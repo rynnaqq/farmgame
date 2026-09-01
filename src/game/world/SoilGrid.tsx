@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
+import * as THREE from 'three';
 import {
   PLOT_SIZE,
   MAX_GRID_SIZE,
@@ -13,6 +14,7 @@ import {
   getGridBounds,
   getPlotId,
   getLockedPlotSlots,
+  type LockedPlotSlot,
 } from './gridCoordinates';
 import {
   calculateExpansionRing,
@@ -22,7 +24,7 @@ import {
 } from './expansionAnimation';
 
 // ==========================================
-// Locked Plot Indicator Subcomponent
+// Locked Plot Indicator Subcomponent (Individual fallback & Instanced)
 // ==========================================
 
 export interface LockedPlotMeshProps {
@@ -80,6 +82,126 @@ export const LockedPlotMesh: React.FC<LockedPlotMeshProps> = ({
           />
         </mesh>
       </group>
+    </group>
+  );
+};
+
+// ==========================================
+// Instanced Locked Plots (GPU Instancing to keep draw calls < 200)
+// ==========================================
+
+const LOCKED_TILE_GEO = new THREE.BoxGeometry(PLOT_SIZE, 0.08, PLOT_SIZE);
+const LOCKED_MOSS_GEO = new THREE.BoxGeometry(PLOT_SIZE * 0.78, 0.02, PLOT_SIZE * 0.78);
+const LOCKED_BODY_GEO = new THREE.BoxGeometry(0.22, 0.16, 0.1);
+const LOCKED_SHACKLE_GEO = new THREE.TorusGeometry(0.07, 0.02, 4, 8, Math.PI);
+
+interface LockedPlotsInstancedProps {
+  slots: LockedPlotSlot[];
+}
+
+export const LockedPlotsInstanced: React.FC<LockedPlotsInstancedProps> = ({ slots }) => {
+  const tileRef = useRef<THREE.InstancedMesh>(null);
+  const mossRef = useRef<THREE.InstancedMesh>(null);
+  const bodyRef = useRef<THREE.InstancedMesh>(null);
+  const shackleRef = useRef<THREE.InstancedMesh>(null);
+
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+
+  useEffect(() => {
+    if (slots.length === 0) return;
+
+    slots.forEach((slot, i) => {
+      const [x, y, z] = slot.position;
+
+      // 1. Stone border tile
+      dummy.position.set(x, y, z);
+      dummy.rotation.set(0, 0, 0);
+      dummy.scale.set(1, 1, 1);
+      dummy.updateMatrix();
+      tileRef.current?.setMatrixAt(i, dummy.matrix);
+
+      // 2. Moss patch
+      dummy.position.set(x, y + 0.042, z);
+      dummy.updateMatrix();
+      mossRef.current?.setMatrixAt(i, dummy.matrix);
+
+      // 3. Lock body
+      dummy.position.set(x, y + 0.14, z);
+      dummy.updateMatrix();
+      bodyRef.current?.setMatrixAt(i, dummy.matrix);
+
+      // 4. Lock shackle
+      dummy.position.set(x, y + 0.25, z);
+      dummy.updateMatrix();
+      shackleRef.current?.setMatrixAt(i, dummy.matrix);
+    });
+
+    if (tileRef.current) tileRef.current.instanceMatrix.needsUpdate = true;
+    if (mossRef.current) mossRef.current.instanceMatrix.needsUpdate = true;
+    if (bodyRef.current) bodyRef.current.instanceMatrix.needsUpdate = true;
+    if (shackleRef.current) shackleRef.current.instanceMatrix.needsUpdate = true;
+  }, [slots, dummy]);
+
+  if (slots.length === 0) return null;
+
+  return (
+    <group name="LockedPlotsInstanced">
+      {/* 1. Stone Border Tiles */}
+      <instancedMesh
+        ref={tileRef}
+        args={[LOCKED_TILE_GEO, undefined, slots.length]}
+        receiveShadow
+      >
+        <meshStandardMaterial
+          color="#525B62"
+          roughness={0.9}
+          metalness={0.05}
+          flatShading
+        />
+      </instancedMesh>
+
+      {/* 2. Inset Grass/Moss Patches */}
+      <instancedMesh
+        ref={mossRef}
+        args={[LOCKED_MOSS_GEO, undefined, slots.length]}
+        receiveShadow
+      >
+        <meshStandardMaterial
+          color="#48782E"
+          roughness={0.85}
+          metalness={0.0}
+          flatShading
+        />
+      </instancedMesh>
+
+      {/* 3. Lock Bodies */}
+      <instancedMesh
+        ref={bodyRef}
+        args={[LOCKED_BODY_GEO, undefined, slots.length]}
+        castShadow
+        receiveShadow
+      >
+        <meshStandardMaterial
+          color="#967B48"
+          roughness={0.4}
+          metalness={0.6}
+          flatShading
+        />
+      </instancedMesh>
+
+      {/* 4. Lock Shackles */}
+      <instancedMesh
+        ref={shackleRef}
+        args={[LOCKED_SHACKLE_GEO, undefined, slots.length]}
+        castShadow
+      >
+        <meshStandardMaterial
+          color="#6B7280"
+          roughness={0.3}
+          metalness={0.8}
+          flatShading
+        />
+      </instancedMesh>
     </group>
   );
 };
@@ -217,14 +339,8 @@ export const SoilGrid: React.FC<SoilGridProps> = ({ onPlotClick }) => {
         />
       ))}
 
-      {/* Locked Plot Markers */}
-      {lockedSlots.map((slot) => (
-        <LockedPlotMesh
-          key={slot.id}
-          position={slot.position}
-          requiredGridSize={slot.requiredGridSize}
-        />
-      ))}
+      {/* GPU-Instanced Locked Plot Markers (4 draw calls total) */}
+      <LockedPlotsInstanced slots={lockedSlots} />
     </group>
   );
 };

@@ -1,6 +1,19 @@
 import React, { useMemo } from 'react';
+import * as THREE from 'three';
 import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import { useSettingsStore } from '../../state/settingsStore';
+
+// ==========================================
+// Preallocated Geometries for Scene Performance
+// ==========================================
+
+const TRUNK_GEO = new THREE.CylinderGeometry(0.18, 0.28, 1.4, 6);
+const FOLIAGE_CONE_1_GEO = new THREE.ConeGeometry(1.2, 1.2, 7);
+const FOLIAGE_CONE_2_GEO = new THREE.ConeGeometry(0.95, 1.1, 7);
+const FOLIAGE_CONE_3_GEO = new THREE.ConeGeometry(0.65, 0.9, 7);
+const FLOWER_STEM_GEO = new THREE.CylinderGeometry(0.015, 0.015, 1, 4);
+const FLOWER_PETAL_GEO = new THREE.SphereGeometry(0.065, 5, 5);
+const GRASS_BLADE_GEO = new THREE.BoxGeometry(0.04, 0.22, 0.16);
 
 // ==========================================
 // Types & Item Definitions
@@ -119,14 +132,22 @@ const LowPolyTree: React.FC<{ tree: TreeItem }> = ({ tree }) => {
   return (
     <group position={[tree.x, 0, tree.z]} scale={[scale, scale, scale]}>
       {/* Tree Trunk */}
-      <mesh position={[0, 0.7, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.18, 0.28, 1.4, 6]} />
+      <mesh
+        geometry={TRUNK_GEO}
+        position={[0, 0.7, 0]}
+        castShadow
+        receiveShadow
+      >
         <meshStandardMaterial color="#5D4037" roughness={0.85} flatShading />
       </mesh>
 
       {/* Layer 1 - Lower foliage cone */}
-      <mesh position={[0, 1.6, 0]} castShadow receiveShadow>
-        <coneGeometry args={[1.2, 1.2, 7]} />
+      <mesh
+        geometry={FOLIAGE_CONE_1_GEO}
+        position={[0, 1.6, 0]}
+        castShadow
+        receiveShadow
+      >
         <meshStandardMaterial
           color={primaryColor}
           roughness={0.75}
@@ -135,8 +156,12 @@ const LowPolyTree: React.FC<{ tree: TreeItem }> = ({ tree }) => {
       </mesh>
 
       {/* Layer 2 - Mid foliage cone */}
-      <mesh position={[0, 2.3, 0]} castShadow receiveShadow>
-        <coneGeometry args={[0.95, 1.1, 7]} />
+      <mesh
+        geometry={FOLIAGE_CONE_2_GEO}
+        position={[0, 2.3, 0]}
+        castShadow
+        receiveShadow
+      >
         <meshStandardMaterial
           color={secondaryColor}
           roughness={0.75}
@@ -145,8 +170,12 @@ const LowPolyTree: React.FC<{ tree: TreeItem }> = ({ tree }) => {
       </mesh>
 
       {/* Layer 3 - Top foliage cone */}
-      <mesh position={[0, 2.95, 0]} castShadow receiveShadow>
-        <coneGeometry args={[0.65, 0.9, 7]} />
+      <mesh
+        geometry={FOLIAGE_CONE_3_GEO}
+        position={[0, 2.95, 0]}
+        castShadow
+        receiveShadow
+      >
         <meshStandardMaterial
           color={primaryColor}
           roughness={0.75}
@@ -164,10 +193,11 @@ const FacetedBoulder: React.FC<{ boulder: BoulderItem }> = ({ boulder }) => {
     <mesh
       position={[boulder.x, scale * 0.45, boulder.z]}
       rotation={[0.2, rotY, 0.1]}
+      scale={[scale * 0.7, scale * 0.7, scale * 0.7]}
       castShadow
       receiveShadow
     >
-      <dodecahedronGeometry args={[scale * 0.7, 0]} />
+      <dodecahedronGeometry args={[1.0, 0]} />
       <meshStandardMaterial color="#6B7280" roughness={0.88} flatShading />
     </mesh>
   );
@@ -198,13 +228,19 @@ const FlowerCluster: React.FC<{ flower: FlowerClusterItem }> = ({ flower }) => {
       ].map(([px, py, pz], idx) => (
         <group key={idx} position={[px, 0, pz]}>
           {/* Green Stem */}
-          <mesh position={[0, py / 2, 0]}>
-            <cylinderGeometry args={[0.015, 0.015, py, 4]} />
+          <mesh
+            geometry={FLOWER_STEM_GEO}
+            position={[0, py / 2, 0]}
+            scale={[1, py, 1]}
+          >
             <meshStandardMaterial color="#4CAF50" roughness={0.8} />
           </mesh>
           {/* Petal Head */}
-          <mesh position={[0, py, 0]} castShadow>
-            <sphereGeometry args={[0.065, 5, 5]} />
+          <mesh
+            geometry={FLOWER_PETAL_GEO}
+            position={[0, py, 0]}
+            castShadow
+          >
             <meshStandardMaterial
               color={flower.color}
               roughness={0.6}
@@ -221,8 +257,13 @@ const GrassTuft: React.FC<{ tuft: GrassTuftItem }> = ({ tuft }) => {
   return (
     <group position={[tuft.x, 0, tuft.z]} scale={[tuft.scale, tuft.scale, tuft.scale]}>
       {[0, Math.PI / 3, (2 * Math.PI) / 3].map((rot, idx) => (
-        <mesh key={idx} position={[0, 0.1, 0]} rotation={[0.1, rot, 0.05]} receiveShadow>
-          <boxGeometry args={[0.04, 0.22, 0.16]} />
+        <mesh
+          key={idx}
+          geometry={GRASS_BLADE_GEO}
+          position={[0, 0.1, 0]}
+          rotation={[0.1, rot, 0.05]}
+          receiveShadow
+        >
           <meshStandardMaterial color="#68A538" roughness={0.8} flatShading />
         </mesh>
       ))}

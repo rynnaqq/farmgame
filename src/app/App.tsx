@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { Providers } from './providers';
 import { GameCanvas } from '../game/GameCanvas';
@@ -12,6 +12,8 @@ import { InventoryPanel } from '../ui/InventoryPanel';
 import { SettingsModal } from '../ui/SettingsModal';
 import { Tutorial } from '../ui/Tutorial';
 import { ToastRegion } from '../ui/ToastRegion';
+import { DiagnosticsOverlay } from '../game/effects/DiagnosticsPanel';
+import { isDiagnosticsEnabled } from '../game/core/autoQualityManager';
 import { audioManager } from '../game/audio/AudioManager';
 import type { PlotId } from '../state/storeTypes';
 
@@ -26,7 +28,7 @@ export interface AppProps {
 /**
  * Main application entry component for Garden Island 3D.
  * Combines global ErrorBoundary, WebGL validation provider, 3D GameCanvas,
- * GameRuntime scene coordinator, MobileHUD, Toolbelt, and the UI overlay root container.
+ * GameRuntime scene coordinator, MobileHUD, Toolbelt, Diagnostics overlay, and UI containers.
  */
 export const App: React.FC<AppProps> = ({
   children,
@@ -40,6 +42,8 @@ export const App: React.FC<AppProps> = ({
     defaultInputManagerRef.current = new InputManager();
   }
   const activeInputManager = inputManager ?? defaultInputManagerRef.current;
+
+  const debugEnabled = useMemo(() => isDiagnosticsEnabled(), []);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -91,10 +95,10 @@ export const App: React.FC<AppProps> = ({
             <SettingsModal />
             <Tutorial />
             <ToastRegion />
+            <DiagnosticsOverlay enabled={debugEnabled} />
           </div>
         </div>
       </Providers>
     </ErrorBoundary>
   );
 };
-

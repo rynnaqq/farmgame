@@ -10,6 +10,7 @@ import { Player } from './player/Player';
 import { FollowCamera } from './camera/FollowCamera';
 import { ParticlePool } from './effects/ParticlePool';
 import { PostProcessing } from './effects/PostProcessing';
+import { DiagnosticsPanel } from './effects/DiagnosticsPanel';
 import type { InputManager } from './input/InputManager';
 
 export interface GameRuntimeProps {
@@ -30,6 +31,7 @@ export interface GameRuntimeProps {
  * - Third-Person Isometric Follow Camera with collision avoidance
  * - GPU Instanced Particle Pool for rain, heat haze, blood motes, and gameplay bursts
  * - Quality-aware PostProcessing bloom
+ * - Auto Quality Manager & Three.js telemetry monitoring
  * - Extension slot for pet systems and custom dynamic entities
  */
 export const GameRuntime: React.FC<GameRuntimeProps> = ({
@@ -70,7 +72,10 @@ export const GameRuntime: React.FC<GameRuntimeProps> = ({
       {/* 9. Quality-Aware Bloom PostProcessing */}
       <PostProcessing />
 
-      {/* 10. Dynamic entities & extensions (Pets, etc.) */}
+      {/* 10. Auto Quality Manager & Diagnostics Telemetry Collector */}
+      <DiagnosticsPanel />
+
+      {/* 11. Dynamic entities & extensions (Pets, etc.) */}
       {children}
     </group>
   );

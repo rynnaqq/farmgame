@@ -1,8 +1,24 @@
 import React, { useMemo } from 'react';
+import * as THREE from 'three';
 import type { PlotData, PlotId } from '../../state/storeTypes';
 import { PLOT_SIZE } from '../core/constants';
 import { useUiStore } from '../../state/uiStore';
 import { CropRenderer } from '../farming/CropRenderer';
+
+// Pre-allocated shared geometries for plot meshes to eliminate per-plot geometry churn
+const SHARED_SOIL_BOX_GEO = new THREE.BoxGeometry(PLOT_SIZE, 0.1, PLOT_SIZE);
+const SHARED_FURROW_RIDGE_GEO = new THREE.BoxGeometry(PLOT_SIZE * 0.9, 0.03, 0.18);
+const SHARED_HYDRATION_PLANE_GEO = new THREE.PlaneGeometry(
+  PLOT_SIZE * 0.94,
+  PLOT_SIZE * 0.94
+);
+const SHARED_OUTLINE_RING_GEO = new THREE.RingGeometry(
+  (PLOT_SIZE * 0.98) / 2,
+  (PLOT_SIZE * 1.04) / 2,
+  4,
+  1,
+  Math.PI / 4
+);
 
 export interface PlotMeshProps {
   plot: PlotData;
@@ -82,12 +98,12 @@ export const PlotMesh: React.FC<PlotMeshProps> = ({
       <mesh
         castShadow
         receiveShadow
+        geometry={SHARED_SOIL_BOX_GEO}
         onPointerOver={handlePointerOver}
         onPointerOut={handlePointerOut}
         onClick={handleClick}
         position={[0, 0, 0]}
       >
-        <boxGeometry args={[PLOT_SIZE, 0.1, PLOT_SIZE]} />
         <meshStandardMaterial
           color={soilMaterialProps.color}
           roughness={soilMaterialProps.roughness}
@@ -100,8 +116,12 @@ export const PlotMesh: React.FC<PlotMeshProps> = ({
       {plot.tilled && (
         <group position={[0, 0.055, 0]}>
           {[-0.35, 0, 0.35].map((offsetZ, idx) => (
-            <mesh key={idx} position={[0, 0.015, offsetZ]} receiveShadow>
-              <boxGeometry args={[PLOT_SIZE * 0.9, 0.03, 0.18]} />
+            <mesh
+              key={idx}
+              position={[0, 0.015, offsetZ]}
+              geometry={SHARED_FURROW_RIDGE_GEO}
+              receiveShadow
+            >
               <meshStandardMaterial
                 color={isHydrated ? '#241308' : '#4E2F18'}
                 roughness={soilMaterialProps.roughness}
@@ -118,9 +138,9 @@ export const PlotMesh: React.FC<PlotMeshProps> = ({
         <mesh
           position={[0, 0.052, 0]}
           rotation={[-Math.PI / 2, 0, 0]}
+          geometry={SHARED_HYDRATION_PLANE_GEO}
           receiveShadow
         >
-          <planeGeometry args={[PLOT_SIZE * 0.94, PLOT_SIZE * 0.94]} />
           <meshStandardMaterial
             color="#3D2817"
             roughness={0.15}
@@ -140,16 +160,10 @@ export const PlotMesh: React.FC<PlotMeshProps> = ({
       {showOutline && (
         <group position={[0, 0.06, 0]}>
           {/* Top border frame */}
-          <mesh rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry
-              args={[
-                (PLOT_SIZE * 0.98) / 2,
-                (PLOT_SIZE * 1.04) / 2,
-                4,
-                1,
-                Math.PI / 4,
-              ]}
-            />
+          <mesh
+            rotation={[-Math.PI / 2, 0, 0]}
+            geometry={SHARED_OUTLINE_RING_GEO}
+          >
             <meshBasicMaterial
               color={outlineColor}
               transparent
