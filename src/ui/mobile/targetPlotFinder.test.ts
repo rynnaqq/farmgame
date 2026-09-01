@@ -6,7 +6,11 @@ import {
   findNearestTargetPlot,
   isMerchantInRange,
 } from './targetPlotFinder';
-import { MOBILE_ACTION_REACH, MOBILE_ACTION_CONE_DEG } from '../../game/core/constants';
+import {
+  MOBILE_ACTION_REACH,
+  MOBILE_ACTION_CONE_DEG,
+  MERCHANT_POSITION,
+} from '../../game/core/constants';
 import type { PlotData } from '../../state/storeTypes';
 
 describe('targetPlotFinder Unit Tests', () => {
@@ -200,15 +204,14 @@ describe('targetPlotFinder Unit Tests', () => {
 
   describe('4. Merchant Proximity (isMerchantInRange)', () => {
     it('returns true when player is within 2.5 units of merchant stall', () => {
-      // Merchant is at [8.5, 0, 4.2]
-      expect(isMerchantInRange([8.5, 0.5, 4.2])).toBe(true);
-      expect(isMerchantInRange([8.5 + 1.5, 0.5, 4.2])).toBe(true);
-      expect(isMerchantInRange([8.5, 0.5, 4.2 + 2.4])).toBe(true);
+      expect(isMerchantInRange([MERCHANT_POSITION[0], 0.5, MERCHANT_POSITION[2]])).toBe(true);
+      expect(isMerchantInRange([MERCHANT_POSITION[0] + 1.5, 0.5, MERCHANT_POSITION[2]])).toBe(true);
+      expect(isMerchantInRange([MERCHANT_POSITION[0], 0.5, MERCHANT_POSITION[2] + 2.4])).toBe(true);
     });
 
     it('returns false when player is beyond 2.5 units of merchant stall', () => {
       expect(isMerchantInRange([0, 0.5, 0])).toBe(false);
-      expect(isMerchantInRange([8.5 + 3.0, 0.5, 4.2])).toBe(false);
+      expect(isMerchantInRange([MERCHANT_POSITION[0] + 3.0, 0.5, MERCHANT_POSITION[2]])).toBe(false);
     });
   });
 });

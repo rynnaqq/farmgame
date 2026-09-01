@@ -2,6 +2,7 @@ import {
   MOBILE_ACTION_REACH,
   MOBILE_ACTION_CONE_DEG,
   MERCHANT_INTERACTION_RANGE,
+  MERCHANT_POSITION,
   MAX_GRID_SIZE,
   STARTING_GRID_SIZE,
 } from '../../game/core/constants';
@@ -14,8 +15,6 @@ export interface TargetPlotResult {
   angleDeg: number;
   worldPosition: [number, number, number];
 }
-
-export const MERCHANT_POSITION: [number, number, number] = [8.5, 0, 4.2];
 
 /**
  * Calculates angle in degrees [0, 180] between player facing direction (yaw) and target position in X-Z plane.
@@ -184,7 +183,7 @@ export function findNearestTargetPlot(
  */
 export function isMerchantInRange(
   playerPosition: [number, number, number] | { x: number; z: number },
-  merchantPosition: [number, number, number] = MERCHANT_POSITION,
+  merchantPosition: readonly [number, number, number] | [number, number, number] = MERCHANT_POSITION,
   range: number = MERCHANT_INTERACTION_RANGE
 ): boolean {
   const px = Array.isArray(playerPosition) ? playerPosition[0] : playerPosition.x;
