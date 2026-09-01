@@ -10,6 +10,7 @@ export interface PlotMeshProps {
   isHovered?: boolean;
   isTargeted?: boolean;
   onPlotClick?: (plotId: PlotId) => void;
+  scale?: number | [number, number, number];
 }
 
 export const PlotMesh: React.FC<PlotMeshProps> = ({
@@ -18,6 +19,7 @@ export const PlotMesh: React.FC<PlotMeshProps> = ({
   isHovered = false,
   isTargeted = false,
   onPlotClick,
+  scale = 1.0,
 }) => {
   const setHoveredPlot = useUiStore((state) => state.setHoveredPlot);
 
@@ -71,8 +73,11 @@ export const PlotMesh: React.FC<PlotMeshProps> = ({
     onPlotClick?.(plot.id);
   };
 
+  const scaleVector: [number, number, number] =
+    typeof scale === 'number' ? [scale, scale, scale] : scale;
+
   return (
-    <group position={position}>
+    <group position={position} scale={scaleVector} name={`PlotMesh-${plot.id}`}>
       {/* Main Soil Bed Mesh */}
       <mesh
         castShadow

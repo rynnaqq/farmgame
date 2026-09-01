@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   PLOT_SIZE,
   MAX_GRID_SIZE,
@@ -6,6 +6,7 @@ import {
 import type { PlotId } from '../../state/storeTypes';
 import { useGameStore } from '../../state/gameStore';
 import { useUiStore } from '../../state/uiStore';
+import { useSettingsStore } from '../../state/settingsStore';
 import { PlotMesh } from './PlotMesh';
 import {
   getPlotPosition,
@@ -13,6 +14,12 @@ import {
   getPlotId,
   getLockedPlotSlots,
 } from './gridCoordinates';
+import {
+  calculateExpansionRing,
+  calculatePlotExpansionScale,
+  isPlotInExpansionWave,
+  getExpansionWaveDuration,
+} from './expansionAnimation';
 
 // ==========================================
 // Locked Plot Indicator Subcomponent
@@ -90,6 +97,62 @@ export const SoilGrid: React.FC<SoilGridProps> = ({ onPlotClick }) => {
   const gridSize = useGameStore((state) => state.farm.gridSize);
   const hoveredPlotId = useUiStore((state) => state.hoveredPlotId);
   const targetedPlotId = useUiStore((state) => state.targetedPlotId);
+  const reducedMotion = useSettingsStore((state) => state.reducedMotion);
+
+  // Expansion wave animation state
+  const [waveState, setWaveState] = useState<{
+    prevGridSize: number;
+    newGridSize: number;
+    startTime: number;
+    duration: number;
+  } | null>(null);
+
+  const [animTime, setAnimTime] = useState<number>(Date.now());
+  const prevGridSizeRef = useRef<number>(gridSize);
+
+  useEffect(() => {
+    if (gridSize > prevGridSizeRef.current) {
+      const prev = prevGridSizeRef.current;
+      const duration = getExpansionWaveDuration(prev, gridSize);
+      setWaveState({
+        prevGridSize: prev,
+        newGridSize: gridSize,
+        startTime: Date.now(),
+        duration,
+      });
+      setAnimTime(Date.now());
+    }
+    prevGridSizeRef.current = gridSize;
+  }, [gridSize]);
+
+  useEffect(() => {
+    if (!waveState || reducedMotion) return;
+
+    let rafId: number;
+    const updateAnim = () => {
+      const now = Date.now();
+      setAnimTime(now);
+
+      if (now - waveState.startTime < waveState.duration + 50) {
+        rafId = requestAnimationFrame(updateAnim);
+      } else {
+        setWaveState(null);
+      }
+    };
+
+    rafId = requestAnimationFrame(updateAnim);
+    return () => cancelAnimationFrame(rafId);
+  }, [waveState, reducedMotion]);
+
+  // Compute scale factor for a given plot based on active expansion wave
+  const getPlotScale = (row: number, col: number): number => {
+    if (!waveState || reducedMotion) return 1.0;
+    if (!isPlotInExpansionWave(row, col, waveState.prevGridSize, waveState.newGridSize)) {
+      return 1.0;
+    }
+    const ring = calculateExpansionRing(row, col, waveState.prevGridSize);
+    return calculatePlotExpansionScale(animTime, waveState.startTime, ring);
+  };
 
   // Active plot list
   const activePlots = useMemo(() => {
@@ -147,6 +210,7 @@ export const SoilGrid: React.FC<SoilGridProps> = ({ onPlotClick }) => {
           key={plot.id}
           plot={plot}
           position={position}
+          scale={getPlotScale(plot.row, plot.col)}
           isHovered={hoveredPlotId === plot.id}
           isTargeted={targetedPlotId === plot.id}
           onPlotClick={onPlotClick}
