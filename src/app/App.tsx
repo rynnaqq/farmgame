@@ -6,6 +6,7 @@ import { GameRuntime } from '../game/GameRuntime';
 import { InputManager } from '../game/input/InputManager';
 import { MobileHUD } from '../ui/mobile/MobileHUD';
 import { Toolbelt } from '../ui/Toolbelt';
+import { ShopModal } from '../ui/ShopModal';
 import type { PlotId } from '../state/storeTypes';
 
 export interface AppProps {
@@ -70,6 +71,7 @@ export const App: React.FC<AppProps> = ({
           >
             <MobileHUD inputManager={activeInputManager} onPlotInteract={onPlotClick} />
             <Toolbelt inputManager={activeInputManager} />
+            <ShopModal />
           </div>
         </div>
       </Providers>

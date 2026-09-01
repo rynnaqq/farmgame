@@ -63,6 +63,7 @@ export const FARMING_REACH = 3.0; // Desktop click / general reach in world unit
 export const MOBILE_ACTION_REACH = 2.8; // Mobile context button distance
 export const MOBILE_ACTION_CONE_DEG = 70; // 70-degree forward cone
 export const MERCHANT_INTERACTION_RANGE = 2.5; // Merchant opening range
+export const MERCHANT_POSITION = [8.5, 0, 4.2] as const;
 
 // ==========================================
 // 7. Mobile Virtual Joystick

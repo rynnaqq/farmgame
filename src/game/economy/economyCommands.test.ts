@@ -27,6 +27,7 @@ import {
   EXPANSION_1_COST,
   EXPANSION_2_COST,
   MAX_PET_INVENTORY,
+  type CropId,
 } from '../core/constants';
 import type { EggData, PetData } from '../../state/storeTypes';
 
