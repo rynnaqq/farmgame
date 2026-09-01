@@ -40,10 +40,29 @@ body,
   margin: 0;
   padding: 0;
   overflow: hidden;
+  position: fixed;
+  inset: 0;
 }
 
 /* Prevent mobile pull-to-refresh and bouncing */
 body {
   overscroll-behavior: none;
-  position: fixed;
+  background-color: #0c4a6e;
+}
+
+/* Fullscreen safe-area padding helpers */
+.safe-top {
+  padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
+}
+
+.safe-bottom {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+}
+
+.safe-left {
+  padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
+}
+
+.safe-right {
+  padding-right: max(0.5rem, env(safe-area-inset-right, 0px));
 }

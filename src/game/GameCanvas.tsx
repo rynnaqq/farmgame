@@ -37,7 +37,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         return [1, 1.5];
       case 'high':
       default:
-        return [1, isMobile ? 1.5 : 2.0];
+        return [1, isMobile ? 2.0 : 2.5];
     }
   }, [effectiveQuality]);
 
@@ -46,20 +46,22 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   return (
     <div className={className} tabIndex={0}>
       <Canvas
-        shadows={shadowsEnabled}
+        shadows={shadowsEnabled ? 'soft' : false}
         dpr={dprRange}
         gl={{
           antialias: true,
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.0,
+          toneMappingExposure: 1.15,
           outputColorSpace: THREE.SRGBColorSpace,
           powerPreference: 'high-performance',
+          stencil: false,
+          depth: true,
         }}
         camera={{
-          position: [6.5, 8.9, 6.5],
+          position: [6.5, 8.7, 6.5],
           fov: 45,
           near: 0.1,
-          far: 200,
+          far: 250,
         }}
       >
         <Suspense fallback={null}>

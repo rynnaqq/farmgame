@@ -260,6 +260,35 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, className
 
           <div className="flex items-center justify-between pt-1">
             <div>
+              <div className="text-xs font-medium text-slate-200">Fullscreen Mode</div>
+              <div className="text-[11px] text-slate-400">
+                Fills screen without browser navigation bars
+              </div>
+            </div>
+            <button
+              type="button"
+              data-testid="setting-fullscreen-toggle"
+              onClick={() => {
+                audioManager.playSfx('ui_click');
+                if (typeof document === 'undefined') return;
+                if (!document.fullscreenElement) {
+                  document.documentElement.requestFullscreen?.().catch(() => {});
+                } else {
+                  document.exitFullscreen?.().catch(() => {});
+                }
+              }}
+              className={`px-3 py-1 rounded-lg text-xs font-bold border transition-colors outline-none focus-visible:ring-2 focus-visible:ring-amber-400 cursor-pointer ${
+                typeof document !== 'undefined' && document.fullscreenElement
+                  ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-300'
+                  : 'bg-slate-800 border-white/10 text-slate-300 hover:text-white'
+              }`}
+            >
+              {typeof document !== 'undefined' && document.fullscreenElement ? 'Fullscreen' : 'Windowed'}
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between pt-1">
+            <div>
               <div className="text-xs font-medium text-slate-200">Reduced Motion</div>
               <div className="text-[11px] text-slate-400">
                 Disables screen shake and camera impulses

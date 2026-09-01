@@ -97,6 +97,35 @@ export const HUD: React.FC<HUDProps> = ({ className = '' }) => {
   const isInitialMountRef = useRef<boolean>(true);
   const [coinDelta, setCoinDelta] = useState<CoinDelta | null>(null);
 
+  // Fullscreen state
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(() => {
+    if (typeof document === 'undefined') return false;
+    return Boolean(document.fullscreenElement);
+  });
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  const handleToggleFullscreen = useCallback(() => {
+    audioManager.playSfx('ui_click');
+    if (typeof document === 'undefined') return;
+
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+    } else {
+      document.exitFullscreen?.().catch(() => {});
+    }
+  }, []);
+
   useEffect(() => {
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
@@ -291,6 +320,28 @@ export const HUD: React.FC<HUDProps> = ({ className = '' }) => {
               {totalProduceCount}
             </span>
           )}
+        </button>
+
+        {/* Fullscreen Toggle Button */}
+        <button
+          type="button"
+          data-testid="hud-fullscreen-button"
+          aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+          aria-pressed={isFullscreen}
+          onClick={handleToggleFullscreen}
+          title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+          className={`pointer-events-auto min-w-[38px] min-h-[38px] sm:min-w-[42px] sm:min-h-[42px] px-2.5 sm:px-3 py-1.5 rounded-xl flex items-center justify-center gap-1.5 border shadow-lg transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-sky-400 cursor-pointer ${
+            isFullscreen
+              ? 'bg-sky-950/90 border-sky-400/60 text-sky-200 ring-2 ring-sky-400/30'
+              : 'bg-slate-900/90 hover:bg-slate-800/90 border-white/15 text-slate-200 hover:text-white'
+          }`}
+        >
+          <span className="text-base sm:text-lg select-none" role="img" aria-hidden="true">
+            {isFullscreen ? '🗗' : '⛶'}
+          </span>
+          <span className="text-xs font-bold hidden lg:inline">
+            {isFullscreen ? 'Exit Full' : 'Fullscreen'}
+          </span>
         </button>
 
         {/* Settings Button */}

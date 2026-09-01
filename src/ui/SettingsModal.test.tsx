@@ -143,6 +143,19 @@ describe('Task 19: SettingsModal Component Tests', () => {
       fireEvent.click(motionToggle);
       expect(useSettingsStore.getState().reducedMotion).toBe(!initialMotion);
     });
+
+    it('renders fullscreen toggle button and calls fullscreen API', () => {
+      render(<SettingsModal />);
+
+      const fsToggle = screen.getByTestId('setting-fullscreen-toggle');
+      expect(fsToggle).toBeInTheDocument();
+
+      const requestFsMock = vi.fn().mockResolvedValue(undefined);
+      document.documentElement.requestFullscreen = requestFsMock;
+
+      fireEvent.click(fsToggle);
+      expect(requestFsMock).toHaveBeenCalled();
+    });
   });
 
   describe('4. Input Controls (Mode, Sensitivity, Invert-Y, Haptics)', () => {

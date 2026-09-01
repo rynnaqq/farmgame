@@ -5,15 +5,18 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#29B6F6" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#0284c7" />
     <meta name="description" content="Garden Island 3D - A 3D farming simulator browser game" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <title>Garden Island 3D</title>
   </head>
-  <body class="bg-sky-950 text-white select-none overflow-hidden m-0 p-0">
-    <div id="root" class="w-full h-full"></div>
+  <body class="bg-sky-950 text-white select-none overflow-hidden m-0 p-0 w-full h-full">
+    <div id="root" class="w-full h-full overflow-hidden"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

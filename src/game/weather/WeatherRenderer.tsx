@@ -175,7 +175,8 @@ export const WeatherRenderer: React.FC = () => {
         shadow-mapSize={
           shadowConfig.castShadow ? [shadowConfig.mapSize, shadowConfig.mapSize] : undefined
         }
-        shadow-bias={-0.0005}
+        shadow-bias={-0.0003}
+        shadow-normalBias={0.02}
       />
     </group>
   );

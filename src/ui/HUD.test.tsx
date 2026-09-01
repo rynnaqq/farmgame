@@ -221,6 +221,19 @@ describe('HUD & ToastRegion Components', () => {
 
       expect(useUiStore.getState().activeModal).toBe('settings');
     });
+
+    it('renders fullscreen toggle button and triggers fullscreen request/exit', () => {
+      render(<HUD />);
+
+      const fullscreenBtn = screen.getByTestId('hud-fullscreen-button');
+      expect(fullscreenBtn).toBeInTheDocument();
+
+      const requestFsMock = vi.fn().mockResolvedValue(undefined);
+      document.documentElement.requestFullscreen = requestFsMock;
+
+      fireEvent.click(fullscreenBtn);
+      expect(requestFsMock).toHaveBeenCalled();
+    });
   });
 
   describe('ToastRegion: Notification Rendering & Dismissal', () => {
