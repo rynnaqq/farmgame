@@ -399,6 +399,99 @@ describe('Task 6: Cross-Platform Input Pipeline', () => {
       window.dispatchEvent(new Event('blur'));
       expect(touchInput.getActivePointerCount()).toBe(0);
     });
+
+    it('ignores pointers marked with ignorePointerId (e.g. active virtual joystick)', () => {
+      const orbitSpy = vi.fn();
+      touchInput.onOrbit = orbitSpy;
+
+      // Pointer 1 is registered as the joystick pointer
+      touchInput.ignorePointerId(1);
+
+      // Joystick pointerdown on screen
+      targetEl.dispatchEvent(
+        new PointerEvent('pointerdown', {
+          pointerId: 1,
+          clientX: 50,
+          clientY: 50,
+          pointerType: 'touch',
+        })
+      );
+      // Joystick pointermove
+      targetEl.dispatchEvent(
+        new PointerEvent('pointermove', {
+          pointerId: 1,
+          clientX: 70,
+          clientY: 50,
+          pointerType: 'touch',
+        })
+      );
+
+      // Camera orbit should NOT be triggered by the joystick pointer
+      expect(orbitSpy).not.toHaveBeenCalled();
+      expect(touchInput.getActivePointerCount()).toBe(0);
+
+      // Camera swipe pointer 2 touches and moves
+      targetEl.dispatchEvent(
+        new PointerEvent('pointerdown', {
+          pointerId: 2,
+          clientX: 200,
+          clientY: 200,
+          pointerType: 'touch',
+        })
+      );
+      targetEl.dispatchEvent(
+        new PointerEvent('pointermove', {
+          pointerId: 2,
+          clientX: 230,
+          clientY: 210,
+          pointerType: 'touch',
+        })
+      );
+
+      // Camera orbit triggers with identical sensitivity (deltaX = 30, deltaY = 10)
+      expect(orbitSpy).toHaveBeenCalledTimes(1);
+      expect(orbitSpy).toHaveBeenCalledWith(30, 10);
+      expect(touchInput.getActivePointerCount()).toBe(1);
+
+      // Clean up pointer 2
+      targetEl.dispatchEvent(
+        new PointerEvent('pointerup', {
+          pointerId: 2,
+          clientX: 230,
+          clientY: 210,
+          pointerType: 'touch',
+        })
+      );
+      expect(touchInput.getActivePointerCount()).toBe(0);
+    });
+
+    it('excludes elements matching virtual-joystick-base and virtual-joystick-knob', () => {
+      const orbitSpy = vi.fn();
+      touchInput.onOrbit = orbitSpy;
+
+      const joystickBase = document.createElement('div');
+      joystickBase.setAttribute('data-testid', 'virtual-joystick-base');
+      targetEl.appendChild(joystickBase);
+
+      const joystickKnob = document.createElement('div');
+      joystickKnob.setAttribute('data-testid', 'virtual-joystick-knob');
+      joystickBase.appendChild(joystickKnob);
+
+      joystickKnob.dispatchEvent(
+        new PointerEvent('pointerdown', {
+          pointerId: 10,
+          clientX: 80,
+          clientY: 80,
+          pointerType: 'touch',
+          bubbles: true,
+        })
+      );
+
+      expect(touchInput.getActivePointerCount()).toBe(0);
+      expect(orbitSpy).not.toHaveBeenCalled();
+
+      joystickBase.remove();
+    });
   });
 
   describe('6. InputManager Coordination & Run Duration', () => {

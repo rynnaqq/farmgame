@@ -32,6 +32,7 @@ import {
   DEFAULT_ROTATION_DAMPING,
   DEFAULT_DISTANCE_DAMPING,
   DEFAULT_COLLISION_BUFFER,
+  DEFAULT_TOUCH_ORBIT_MULTIPLIER,
   type Vector3Like,
   type PositionInput,
 } from './cameraMath';
@@ -115,7 +116,7 @@ export const FollowCamera: React.FC<FollowCameraProps> = ({
       const isFirstPerson = currentDistanceRef.current < FIRST_PERSON_DISTANCE_THRESHOLD;
       const effectiveMinPitch = isFirstPerson ? degToRad(-75) : minPitchRad;
       const effectiveMaxPitch = isFirstPerson ? degToRad(85) : maxPitchRad;
-      const touchMultiplier = 2.5;
+      const touchMultiplier = DEFAULT_TOUCH_ORBIT_MULTIPLIER;
 
       const { yaw, pitch } = applyOrbitDelta(
         targetYawRef.current,
@@ -130,6 +131,8 @@ export const FollowCamera: React.FC<FollowCameraProps> = ({
       );
       targetYawRef.current = yaw;
       targetPitchRef.current = pitch;
+      currentYawRef.current = yaw;
+      currentPitchRef.current = pitch;
     };
 
     inputManager.onCameraZoom = (deltaDist) => {
@@ -193,6 +196,8 @@ export const FollowCamera: React.FC<FollowCameraProps> = ({
       );
       targetYawRef.current = yaw;
       targetPitchRef.current = pitch;
+      currentYawRef.current = yaw;
+      currentPitchRef.current = pitch;
     };
 
     const handlePointerUp = (e: PointerEvent) => {

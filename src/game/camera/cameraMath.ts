@@ -33,11 +33,11 @@ export interface RaycastHitLike {
 }
 
 export const DEFAULT_ORBIT_SENSITIVITY = 0.005;
-export const DEFAULT_TOUCH_ORBIT_MULTIPLIER = 3.5;
+export const DEFAULT_TOUCH_ORBIT_MULTIPLIER = 2.5;
 export const DEFAULT_ZOOM_SENSITIVITY = 0.01;
-export const DEFAULT_POSITION_DAMPING = 8;
-export const DEFAULT_ROTATION_DAMPING = 10;
-export const DEFAULT_DISTANCE_DAMPING = 8;
+export const DEFAULT_POSITION_DAMPING = 30;
+export const DEFAULT_ROTATION_DAMPING = 40;
+export const DEFAULT_DISTANCE_DAMPING = 15;
 export const DEFAULT_COLLISION_BUFFER = 0.3;
 
 /**

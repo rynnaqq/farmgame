@@ -32,6 +32,7 @@ import {
   DEFAULT_ROTATION_DAMPING,
   DEFAULT_DISTANCE_DAMPING,
   DEFAULT_COLLISION_BUFFER,
+  DEFAULT_TOUCH_ORBIT_MULTIPLIER,
   isCameraObstacle,
 } from './cameraMath';
 import { InputManager } from '../input/InputManager';
@@ -332,10 +333,11 @@ describe('Camera Math Pure Calculations', () => {
     it('exports appropriate tuning defaults', () => {
       expect(DEFAULT_ORBIT_SENSITIVITY).toBe(0.005);
       expect(DEFAULT_ZOOM_SENSITIVITY).toBe(0.01);
-      expect(DEFAULT_POSITION_DAMPING).toBe(8);
-      expect(DEFAULT_ROTATION_DAMPING).toBe(10);
-      expect(DEFAULT_DISTANCE_DAMPING).toBe(8);
+      expect(DEFAULT_POSITION_DAMPING).toBe(30);
+      expect(DEFAULT_ROTATION_DAMPING).toBe(40);
+      expect(DEFAULT_DISTANCE_DAMPING).toBe(15);
       expect(DEFAULT_COLLISION_BUFFER).toBe(0.3);
+      expect(DEFAULT_TOUCH_ORBIT_MULTIPLIER).toBe(2.5);
     });
   });
 });

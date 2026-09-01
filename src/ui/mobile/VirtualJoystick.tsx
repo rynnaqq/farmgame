@@ -57,7 +57,10 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({
   }, []);
 
   const resetJoystick = useCallback(() => {
-    activePointerIdRef.current = null;
+    if (activePointerIdRef.current !== null) {
+      inputManager?.touch.unignorePointerId(activePointerIdRef.current);
+      activePointerIdRef.current = null;
+    }
 
     if (knobRef.current) {
       knobRef.current.style.transform = 'translate3d(0px, 0px, 0)';
@@ -144,6 +147,7 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({
     e.stopPropagation();
 
     activePointerIdRef.current = e.pointerId;
+    inputManager?.touch.ignorePointerId(e.pointerId);
     try {
       e.currentTarget.setPointerCapture?.(e.pointerId);
     } catch {

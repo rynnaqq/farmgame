@@ -11,12 +11,26 @@ export class TouchInput {
   private attached = false;
   private lastPinchDistance: number | null = null;
 
+  private ignoredPointerIds = new Set<number>();
+
   // Callbacks
   public onOrbit?: CameraOrbitCallback;
   public onZoom?: CameraZoomCallback;
 
   // Optional predicate to ignore touches starting on UI / joystick elements
   public isElementExcluded?: (el: Element | null) => boolean;
+
+  public ignorePointerId(pointerId: number): void {
+    this.ignoredPointerIds.add(pointerId);
+    if (this.activePointers.has(pointerId)) {
+      this.activePointers.delete(pointerId);
+      this.lastPinchDistance = null;
+    }
+  }
+
+  public unignorePointerId(pointerId: number): void {
+    this.ignoredPointerIds.delete(pointerId);
+  }
 
   private boundPointerDown = (e: PointerEvent) => this.handlePointerDown(e);
   private boundPointerMove = (e: PointerEvent) => this.handlePointerMove(e);
@@ -61,6 +75,7 @@ export class TouchInput {
 
   public reset(): void {
     this.activePointers.clear();
+    this.ignoredPointerIds.clear();
     this.lastPinchDistance = null;
   }
 
@@ -75,7 +90,8 @@ export class TouchInput {
       const htmlEl = el as HTMLElement;
       if (
         htmlEl.closest('#ui-overlay') ||
-        htmlEl.closest('[data-testid="virtual-joystick"]') ||
+        htmlEl.closest('[data-testid^="virtual-joystick"]') ||
+        htmlEl.closest('[data-testid="mobile-hud-container"]') ||
         htmlEl.closest('button') ||
         htmlEl.closest('input') ||
         htmlEl.closest('dialog') ||
@@ -94,7 +110,7 @@ export class TouchInput {
       return;
     }
 
-    if (this.isExcluded(e.target as Element)) {
+    if (this.ignoredPointerIds.has(e.pointerId) || this.isExcluded(e.target as Element)) {
       return;
     }
 
@@ -154,6 +170,7 @@ export class TouchInput {
 
   private handlePointerUp(e: PointerEvent): void {
     this.activePointers.delete(e.pointerId);
+    this.ignoredPointerIds.delete(e.pointerId);
 
     if (e.target && 'releasePointerCapture' in (e.target as HTMLElement)) {
       try {
