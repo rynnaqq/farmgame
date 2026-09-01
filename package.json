@@ -12,8 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "format": "prettier --write .",
-    "postinstall": "command -v termux-fix-shebang >/dev/null 2>&1 && termux-fix-shebang node_modules/.bin/* || true"
+    "format": "prettier --write ."
   },
   "dependencies": {
     "@react-three/drei": "^10.0.4",
