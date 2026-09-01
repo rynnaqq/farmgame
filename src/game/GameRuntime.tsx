@@ -5,10 +5,13 @@ import { GardenIsland } from './world/GardenIsland';
 import { SoilGrid } from './world/SoilGrid';
 import { Boundaries } from './world/Boundaries';
 import { Decorations } from './world/Decorations';
+import { Player } from './player/Player';
+import type { InputManager } from './input/InputManager';
 
 export interface GameRuntimeProps {
   onPlotClick?: (plotId: PlotId) => void;
   onPlayerFall?: () => void;
+  inputManager?: InputManager;
   children?: React.ReactNode;
 }
 
@@ -19,11 +22,13 @@ export interface GameRuntimeProps {
  * - Dynamic Soil Grid with active plot tiles and locked slot indicators
  * - Invisible boundary barriers and respawn killzone
  * - Low-poly environmental decorations (trees, rocks, flowers, grass)
- * - Extension slot for player, camera, weather particles, and pet systems
+ * - Procedural Player character with kinematic Rapier capsule controller & animation
+ * - Extension slot for camera, weather particles, and pet systems
  */
 export const GameRuntime: React.FC<GameRuntimeProps> = ({
   onPlotClick,
   onPlayerFall,
+  inputManager,
   children,
 }) => {
   return (
@@ -43,7 +48,10 @@ export const GameRuntime: React.FC<GameRuntimeProps> = ({
       {/* 5. Low-Poly Environmental Props */}
       <Decorations />
 
-      {/* 6. Dynamic entities (Player, Pets, Weather, Particles, etc.) */}
+      {/* 6. Procedural Player Character */}
+      <Player inputManager={inputManager} onFall={onPlayerFall} />
+
+      {/* 7. Dynamic entities & extensions (Camera, Pets, Weather, Particles, etc.) */}
       {children}
     </group>
   );
