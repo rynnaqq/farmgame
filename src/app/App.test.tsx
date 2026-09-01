@@ -9,6 +9,18 @@ import { App } from './App';
 import { useGameStore, resetGameStore } from '../state/gameStore';
 import { resetUiStore } from '../state/uiStore';
 import { resetSettingsStore, SETTINGS_STORAGE_KEY } from '../state/settingsStore';
+import { useAuthStore } from '../features/auth/authStore';
+
+// Auth gate must pass in shell tests; Supabase is covered by auth feature tests.
+vi.mock('../features/auth/authService', () => ({
+  getAuthService: () => ({
+    restoreSession: async () => null,
+    signUp: vi.fn(),
+    logIn: vi.fn(),
+    logOut: vi.fn(),
+    onAuthStateChange: () => () => {},
+  }),
+}));
 
 // Component that throws on demand
 const ProblemChild: React.FC<{ shouldThrow?: boolean; message?: string }> = ({
@@ -237,6 +249,11 @@ describe('Task 5: App Shell, Error Boundary & WebGL Fallback', () => {
 
   describe('App Shell Component', () => {
     it('renders main application container, game canvas, and UI overlay container', () => {
+      useAuthStore.setState({
+        status: 'authenticated',
+        session: { userId: 'u1', email: 'verdant@game.internal', username: 'Verdant' },
+        initialized: true,
+      });
       render(
         <App forceWebGLSupported={true}>
           <group name="TestExtension" />

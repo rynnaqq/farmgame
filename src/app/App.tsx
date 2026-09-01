@@ -23,6 +23,8 @@ import { useUiStore } from '../state/uiStore';
 import { AUTOSAVE_INTERVAL_MS } from '../game/core/constants';
 import { executeToolAction } from '../game/farming/farmingCommands';
 import { installTestClock } from '../test/testClock';
+import { AuthModal } from '../features/auth/AuthModal';
+import { useAuthStore } from '../features/auth/authStore';
 import type { PlotId } from '../state/storeTypes';
 
 export interface AppProps {
@@ -53,6 +55,14 @@ export const App: React.FC<AppProps> = ({
 
   const debugEnabled = useMemo(() => isDiagnosticsEnabled(), []);
 
+  const authStatus = useAuthStore((state) => state.status);
+  const initializeAuth = useAuthStore((state) => state.initialize);
+  const isAuthenticated = authStatus === 'authenticated';
+
+  useEffect(() => {
+    void initializeAuth();
+  }, [initializeAuth]);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       installTestClock();
@@ -63,26 +73,34 @@ export const App: React.FC<AppProps> = ({
       const unbindSettings = audioManager.bindToSettingsStore();
 
       let isMounted = true;
-      saveService.load().then(async ({ envelope }) => {
-        if (!isMounted) return;
-
-        const { updatedEnvelope, summary } = simulateOfflineProgression(envelope, Date.now());
-        useGameStore.getState().loadSaveEnvelope(updatedEnvelope);
-        await saveService.saveImmediate(updatedEnvelope);
-
-        if (summary.shouldDisplay) {
-          useUiStore.getState().openModal('offline_summary', summary);
-        } else if (summary.clockMovedBackward) {
-          useUiStore
-            .getState()
-            .showToast('System clock moved backward; offline simulation paused.', 'warning');
-        }
-
+      if (isAuthenticated) {
+        // Server-authoritative mode (Project Verdant): skip local save/offline sim;
+        // persistent progression lives in Supabase.
         saveService.startAutosave(AUTOSAVE_INTERVAL_MS, () =>
           useGameStore.getState().toSaveEnvelope()
         );
-        saveService.setupLifecycleListeners(() => useGameStore.getState().toSaveEnvelope());
-      });
+      } else {
+        saveService.load().then(async ({ envelope }) => {
+          if (!isMounted) return;
+
+          const { updatedEnvelope, summary } = simulateOfflineProgression(envelope, Date.now());
+          useGameStore.getState().loadSaveEnvelope(updatedEnvelope);
+          await saveService.saveImmediate(updatedEnvelope);
+
+          if (summary.shouldDisplay) {
+            useUiStore.getState().openModal('offline_summary', summary);
+          } else if (summary.clockMovedBackward) {
+            useUiStore
+              .getState()
+              .showToast('System clock moved backward; offline simulation paused.', 'warning');
+          }
+
+          saveService.startAutosave(AUTOSAVE_INTERVAL_MS, () =>
+            useGameStore.getState().toSaveEnvelope()
+          );
+          saveService.setupLifecycleListeners(() => useGameStore.getState().toSaveEnvelope());
+        });
+      }
 
       return () => {
         isMounted = false;
@@ -93,7 +111,7 @@ export const App: React.FC<AppProps> = ({
         saveService.dispose();
       };
     }
-  }, [activeInputManager]);
+  }, [activeInputManager, isAuthenticated]);
 
   const handlePlotClick = React.useCallback(
     (plotId: PlotId) => {
@@ -135,34 +153,40 @@ export const App: React.FC<AppProps> = ({
           className="relative w-full h-full min-h-screen overflow-hidden select-none bg-sky-950"
           data-testid="garden-island-app"
         >
-          {/* 3D WebGL Canvas Layer */}
-          <GameCanvas>
-            <GameRuntime
-              onPlotClick={handlePlotClick}
-              onPlayerFall={onPlayerFall}
-              inputManager={activeInputManager}
-            >
-              {children}
-            </GameRuntime>
-          </GameCanvas>
+          {authStatus !== 'authenticated' ? (
+            <AuthModal />
+          ) : (
+            <>
+              {/* 3D WebGL Canvas Layer */}
+              <GameCanvas>
+                <GameRuntime
+                  onPlotClick={handlePlotClick}
+                  onPlayerFall={onPlayerFall}
+                  inputManager={activeInputManager}
+                >
+                  {children}
+                </GameRuntime>
+              </GameCanvas>
 
-          {/* HUD and UI Overlay Layer (pointer-events pass-through) */}
-          <div
-            id="ui-overlay"
-            className="absolute inset-0 pointer-events-none z-10"
-            data-testid="ui-overlay-container"
-          >
-            <HUD />
-            <MobileHUD inputManager={activeInputManager} onPlotInteract={handlePlotClick} />
-            <Toolbelt inputManager={activeInputManager} />
-            <ShopModal />
-            <InventoryPanel />
-            <SettingsModal />
-            <Tutorial />
-            <OfflineSummary />
-            <ToastRegion />
-            <DiagnosticsOverlay enabled={debugEnabled} />
-          </div>
+              {/* HUD and UI Overlay Layer (pointer-events pass-through) */}
+              <div
+                id="ui-overlay"
+                className="absolute inset-0 pointer-events-none z-10"
+                data-testid="ui-overlay-container"
+              >
+                <HUD />
+                <MobileHUD inputManager={activeInputManager} onPlotInteract={handlePlotClick} />
+                <Toolbelt inputManager={activeInputManager} />
+                <ShopModal />
+                <InventoryPanel />
+                <SettingsModal />
+                <Tutorial />
+                <OfflineSummary />
+                <ToastRegion />
+                <DiagnosticsOverlay enabled={debugEnabled} />
+              </div>
+            </>
+          )}
         </div>
       </Providers>
     </ErrorBoundary>
