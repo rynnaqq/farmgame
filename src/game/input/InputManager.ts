@@ -151,6 +151,10 @@ export class InputManager {
     this.isJoystickActive = isActive !== undefined ? isActive : Math.hypot(x, y) > 0;
   }
 
+  public setJoystickVector(x: number, y: number, isActive?: boolean): void {
+    this.setJoystickInput(x, y, isActive);
+  }
+
   public isModalOpen(): boolean {
     return useUiStore.getState().activeModal !== null;
   }
