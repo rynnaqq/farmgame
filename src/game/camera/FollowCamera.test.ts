@@ -62,21 +62,21 @@ describe('Camera Math Pure Calculations', () => {
   });
 
   describe('Pitch and Distance Clamping', () => {
-    it('clamps pitch in degrees to [25, 65]', () => {
+    it('clamps pitch in degrees to [15, 75]', () => {
       expect(clampPitchDeg(CAMERA_DEFAULT_PITCH_DEG)).toBe(40);
-      expect(clampPitchDeg(10)).toBe(CAMERA_MIN_PITCH_DEG); // 25
+      expect(clampPitchDeg(5)).toBe(CAMERA_MIN_PITCH_DEG); // 15
       expect(clampPitchDeg(25)).toBe(25);
       expect(clampPitchDeg(65)).toBe(65);
-      expect(clampPitchDeg(80)).toBe(CAMERA_MAX_PITCH_DEG); // 65
+      expect(clampPitchDeg(85)).toBe(CAMERA_MAX_PITCH_DEG); // 75
     });
 
-    it('clamps pitch in radians to [25°, 65°]', () => {
+    it('clamps pitch in radians to [15°, 75°]', () => {
       const minRad = degToRad(CAMERA_MIN_PITCH_DEG);
       const maxRad = degToRad(CAMERA_MAX_PITCH_DEG);
 
       expect(clampPitchRad(degToRad(40))).toBeCloseTo(degToRad(40));
-      expect(clampPitchRad(degToRad(10))).toBeCloseTo(minRad);
-      expect(clampPitchRad(degToRad(75))).toBeCloseTo(maxRad);
+      expect(clampPitchRad(degToRad(5))).toBeCloseTo(minRad);
+      expect(clampPitchRad(degToRad(85))).toBeCloseTo(maxRad);
     });
 
     it('clamps distance to [0, 20]', () => {
@@ -193,7 +193,7 @@ describe('Camera Math Pure Calculations', () => {
       expect(invertedDiff).toBeCloseTo(-normalDiff, 4);
     });
 
-    it('clamps pitch delta within [25°, 65°]', () => {
+    it('clamps pitch delta within [15°, 75°]', () => {
       const initialPitch = degToRad(40);
 
       // Extreme drag down

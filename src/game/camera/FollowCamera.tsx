@@ -112,7 +112,11 @@ export const FollowCamera: React.FC<FollowCameraProps> = ({
 
     inputManager.onCameraOrbit = (deltaX, deltaY) => {
       const { cameraSensitivity, invertY } = useSettingsStore.getState();
-      const touchMultiplier = 3.0;
+      const isFirstPerson = currentDistanceRef.current < FIRST_PERSON_DISTANCE_THRESHOLD;
+      const effectiveMinPitch = isFirstPerson ? degToRad(-75) : minPitchRad;
+      const effectiveMaxPitch = isFirstPerson ? degToRad(85) : maxPitchRad;
+      const touchMultiplier = 2.5;
+
       const { yaw, pitch } = applyOrbitDelta(
         targetYawRef.current,
         targetPitchRef.current,
@@ -120,8 +124,8 @@ export const FollowCamera: React.FC<FollowCameraProps> = ({
         deltaY,
         cameraSensitivity,
         invertY,
-        minPitchRad,
-        maxPitchRad,
+        effectiveMinPitch,
+        effectiveMaxPitch,
         touchMultiplier
       );
       targetYawRef.current = yaw;
@@ -172,6 +176,10 @@ export const FollowCamera: React.FC<FollowCameraProps> = ({
       lastPointerPosRef.current = { x: e.clientX, y: e.clientY };
 
       const { cameraSensitivity, invertY } = useSettingsStore.getState();
+      const isFirstPerson = currentDistanceRef.current < FIRST_PERSON_DISTANCE_THRESHOLD;
+      const effectiveMinPitch = isFirstPerson ? degToRad(-75) : minPitchRad;
+      const effectiveMaxPitch = isFirstPerson ? degToRad(85) : maxPitchRad;
+
       const { yaw, pitch } = applyOrbitDelta(
         targetYawRef.current,
         targetPitchRef.current,
@@ -179,8 +187,9 @@ export const FollowCamera: React.FC<FollowCameraProps> = ({
         deltaY,
         cameraSensitivity,
         invertY,
-        minPitchRad,
-        maxPitchRad
+        effectiveMinPitch,
+        effectiveMaxPitch,
+        1.0
       );
       targetYawRef.current = yaw;
       targetPitchRef.current = pitch;

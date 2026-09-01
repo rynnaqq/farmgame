@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useLayoutEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { PLOT_SIZE, MAX_GRID_SIZE } from '../core/constants';
 import type { PlotId } from '../../state/storeTypes';
@@ -82,7 +82,7 @@ export const LockedPlotsInstanced: React.FC<LockedPlotsInstancedProps> = ({ slot
 
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (slots.length === 0) return;
 
     slots.forEach((slot, i) => {
@@ -97,24 +97,42 @@ export const LockedPlotsInstanced: React.FC<LockedPlotsInstancedProps> = ({ slot
 
       // 2. Moss patch
       dummy.position.set(x, y + 0.042, z);
+      dummy.rotation.set(0, 0, 0);
+      dummy.scale.set(1, 1, 1);
       dummy.updateMatrix();
       mossRef.current?.setMatrixAt(i, dummy.matrix);
 
       // 3. Lock body
       dummy.position.set(x, y + 0.14, z);
+      dummy.rotation.set(0, 0, 0);
+      dummy.scale.set(1, 1, 1);
       dummy.updateMatrix();
       bodyRef.current?.setMatrixAt(i, dummy.matrix);
 
       // 4. Lock shackle
       dummy.position.set(x, y + 0.25, z);
+      dummy.rotation.set(0, 0, 0);
+      dummy.scale.set(1, 1, 1);
       dummy.updateMatrix();
       shackleRef.current?.setMatrixAt(i, dummy.matrix);
     });
 
-    if (tileRef.current) tileRef.current.instanceMatrix.needsUpdate = true;
-    if (mossRef.current) mossRef.current.instanceMatrix.needsUpdate = true;
-    if (bodyRef.current) bodyRef.current.instanceMatrix.needsUpdate = true;
-    if (shackleRef.current) shackleRef.current.instanceMatrix.needsUpdate = true;
+    if (tileRef.current) {
+      tileRef.current.count = slots.length;
+      tileRef.current.instanceMatrix.needsUpdate = true;
+    }
+    if (mossRef.current) {
+      mossRef.current.count = slots.length;
+      mossRef.current.instanceMatrix.needsUpdate = true;
+    }
+    if (bodyRef.current) {
+      bodyRef.current.count = slots.length;
+      bodyRef.current.instanceMatrix.needsUpdate = true;
+    }
+    if (shackleRef.current) {
+      shackleRef.current.count = slots.length;
+      shackleRef.current.instanceMatrix.needsUpdate = true;
+    }
   }, [slots, dummy]);
 
   if (slots.length === 0) return null;
@@ -122,19 +140,33 @@ export const LockedPlotsInstanced: React.FC<LockedPlotsInstancedProps> = ({ slot
   return (
     <group name="LockedPlotsInstanced">
       {/* 1. Stone Border Tiles */}
-      <instancedMesh ref={tileRef} args={[LOCKED_TILE_GEO, undefined, slots.length]} receiveShadow>
+      <instancedMesh
+        ref={tileRef}
+        key={`tile-${slots.length}`}
+        args={[LOCKED_TILE_GEO, undefined, slots.length]}
+        count={slots.length}
+        receiveShadow
+      >
         <meshStandardMaterial color="#525B62" roughness={0.9} metalness={0.05} flatShading />
       </instancedMesh>
 
       {/* 2. Inset Grass/Moss Patches */}
-      <instancedMesh ref={mossRef} args={[LOCKED_MOSS_GEO, undefined, slots.length]} receiveShadow>
+      <instancedMesh
+        ref={mossRef}
+        key={`moss-${slots.length}`}
+        args={[LOCKED_MOSS_GEO, undefined, slots.length]}
+        count={slots.length}
+        receiveShadow
+      >
         <meshStandardMaterial color="#48782E" roughness={0.85} metalness={0.0} flatShading />
       </instancedMesh>
 
       {/* 3. Lock Bodies */}
       <instancedMesh
         ref={bodyRef}
+        key={`body-${slots.length}`}
         args={[LOCKED_BODY_GEO, undefined, slots.length]}
+        count={slots.length}
         castShadow
         receiveShadow
       >
@@ -144,7 +176,9 @@ export const LockedPlotsInstanced: React.FC<LockedPlotsInstancedProps> = ({ slot
       {/* 4. Lock Shackles */}
       <instancedMesh
         ref={shackleRef}
+        key={`shackle-${slots.length}`}
         args={[LOCKED_SHACKLE_GEO, undefined, slots.length]}
+        count={slots.length}
         castShadow
       >
         <meshStandardMaterial color="#6B7280" roughness={0.3} metalness={0.8} flatShading />

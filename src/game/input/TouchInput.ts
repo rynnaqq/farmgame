@@ -68,8 +68,33 @@ export class TouchInput {
     return this.activePointers.size;
   }
 
+  private isExcluded(el: Element | null): boolean {
+    if (!el) return false;
+    if (this.isElementExcluded && this.isElementExcluded(el)) return true;
+    if (typeof (el as HTMLElement).closest === 'function') {
+      const htmlEl = el as HTMLElement;
+      if (
+        htmlEl.closest('#ui-overlay') ||
+        htmlEl.closest('[data-testid="virtual-joystick"]') ||
+        htmlEl.closest('button') ||
+        htmlEl.closest('input') ||
+        htmlEl.closest('dialog') ||
+        htmlEl.closest('[role="dialog"]') ||
+        htmlEl.closest('[role="button"]')
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private handlePointerDown(e: PointerEvent): void {
-    if (this.isElementExcluded && this.isElementExcluded(e.target as Element)) {
+    // Only handle touch/pen or primary left mouse button
+    if (e.pointerType === 'mouse' && e.button !== 0) {
+      return;
+    }
+
+    if (this.isExcluded(e.target as Element)) {
       return;
     }
 
@@ -106,15 +131,22 @@ export class TouchInput {
       clientY: e.clientY,
     });
 
+    // Guard against sudden huge coordinate leaps (e.g. touch reconnection)
+    if (Math.abs(deltaX) > 150 || Math.abs(deltaY) > 150) {
+      return;
+    }
+
     if (this.activePointers.size === 1) {
-      // 1-finger drag -> Orbit camera
+      // 1-finger drag -> Orbit camera (both horizontal yaw and vertical pitch)
       this.onOrbit?.(deltaX, deltaY);
     } else if (this.activePointers.size === 2) {
       // 2-finger pinch -> Zoom camera
       const currentDist = this.getPointersDistance();
       if (this.lastPinchDistance !== null && currentDist !== null) {
         const deltaDist = currentDist - this.lastPinchDistance;
-        this.onZoom?.(deltaDist);
+        if (Math.abs(deltaDist) < 150) {
+          this.onZoom?.(deltaDist);
+        }
       }
       this.lastPinchDistance = currentDist;
     }
@@ -131,11 +163,7 @@ export class TouchInput {
       }
     }
 
-    if (this.activePointers.size === 2) {
-      this.lastPinchDistance = this.getPointersDistance();
-    } else {
-      this.lastPinchDistance = null;
-    }
+    this.lastPinchDistance = null;
   }
 
   private handlePointerCancel(e: PointerEvent): void {
