@@ -9,6 +9,8 @@ import { MobileHUD } from '../ui/mobile/MobileHUD';
 import { Toolbelt } from '../ui/Toolbelt';
 import { ShopModal } from '../ui/ShopModal';
 import { InventoryPanel } from '../ui/InventoryPanel';
+import { SettingsModal } from '../ui/SettingsModal';
+import { Tutorial } from '../ui/Tutorial';
 import { ToastRegion } from '../ui/ToastRegion';
 import type { PlotId } from '../state/storeTypes';
 
@@ -77,6 +79,8 @@ export const App: React.FC<AppProps> = ({
             <Toolbelt inputManager={activeInputManager} />
             <ShopModal />
             <InventoryPanel />
+            <SettingsModal />
+            <Tutorial />
             <ToastRegion />
           </div>
         </div>
