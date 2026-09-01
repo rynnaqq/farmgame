@@ -5,6 +5,7 @@ import { GardenIsland } from './world/GardenIsland';
 import { SoilGrid } from './world/SoilGrid';
 import { Boundaries } from './world/Boundaries';
 import { Decorations } from './world/Decorations';
+import { Merchant } from './world/Merchant';
 import { Player } from './player/Player';
 import { FollowCamera } from './camera/FollowCamera';
 import type { InputManager } from './input/InputManager';
@@ -48,6 +49,9 @@ export const GameRuntime: React.FC<GameRuntimeProps> = ({
 
       {/* 5. Low-Poly Environmental Props */}
       <Decorations />
+
+      {/* 5.1 Procedural Merchant NPC & Stall Interaction */}
+      <Merchant />
 
       {/* 6. Procedural Player Character */}
       <Player inputManager={inputManager} onFall={onPlayerFall} />

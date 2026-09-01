@@ -166,7 +166,8 @@ export type ModalType =
   | 'settings'
   | 'offline_summary'
   | 'tutorial'
-  | 'reset_confirm';
+  | 'reset_confirm'
+  | 'inventory';
 
 export type ToastType = 'info' | 'success' | 'warning' | 'error';
 

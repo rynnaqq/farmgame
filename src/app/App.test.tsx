@@ -250,6 +250,10 @@ describe('Task 5: App Shell, Error Boundary & WebGL Fallback', () => {
       const uiOverlay = screen.getByTestId('ui-overlay-container');
       expect(uiOverlay).toBeInTheDocument();
       expect(uiOverlay).toHaveClass('pointer-events-none', 'z-10');
+
+      // Verify HUD and Toolbelt mounted
+      expect(screen.getByTestId('hud-container')).toBeInTheDocument();
+      expect(screen.getByTestId('toolbelt-container')).toBeInTheDocument();
     });
 
     it('renders WebGLFallback when WebGL2 is unsupported', () => {

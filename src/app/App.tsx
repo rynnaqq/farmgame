@@ -4,9 +4,12 @@ import { Providers } from './providers';
 import { GameCanvas } from '../game/GameCanvas';
 import { GameRuntime } from '../game/GameRuntime';
 import { InputManager } from '../game/input/InputManager';
+import { HUD } from '../ui/HUD';
 import { MobileHUD } from '../ui/mobile/MobileHUD';
 import { Toolbelt } from '../ui/Toolbelt';
 import { ShopModal } from '../ui/ShopModal';
+import { InventoryPanel } from '../ui/InventoryPanel';
+import { ToastRegion } from '../ui/ToastRegion';
 import type { PlotId } from '../state/storeTypes';
 
 export interface AppProps {
@@ -69,9 +72,12 @@ export const App: React.FC<AppProps> = ({
             className="absolute inset-0 pointer-events-none z-10"
             data-testid="ui-overlay-container"
           >
+            <HUD />
             <MobileHUD inputManager={activeInputManager} onPlotInteract={onPlotClick} />
             <Toolbelt inputManager={activeInputManager} />
             <ShopModal />
+            <InventoryPanel />
+            <ToastRegion />
           </div>
         </div>
       </Providers>
