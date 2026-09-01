@@ -114,8 +114,7 @@ describe('Pet & Egg Domain Logic', () => {
     });
 
     it('persists rolled outcome to EggData when buying an egg', () => {
-      const store = useGameStore.getState();
-      store.setCoins(2000);
+      useGameStore.getState().setCoins(2000);
       const rng = new SeededRNG(42);
 
       const result = buyEgg('rare', rng, 1000);
@@ -245,7 +244,6 @@ describe('Pet & Egg Domain Logic', () => {
     });
 
     it('hatches ready egg: removes egg, creates pet with rolled outcome, and auto-equips if no pet equipped', () => {
-      const store = useGameStore.getState();
       const egg: EggData = {
         id: 'egg-ready-1',
         type: 'common',
@@ -255,10 +253,10 @@ describe('Pet & Egg Domain Logic', () => {
         elapsedIncubationSec: 90,
         distanceTraveled: 0,
       };
-      store.addEgg(egg);
-      store.setIncubatingEgg('egg-ready-1');
+      useGameStore.getState().addEgg(egg);
+      useGameStore.getState().setIncubatingEgg('egg-ready-1');
 
-      expect(store.inventory.equippedPetId).toBeNull();
+      expect(useGameStore.getState().inventory.equippedPetId).toBeNull();
 
       const result = hatchEgg('egg-ready-1');
       expect(result.ok).toBe(true);
@@ -277,14 +275,13 @@ describe('Pet & Egg Domain Logic', () => {
     });
 
     it('does not replace currently equipped pet when hatching a new egg', () => {
-      const store = useGameStore.getState();
       const existingPet: PetData = {
         id: 'pet-dog-existing',
         type: 'dog',
         acquiredAtUtcMs: 1000,
       };
-      store.addPet(existingPet);
-      store.setEquippedPet(existingPet.id);
+      useGameStore.getState().addPet(existingPet);
+      useGameStore.getState().setEquippedPet(existingPet.id);
 
       const egg: EggData = {
         id: 'egg-ready-2',
@@ -295,7 +292,7 @@ describe('Pet & Egg Domain Logic', () => {
         elapsedIncubationSec: 0,
         distanceTraveled: 125,
       };
-      store.addEgg(egg);
+      useGameStore.getState().addEgg(egg);
 
       const result = hatchEgg('egg-ready-2');
       expect(result.ok).toBe(true);
@@ -308,11 +305,10 @@ describe('Pet & Egg Domain Logic', () => {
 
   describe('Pet Equip & Unequip (equipPet, unequipPet)', () => {
     it('equips an existing pet from inventory', () => {
-      const store = useGameStore.getState();
       const pet1: PetData = { id: 'pet-1', type: 'bee', acquiredAtUtcMs: 1000 };
       const pet2: PetData = { id: 'pet-2', type: 'dog', acquiredAtUtcMs: 1000 };
-      store.addPet(pet1);
-      store.addPet(pet2);
+      useGameStore.getState().addPet(pet1);
+      useGameStore.getState().addPet(pet2);
 
       const equipRes = equipPet('pet-2');
       expect(equipRes.ok).toBe(true);
@@ -333,10 +329,9 @@ describe('Pet & Egg Domain Logic', () => {
     });
 
     it('unequips active pet', () => {
-      const store = useGameStore.getState();
       const pet: PetData = { id: 'pet-1', type: 'bee', acquiredAtUtcMs: 1000 };
-      store.addPet(pet);
-      store.setEquippedPet('pet-1');
+      useGameStore.getState().addPet(pet);
+      useGameStore.getState().setEquippedPet('pet-1');
 
       const unequipRes = unequipPet();
       expect(unequipRes.ok).toBe(true);
@@ -346,7 +341,6 @@ describe('Pet & Egg Domain Logic', () => {
 
   describe('Incubating Egg Assignment (setIncubatingEgg)', () => {
     it('sets specified egg as incubating and unsets others', () => {
-      const store = useGameStore.getState();
       const egg1: EggData = {
         id: 'egg-1',
         type: 'common',
@@ -365,8 +359,8 @@ describe('Pet & Egg Domain Logic', () => {
         elapsedIncubationSec: 0,
         distanceTraveled: 0,
       };
-      store.addEgg(egg1);
-      store.addEgg(egg2);
+      useGameStore.getState().addEgg(egg1);
+      useGameStore.getState().addEgg(egg2);
 
       const result = setIncubatingEgg('egg-1');
       expect(result.ok).toBe(true);
@@ -378,7 +372,6 @@ describe('Pet & Egg Domain Logic', () => {
     });
 
     it('allows clearing active incubating egg with null', () => {
-      const store = useGameStore.getState();
       const egg: EggData = {
         id: 'egg-1',
         type: 'common',
@@ -388,8 +381,8 @@ describe('Pet & Egg Domain Logic', () => {
         elapsedIncubationSec: 0,
         distanceTraveled: 0,
       };
-      store.addEgg(egg);
-      store.setIncubatingEgg('egg-1');
+      useGameStore.getState().addEgg(egg);
+      useGameStore.getState().setIncubatingEgg('egg-1');
 
       const result = setIncubatingEgg(null);
       expect(result.ok).toBe(true);
@@ -408,16 +401,15 @@ describe('Pet & Egg Domain Logic', () => {
 
   describe('Inventory Capacity Cap (12 total pets + eggs)', () => {
     it('prevents egg purchases when pets + eggs reaches MAX_PET_INVENTORY (12)', () => {
-      const store = useGameStore.getState();
-      store.setCoins(50000);
+      useGameStore.getState().setCoins(50000);
       const rng = new SeededRNG(42);
 
       // Add 8 pets and 3 eggs (11 total)
       for (let i = 0; i < 8; i++) {
-        store.addPet({ id: `pet-${i}`, type: 'bee', acquiredAtUtcMs: 1000 });
+        useGameStore.getState().addPet({ id: `pet-${i}`, type: 'bee', acquiredAtUtcMs: 1000 });
       }
       for (let i = 0; i < 3; i++) {
-        store.addEgg({
+        useGameStore.getState().addEgg({
           id: `egg-${i}`,
           type: 'common',
           purchasedAtUtcMs: 1000,
@@ -431,7 +423,8 @@ describe('Pet & Egg Domain Logic', () => {
       // Slot 12 purchase succeeds
       const res12 = buyEgg('common', rng);
       expect(res12.ok).toBe(true);
-      expect(store.inventory.pets.length + store.inventory.eggs.length).toBe(12);
+      const stateAfter12 = useGameStore.getState();
+      expect(stateAfter12.inventory.pets.length + stateAfter12.inventory.eggs.length).toBe(12);
 
       // Slot 13 purchase fails
       const res13 = buyEgg('common', rng);
@@ -452,8 +445,7 @@ describe('Pet & Egg Domain Logic', () => {
         mutation?: 'none' | 'gold';
       }
     ) => {
-      const store = useGameStore.getState();
-      const current = store.farm.plots[plotId];
+      const current = useGameStore.getState().farm.plots[plotId];
       if (!current) return;
 
       const plot: PlotData = {
@@ -468,12 +460,11 @@ describe('Pet & Egg Domain Logic', () => {
             }
           : null,
       };
-      store.setPlot(plot);
+      useGameStore.getState().setPlot(plot);
     };
 
     it('finds mature plot within 1.75 units and ignores plots farther away', () => {
       const gridSize = 4;
-      const store = useGameStore.getState();
       // Plot (1, 1) position
       const plot11Pos = getPlotPosition(1, 1, gridSize);
       // Mature carrot on plot-1-1 (Carrot needs 45s)
@@ -485,7 +476,7 @@ describe('Pet & Egg Domain Logic', () => {
         plot11Pos[1],
         plot11Pos[2],
       ];
-      const targetNear = findDogHarvestTarget(dogPosNear, store.farm.plots, gridSize);
+      const targetNear = findDogHarvestTarget(dogPosNear, useGameStore.getState().farm.plots, gridSize);
       expect(targetNear).toBe('plot-1-1');
 
       // Dog position 2.5 units away from plot-1-1 (> 1.75 limit)
@@ -494,13 +485,12 @@ describe('Pet & Egg Domain Logic', () => {
         plot11Pos[1],
         plot11Pos[2],
       ];
-      const targetFar = findDogHarvestTarget(dogPosFar, store.farm.plots, gridSize);
+      const targetFar = findDogHarvestTarget(dogPosFar, useGameStore.getState().farm.plots, gridSize);
       expect(targetFar).toBeNull();
     });
 
     it('ignores locked plots beyond current grid size', () => {
       const gridSize = 4;
-      const store = useGameStore.getState();
       // Create a mature plot at (5, 5) which is locked on a 4x4 grid
       const plot55Pos = getPlotPosition(5, 5, 8);
       const plot: PlotData = {
@@ -516,28 +506,26 @@ describe('Pet & Egg Domain Logic', () => {
         },
         hydratedUntilUtcMs: 0,
       };
-      store.setPlot(plot);
+      useGameStore.getState().setPlot(plot);
 
       // Place dog right on top of (5,5)
-      const target = findDogHarvestTarget(plot55Pos, store.farm.plots, gridSize);
+      const target = findDogHarvestTarget(plot55Pos, useGameStore.getState().farm.plots, gridSize);
       expect(target).toBeNull();
     });
 
     it('ignores immature crops within range', () => {
       const gridSize = 4;
-      const store = useGameStore.getState();
       const plot11Pos = getPlotPosition(1, 1, gridSize);
       // Immature carrot (only 20s of 45s)
       setupPlot('plot-1-1', { cropId: 'carrot', progress: 20 });
 
       const dogPos: [number, number, number] = [plot11Pos[0], plot11Pos[1], plot11Pos[2]];
-      const target = findDogHarvestTarget(dogPos, store.farm.plots, gridSize);
+      const target = findDogHarvestTarget(dogPos, useGameStore.getState().farm.plots, gridSize);
       expect(target).toBeNull();
     });
 
     it('selects closest mature plot when multiple are in range', () => {
       const gridSize = 4;
-      const store = useGameStore.getState();
       setupPlot('plot-1-1', { cropId: 'carrot', progress: 45 });
       setupPlot('plot-1-2', { cropId: 'carrot', progress: 45 });
 
@@ -549,15 +537,14 @@ describe('Pet & Egg Domain Logic', () => {
         plot11Pos[2],
       ];
 
-      const target = findDogHarvestTarget(dogPos, store.farm.plots, gridSize);
+      const target = findDogHarvestTarget(dogPos, useGameStore.getState().farm.plots, gridSize);
       expect(target).toBe('plot-1-1');
     });
 
     it('ticks dog auto-harvest: rate limited to max 1 harvest per second', () => {
-      const store = useGameStore.getState();
       const dogPet: PetData = { id: 'dog-pet-1', type: 'dog', acquiredAtUtcMs: 1000 };
-      store.addPet(dogPet);
-      store.setEquippedPet('dog-pet-1');
+      useGameStore.getState().addPet(dogPet);
+      useGameStore.getState().setEquippedPet('dog-pet-1');
 
       setupPlot('plot-1-1', { cropId: 'carrot', progress: 45 });
       setupPlot('plot-1-2', { cropId: 'carrot', progress: 45 });
@@ -594,10 +581,9 @@ describe('Pet & Egg Domain Logic', () => {
     });
 
     it('does nothing when equipped pet is not Dog', () => {
-      const store = useGameStore.getState();
       const beePet: PetData = { id: 'bee-pet-1', type: 'bee', acquiredAtUtcMs: 1000 };
-      store.addPet(beePet);
-      store.setEquippedPet('bee-pet-1');
+      useGameStore.getState().addPet(beePet);
+      useGameStore.getState().setEquippedPet('bee-pet-1');
 
       setupPlot('plot-1-1', { cropId: 'carrot', progress: 45 });
       const plot11Pos = getPlotPosition(1, 1, 4);
@@ -611,18 +597,17 @@ describe('Pet & Egg Domain Logic', () => {
     });
 
     it('protects against race conditions when plot is already harvested concurrently', () => {
-      const store = useGameStore.getState();
       const dogPet: PetData = { id: 'dog-pet-1', type: 'dog', acquiredAtUtcMs: 1000 };
-      store.addPet(dogPet);
-      store.setEquippedPet('dog-pet-1');
+      useGameStore.getState().addPet(dogPet);
+      useGameStore.getState().setEquippedPet('dog-pet-1');
 
       setupPlot('plot-1-1', { cropId: 'carrot', progress: 45 });
       const plot11Pos = getPlotPosition(1, 1, 4);
       const dogPos: [number, number, number] = [plot11Pos[0], plot11Pos[1], plot11Pos[2]];
 
       // Clear plot crop right before dog ticks (simulating player harvesting at the same moment)
-      store.setPlot({
-        ...store.farm.plots['plot-1-1'],
+      useGameStore.getState().setPlot({
+        ...useGameStore.getState().farm.plots['plot-1-1'],
         crop: null,
       });
 

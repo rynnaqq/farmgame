@@ -105,7 +105,7 @@ export function hatchEgg(
     };
   }
 
-  const petId = `pet-${egg.outcome}-${nowMs}-${Math.random().toString(36).slice(2, 8)}`;
+  const petId = `pet-${egg.outcome}-${nowMs}-${store.inventory.pets.length + 1}-${store.rngState}`;
   const newPet: PetData = {
     id: petId,
     type: egg.outcome,
