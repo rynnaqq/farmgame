@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import type { PlotData, PlotId } from '../../state/storeTypes';
 import { PLOT_SIZE } from '../core/constants';
 import { useUiStore } from '../../state/uiStore';
+import { CropRenderer } from '../farming/CropRenderer';
 
 export interface PlotMeshProps {
   plot: PlotData;
@@ -123,6 +124,11 @@ export const PlotMesh: React.FC<PlotMeshProps> = ({
             opacity={0.35}
           />
         </mesh>
+      )}
+
+      {/* Procedural 3D Crop Mesh */}
+      {plot.crop && (
+        <CropRenderer crop={plot.crop} position={[0, 0.055, 0]} />
       )}
 
       {/* Hover / Targeted Selection Outline */}
