@@ -161,3 +161,30 @@ if (typeof window !== 'undefined' && !window.WebGL2RenderingContext) {
   globalThis.WebGL2RenderingContext = WebGL2RenderingContextMock as unknown as typeof WebGL2RenderingContext;
 }
 
+// Mock PointerEvent global for JSDOM
+if (typeof window !== 'undefined' && !window.PointerEvent) {
+  class PointerEventMock extends MouseEvent {
+    pointerId: number;
+    pointerType: string;
+    isPrimary: boolean;
+
+    constructor(type: string, params: PointerEventInit = {}) {
+      super(type, params);
+      this.pointerId = params.pointerId ?? 0;
+      this.pointerType = params.pointerType ?? 'mouse';
+      this.isPrimary = params.isPrimary ?? false;
+    }
+  }
+  window.PointerEvent = PointerEventMock as unknown as typeof PointerEvent;
+  globalThis.PointerEvent = PointerEventMock as unknown as typeof PointerEvent;
+}
+
+if (typeof Element !== 'undefined') {
+  if (!Element.prototype.setPointerCapture) {
+    Element.prototype.setPointerCapture = () => {};
+  }
+  if (!Element.prototype.releasePointerCapture) {
+    Element.prototype.releasePointerCapture = () => {};
+  }
+}
+
