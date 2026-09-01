@@ -63,7 +63,55 @@ if (typeof window !== 'undefined') {
 
 // Mock HTMLCanvasElement getContext
 if (typeof HTMLCanvasElement !== 'undefined') {
-  HTMLCanvasElement.prototype.getContext = (() => {
+  HTMLCanvasElement.prototype.getContext = ((contextId: string) => {
+    if (contextId === 'webgl2' || contextId === 'experimental-webgl2' || contextId === 'webgl') {
+      return {
+        canvas: {},
+        drawingBufferWidth: 800,
+        drawingBufferHeight: 600,
+        getExtension: () => null,
+        getParameter: () => 2048,
+        getShaderPrecisionFormat: () => ({ precision: 23, rangeMin: 127, rangeMax: 127 }),
+        createBuffer: () => ({}),
+        bindBuffer: () => {},
+        bufferData: () => {},
+        createProgram: () => ({}),
+        attachShader: () => {},
+        linkProgram: () => {},
+        getProgramParameter: () => true,
+        getProgramInfoLog: () => '',
+        useProgram: () => {},
+        createShader: () => ({}),
+        shaderSource: () => {},
+        compileShader: () => {},
+        getShaderParameter: () => true,
+        getShaderInfoLog: () => '',
+        enable: () => {},
+        disable: () => {},
+        clear: () => {},
+        clearColor: () => {},
+        viewport: () => {},
+        createTexture: () => ({}),
+        bindTexture: () => {},
+        texParameteri: () => {},
+        texImage2D: () => {},
+        createFramebuffer: () => ({}),
+        bindFramebuffer: () => {},
+        framebufferTexture2D: () => {},
+        checkFramebufferStatus: () => 36053,
+        createRenderbuffer: () => ({}),
+        bindRenderbuffer: () => {},
+        renderbufferStorage: () => {},
+        framebufferRenderbuffer: () => {},
+        deleteTexture: () => {},
+        deleteFramebuffer: () => {},
+        deleteRenderbuffer: () => {},
+        deleteProgram: () => {},
+        deleteShader: () => {},
+        deleteBuffer: () => {},
+      } as unknown as RenderingContext;
+    }
+
     return {
       fillRect: () => {},
       clearRect: () => {},
@@ -94,3 +142,22 @@ if (typeof HTMLCanvasElement !== 'undefined') {
     } as unknown as RenderingContext;
   }) as typeof HTMLCanvasElement.prototype.getContext;
 }
+
+// Mock ResizeObserver
+if (typeof window !== 'undefined' && !window.ResizeObserver) {
+  class ResizeObserverMock {
+    observe = () => {};
+    unobserve = () => {};
+    disconnect = () => {};
+  }
+  window.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver;
+  globalThis.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver;
+}
+
+// Mock WebGL2RenderingContext global
+if (typeof window !== 'undefined' && !window.WebGL2RenderingContext) {
+  class WebGL2RenderingContextMock {}
+  window.WebGL2RenderingContext = WebGL2RenderingContextMock as unknown as typeof WebGL2RenderingContext;
+  globalThis.WebGL2RenderingContext = WebGL2RenderingContextMock as unknown as typeof WebGL2RenderingContext;
+}
+
