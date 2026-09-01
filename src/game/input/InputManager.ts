@@ -16,6 +16,7 @@ import {
   type CameraOrbitCallback,
   type CameraZoomCallback,
 } from './inputTypes';
+import { CROP_IDS } from '../farming/cropDefinitions';
 import { KeyboardInput } from './KeyboardInput';
 import { TouchInput } from './TouchInput';
 
@@ -65,11 +66,13 @@ export class InputManager {
     this.keyboard.onCycleSeed = (direction) => {
       if (this.isModalOpen()) return;
       this.onCycleSeed?.(direction);
-      const crops = ['carrot', 'tomato', 'pumpkin', 'golden_berry', 'starfruit'] as const;
+      if (useUiStore.getState().selectedTool !== 'seed_bag') {
+        return;
+      }
       const current = useUiStore.getState().selectedSeed;
-      const idx = crops.indexOf(current);
-      const nextIdx = (idx + direction + crops.length) % crops.length;
-      useUiStore.getState().setSelectedSeed(crops[nextIdx]);
+      const idx = CROP_IDS.indexOf(current);
+      const nextIdx = (idx + direction + CROP_IDS.length) % CROP_IDS.length;
+      useUiStore.getState().setSelectedSeed(CROP_IDS[nextIdx]);
     };
 
     this.keyboard.onInteract = () => {

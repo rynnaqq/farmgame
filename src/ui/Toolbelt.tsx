@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useGameStore } from '../state/gameStore';
 import { useUiStore } from '../state/uiStore';
 import { CROPS } from '../game/core/constants';
@@ -179,32 +179,6 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
     },
     [isInteractive]
   );
-
-  // Keyboard shortcut listener for digits 1-4
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
-      if (targetTag === 'input' || targetTag === 'textarea' || targetTag === 'select') {
-        return;
-      }
-      if (disabled || useUiStore.getState().activeModal !== null) {
-        return;
-      }
-
-      if (e.key === '1') {
-        handleSelectTool('trowel');
-      } else if (e.key === '2') {
-        handleSelectTool('watering_can');
-      } else if (e.key === '3') {
-        handleSelectTool('seed_bag');
-      } else if (e.key === '4') {
-        handleSelectTool('hand');
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [disabled, handleSelectTool]);
 
   const isTrowelActive = selectedTool === 'trowel';
   const isWateringActive = selectedTool === 'watering_can';

@@ -9,6 +9,17 @@ import {
 export type { CropId, CropDefinition, MutationType };
 
 /**
+ * Fixed ordered list of all crop identifiers in the game.
+ */
+export const CROP_IDS: readonly CropId[] = [
+  'carrot',
+  'tomato',
+  'pumpkin',
+  'golden_berry',
+  'starfruit',
+] as const;
+
+/**
  * Global registry of crop configurations and balance values.
  */
 export const CROPS_RECORD: Record<CropId, CropDefinition> = CROPS;

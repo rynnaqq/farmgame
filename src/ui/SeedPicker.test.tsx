@@ -4,16 +4,22 @@ import { SeedPicker } from './SeedPicker';
 import { useGameStore, resetGameStore } from '../state/gameStore';
 import { useUiStore, resetUiStore } from '../state/uiStore';
 import { resetSettingsStore } from '../state/settingsStore';
+import { InputManager } from '../game/input/InputManager';
 
 describe('Task 14: SeedPicker Component', () => {
+  let inputManager: InputManager;
+
   beforeEach(() => {
     resetGameStore();
     resetUiStore();
     resetSettingsStore();
+    inputManager = new InputManager();
+    inputManager.attach(window);
     vi.restoreAllMocks();
   });
 
   afterEach(() => {
+    inputManager.detach();
     vi.restoreAllMocks();
   });
 
@@ -114,7 +120,8 @@ describe('Task 14: SeedPicker Component', () => {
   });
 
   describe('3. Keyboard Shortcut Seed Cycling (Q / E)', () => {
-    it('cycles to next seed on pressing "e" or "E" (Carrot -> Tomato -> Pumpkin -> Golden Berry -> Starfruit -> Carrot)', () => {
+    it('cycles to next seed on pressing "e" or "E" when Seed Bag is active (Carrot -> Tomato -> Pumpkin -> Golden Berry -> Starfruit -> Carrot)', () => {
+      useUiStore.getState().setSelectedTool('seed_bag');
       render(<SeedPicker />);
 
       expect(useUiStore.getState().selectedSeed).toBe('carrot');
@@ -141,7 +148,8 @@ describe('Task 14: SeedPicker Component', () => {
       expect(useUiStore.getState().selectedSeed).toBe('carrot');
     });
 
-    it('cycles to previous seed on pressing "q" or "Q" (Carrot -> Starfruit -> Golden Berry -> Pumpkin -> Tomato -> Carrot)', () => {
+    it('cycles to previous seed on pressing "q" or "Q" when Seed Bag is active (Carrot -> Starfruit -> Golden Berry -> Pumpkin -> Tomato -> Carrot)', () => {
+      useUiStore.getState().setSelectedTool('seed_bag');
       render(<SeedPicker />);
 
       expect(useUiStore.getState().selectedSeed).toBe('carrot');
@@ -168,7 +176,21 @@ describe('Task 14: SeedPicker Component', () => {
       expect(useUiStore.getState().selectedSeed).toBe('carrot');
     });
 
+    it('does not cycle seed on Q/E when another tool is active (e.g. trowel)', () => {
+      useUiStore.getState().setSelectedTool('trowel');
+      render(<SeedPicker />);
+
+      expect(useUiStore.getState().selectedSeed).toBe('carrot');
+
+      fireEvent.keyDown(window, { key: 'e' });
+      expect(useUiStore.getState().selectedSeed).toBe('carrot');
+
+      fireEvent.keyDown(window, { key: 'q' });
+      expect(useUiStore.getState().selectedSeed).toBe('carrot');
+    });
+
     it('does not cycle seed when typing inside an input element', () => {
+      useUiStore.getState().setSelectedTool('seed_bag');
       render(
         <div>
           <input data-testid="text-input" type="text" />

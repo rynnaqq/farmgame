@@ -1,17 +1,9 @@
 import type React from 'react';
-import { useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useGameStore } from '../state/gameStore';
 import { useUiStore } from '../state/uiStore';
 import { CROPS, type CropId } from '../game/core/constants';
-
-const ALL_CROPS: CropId[] = ['carrot', 'tomato', 'pumpkin', 'golden_berry', 'starfruit'];
-
-function getNextSeed(current: CropId, direction: 1 | -1): CropId {
-  const idx = ALL_CROPS.indexOf(current);
-  if (idx === -1) return ALL_CROPS[0];
-  const nextIdx = (idx + direction + ALL_CROPS.length) % ALL_CROPS.length;
-  return ALL_CROPS[nextIdx];
-}
+import { CROP_IDS } from '../game/farming/cropDefinitions';
 
 export interface SeedPickerProps {
   selectedSeed?: CropId;
@@ -132,7 +124,7 @@ function CropSeedIcon({ cropId, isSelected }: { cropId: CropId; isSelected: bool
 /**
  * SeedPicker: Floating popup seed selector above the toolbelt.
  * - Displays all 5 crops with icons, names, and live inventory count badges.
- * - Supports click selection and Q/E shortcut seed cycling with wrap-around.
+ * - Keyboard shortcut cycling (Q/E) is coordinated globally by InputManager.
  * - Accessible >= 44x44px touch targets with aria-label & aria-pressed.
  * - Responsive scrollable bar with safe-area spacing.
  */
@@ -156,34 +148,6 @@ export const SeedPicker: React.FC<SeedPickerProps> = ({
     },
     [disabled, activeModal, onSelectSeed]
   );
-
-  // Keyboard navigation for Q / E seed cycling
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
-      if (targetTag === 'input' || targetTag === 'textarea' || targetTag === 'select') {
-        return;
-      }
-      if (disabled || useUiStore.getState().activeModal !== null) {
-        return;
-      }
-
-      if (e.key === 'q' || e.key === 'Q') {
-        e.preventDefault();
-        const cur = useUiStore.getState().selectedSeed;
-        const next = getNextSeed(cur, -1);
-        handleSelect(next);
-      } else if (e.key === 'e' || e.key === 'E') {
-        e.preventDefault();
-        const cur = useUiStore.getState().selectedSeed;
-        const next = getNextSeed(cur, 1);
-        handleSelect(next);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [disabled, handleSelect]);
 
   const isInteractive = !disabled && activeModal === null;
 
@@ -225,7 +189,7 @@ export const SeedPicker: React.FC<SeedPickerProps> = ({
         role="group"
         aria-label="Seed Selection"
       >
-        {ALL_CROPS.map((cropId) => {
+        {CROP_IDS.map((cropId) => {
           const cropDef = CROPS[cropId];
           const count = inventorySeeds[cropId] ?? 0;
           const isSelected = currentSelectedSeed === cropId;

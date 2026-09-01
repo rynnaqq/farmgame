@@ -4,22 +4,28 @@ import { Toolbelt } from './Toolbelt';
 import { useGameStore, resetGameStore } from '../state/gameStore';
 import { useUiStore, resetUiStore } from '../state/uiStore';
 import { resetSettingsStore } from '../state/settingsStore';
+import { InputManager } from '../game/input/InputManager';
 
 describe('Task 14: Toolbelt Component', () => {
+  let inputManager: InputManager;
+
   beforeEach(() => {
     resetGameStore();
     resetUiStore();
     resetSettingsStore();
+    inputManager = new InputManager();
+    inputManager.attach(window);
     vi.restoreAllMocks();
   });
 
   afterEach(() => {
+    inputManager.detach();
     vi.restoreAllMocks();
   });
 
   describe('1. Tool Layout and Fixed Ordering', () => {
     it('renders exactly 4 tool buttons in fixed order: Trowel (1), Watering Can (2), Seed Bag (3), Hand/Scythe (4)', () => {
-      render(<Toolbelt />);
+      render(<Toolbelt inputManager={inputManager} />);
 
       const toolbelt = screen.getByTestId('toolbelt-container');
       expect(toolbelt).toBeInTheDocument();
@@ -48,7 +54,7 @@ describe('Task 14: Toolbelt Component', () => {
     });
 
     it('displays shortcut numbers 1, 2, 3, 4 on the respective tools', () => {
-      render(<Toolbelt />);
+      render(<Toolbelt inputManager={inputManager} />);
 
       expect(screen.getByTestId('tool-trowel')).toHaveTextContent('1');
       expect(screen.getByTestId('tool-watering_can')).toHaveTextContent('2');
@@ -59,7 +65,7 @@ describe('Task 14: Toolbelt Component', () => {
 
   describe('2. Tool Selection and Active State Highlighting', () => {
     it('initializes with trowel as active tool with aria-pressed="true"', () => {
-      render(<Toolbelt />);
+      render(<Toolbelt inputManager={inputManager} />);
 
       const trowelBtn = screen.getByTestId('tool-trowel');
       const waterBtn = screen.getByTestId('tool-watering_can');
@@ -69,7 +75,7 @@ describe('Task 14: Toolbelt Component', () => {
     });
 
     it('selects Watering Can on click and updates uiStore', () => {
-      render(<Toolbelt />);
+      render(<Toolbelt inputManager={inputManager} />);
 
       const waterBtn = screen.getByTestId('tool-watering_can');
       fireEvent.click(waterBtn);
@@ -80,7 +86,7 @@ describe('Task 14: Toolbelt Component', () => {
     });
 
     it('selects Seed Bag on click and updates uiStore', () => {
-      render(<Toolbelt />);
+      render(<Toolbelt inputManager={inputManager} />);
 
       const seedBtn = screen.getByTestId('tool-seed_bag');
       fireEvent.click(seedBtn);
@@ -90,7 +96,7 @@ describe('Task 14: Toolbelt Component', () => {
     });
 
     it('selects Hand/Scythe on click and updates uiStore', () => {
-      render(<Toolbelt />);
+      render(<Toolbelt inputManager={inputManager} />);
 
       const handBtn = screen.getByTestId('tool-hand');
       fireEvent.click(handBtn);
@@ -100,7 +106,7 @@ describe('Task 14: Toolbelt Component', () => {
     });
 
     it('applies distinct active styling (border, scale, high contrast) to selected tool', () => {
-      render(<Toolbelt />);
+      render(<Toolbelt inputManager={inputManager} />);
 
       const trowelBtn = screen.getByTestId('tool-trowel');
       // Active tool should have active classes (border, ring, scale, etc.)
@@ -111,7 +117,7 @@ describe('Task 14: Toolbelt Component', () => {
   describe('3. Keyboard Shortcuts (1-4)', () => {
     it('switches tool to Trowel on pressing "1"', () => {
       useUiStore.getState().setSelectedTool('watering_can');
-      render(<Toolbelt />);
+      render(<Toolbelt inputManager={inputManager} />);
 
       fireEvent.keyDown(window, { key: '1' });
       expect(useUiStore.getState().selectedTool).toBe('trowel');
@@ -119,7 +125,7 @@ describe('Task 14: Toolbelt Component', () => {
     });
 
     it('switches tool to Watering Can on pressing "2"', () => {
-      render(<Toolbelt />);
+      render(<Toolbelt inputManager={inputManager} />);
 
       fireEvent.keyDown(window, { key: '2' });
       expect(useUiStore.getState().selectedTool).toBe('watering_can');
@@ -127,7 +133,7 @@ describe('Task 14: Toolbelt Component', () => {
     });
 
     it('switches tool to Seed Bag on pressing "3"', () => {
-      render(<Toolbelt />);
+      render(<Toolbelt inputManager={inputManager} />);
 
       fireEvent.keyDown(window, { key: '3' });
       expect(useUiStore.getState().selectedTool).toBe('seed_bag');
@@ -135,7 +141,7 @@ describe('Task 14: Toolbelt Component', () => {
     });
 
     it('switches tool to Hand/Scythe on pressing "4"', () => {
-      render(<Toolbelt />);
+      render(<Toolbelt inputManager={inputManager} />);
 
       fireEvent.keyDown(window, { key: '4' });
       expect(['hand', 'scythe']).toContain(useUiStore.getState().selectedTool);
@@ -146,7 +152,7 @@ describe('Task 14: Toolbelt Component', () => {
       render(
         <div>
           <input data-testid="test-input" type="text" />
-          <Toolbelt />
+          <Toolbelt inputManager={inputManager} />
         </div>
       );
 
@@ -162,7 +168,7 @@ describe('Task 14: Toolbelt Component', () => {
   describe('4. Golden Watering Can Styling', () => {
     it('displays standard watering can styling when goldenWateringCanOwned is false', () => {
       useGameStore.getState().setGoldenWateringCan(false);
-      render(<Toolbelt />);
+      render(<Toolbelt inputManager={inputManager} />);
 
       const waterBtn = screen.getByTestId('tool-watering_can');
       expect(waterBtn).toHaveAttribute('aria-label', expect.stringMatching(/watering can/i));
@@ -171,7 +177,7 @@ describe('Task 14: Toolbelt Component', () => {
 
     it('displays distinct golden styling and icon when goldenWateringCanOwned is true', () => {
       useGameStore.getState().setGoldenWateringCan(true);
-      render(<Toolbelt />);
+      render(<Toolbelt inputManager={inputManager} />);
 
       const waterBtn = screen.getByTestId('tool-watering_can');
       expect(waterBtn).toHaveAttribute('data-golden', 'true');
@@ -183,7 +189,7 @@ describe('Task 14: Toolbelt Component', () => {
   describe('5. Seed Bag Active Badge & Inventory Count', () => {
     it('displays current active seed and remaining seed count on Seed Bag button', () => {
       useUiStore.getState().setSelectedSeed('carrot');
-      render(<Toolbelt />);
+      render(<Toolbelt inputManager={inputManager} />);
 
       const seedBtn = screen.getByTestId('tool-seed_bag');
       // Default starting carrot seeds is 5
@@ -192,7 +198,7 @@ describe('Task 14: Toolbelt Component', () => {
     });
 
     it('updates Seed Bag badge reactively when seed count or selected seed changes', () => {
-      render(<Toolbelt />);
+      render(<Toolbelt inputManager={inputManager} />);
 
       act(() => {
         useUiStore.getState().setSelectedSeed('pumpkin');
@@ -208,7 +214,7 @@ describe('Task 14: Toolbelt Component', () => {
   describe('6. SeedPicker Popup Integration', () => {
     it('renders SeedPicker popup when Seed Bag tool is selected', () => {
       useUiStore.getState().setSelectedTool('seed_bag');
-      render(<Toolbelt />);
+      render(<Toolbelt inputManager={inputManager} />);
 
       const seedPicker = screen.getByTestId('seed-picker');
       expect(seedPicker).toBeInTheDocument();
@@ -216,7 +222,7 @@ describe('Task 14: Toolbelt Component', () => {
 
     it('hides SeedPicker popup when a non-seed tool is active', () => {
       useUiStore.getState().setSelectedTool('trowel');
-      render(<Toolbelt />);
+      render(<Toolbelt inputManager={inputManager} />);
 
       expect(screen.queryByTestId('seed-picker')).not.toBeInTheDocument();
     });
@@ -224,7 +230,7 @@ describe('Task 14: Toolbelt Component', () => {
 
   describe('7. Accessibility & Touch Targets', () => {
     it('all tool buttons have touch targets >= 44x44 CSS pixels', () => {
-      render(<Toolbelt />);
+      render(<Toolbelt inputManager={inputManager} />);
 
       const buttons = [
         screen.getByTestId('tool-trowel'),
@@ -239,7 +245,7 @@ describe('Task 14: Toolbelt Component', () => {
     });
 
     it('all tool buttons have descriptive aria-labels', () => {
-      render(<Toolbelt />);
+      render(<Toolbelt inputManager={inputManager} />);
 
       expect(screen.getByTestId('tool-trowel')).toHaveAttribute('aria-label');
       expect(screen.getByTestId('tool-watering_can')).toHaveAttribute('aria-label');
@@ -248,7 +254,7 @@ describe('Task 14: Toolbelt Component', () => {
     });
 
     it('disables or marks inactive when a modal is open', () => {
-      render(<Toolbelt />);
+      render(<Toolbelt inputManager={inputManager} />);
 
       act(() => {
         useUiStore.getState().openModal('shop');
