@@ -317,13 +317,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, className
             <input
               id="camera-sensitivity-slider"
               type="range"
-              min="0.1"
-              max="3.0"
+              min="0.2"
+              max="5.0"
               step="0.1"
-              value={cameraSensitivity}
-              onChange={(e) => setCameraSensitivity(Number(e.target.value))}
               data-testid="setting-camera-sensitivity"
-              className="w-full accent-amber-400 cursor-pointer"
+              value={cameraSensitivity}
+              onChange={(e) => setCameraSensitivity(parseFloat(e.target.value))}
+              className="w-full accent-amber-400 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
             />
           </div>
 

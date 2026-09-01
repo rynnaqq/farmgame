@@ -242,5 +242,25 @@ describe('Task 14: SeedPicker Component', () => {
       expect(screen.getByTestId('seed-shortcut-prev')).toHaveTextContent('Q');
       expect(screen.getByTestId('seed-shortcut-next')).toHaveTextContent('E');
     });
+
+    it('renders a close button and triggers onClose or default tool reset on click', () => {
+      const onClose = vi.fn();
+      render(<SeedPicker onClose={onClose} />);
+
+      const closeBtn = screen.getByTestId('seed-picker-close-button');
+      expect(closeBtn).toBeInTheDocument();
+
+      fireEvent.click(closeBtn);
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('defaults to switching to trowel tool when close button is clicked without custom onClose', () => {
+      useUiStore.getState().setSelectedTool('seed_bag');
+      render(<SeedPicker />);
+
+      const closeBtn = screen.getByTestId('seed-picker-close-button');
+      fireEvent.click(closeBtn);
+      expect(useUiStore.getState().selectedTool).toBe('trowel');
+    });
   });
 });

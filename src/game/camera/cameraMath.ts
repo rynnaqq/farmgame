@@ -33,6 +33,7 @@ export interface RaycastHitLike {
 }
 
 export const DEFAULT_ORBIT_SENSITIVITY = 0.005;
+export const DEFAULT_TOUCH_ORBIT_MULTIPLIER = 3.5;
 export const DEFAULT_ZOOM_SENSITIVITY = 0.01;
 export const DEFAULT_POSITION_DAMPING = 8;
 export const DEFAULT_ROTATION_DAMPING = 10;
@@ -174,9 +175,10 @@ export function applyOrbitDelta(
   sensitivity: number = 1.0,
   invertY: boolean = false,
   minPitchRad: number = degToRad(CAMERA_MIN_PITCH_DEG),
-  maxPitchRad: number = degToRad(CAMERA_MAX_PITCH_DEG)
+  maxPitchRad: number = degToRad(CAMERA_MAX_PITCH_DEG),
+  orbitScale: number = 1.0
 ): { yaw: number; pitch: number } {
-  const effectiveSens = DEFAULT_ORBIT_SENSITIVITY * sensitivity;
+  const effectiveSens = DEFAULT_ORBIT_SENSITIVITY * sensitivity * orbitScale;
   const newYaw = normalizeAngleRad(currentYawRad - deltaX * effectiveSens);
 
   const pitchDirection = invertY ? -1 : 1;

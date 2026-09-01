@@ -200,7 +200,10 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
       {/* Floating SeedPicker Popup above Toolbelt */}
       {isSeedBagActive && (
         <div className="mb-2 pointer-events-auto transition-all duration-200">
-          <SeedPicker disabled={!isInteractive} />
+          <SeedPicker
+            disabled={!isInteractive}
+            onClose={() => handleSelectTool('trowel')}
+          />
         </div>
       )}
 

@@ -109,6 +109,7 @@ export const FollowCamera: React.FC<FollowCameraProps> = ({
 
     inputManager.onCameraOrbit = (deltaX, deltaY) => {
       const { cameraSensitivity, invertY } = useSettingsStore.getState();
+      const touchMultiplier = 3.0;
       const { yaw, pitch } = applyOrbitDelta(
         targetYawRef.current,
         targetPitchRef.current,
@@ -117,7 +118,8 @@ export const FollowCamera: React.FC<FollowCameraProps> = ({
         cameraSensitivity,
         invertY,
         minPitchRad,
-        maxPitchRad
+        maxPitchRad,
+        touchMultiplier
       );
       targetYawRef.current = yaw;
       targetPitchRef.current = pitch;

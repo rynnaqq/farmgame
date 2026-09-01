@@ -100,7 +100,7 @@ function createDefaultSettings(): SettingsState {
     inputMode: stored.inputMode ?? 'auto',
     cameraSensitivity:
       typeof stored.cameraSensitivity === 'number'
-        ? clamp(stored.cameraSensitivity, 0.1, 3.0)
+        ? clamp(stored.cameraSensitivity, 0.2, 5.0)
         : 1.0,
     invertY: typeof stored.invertY === 'boolean' ? stored.invertY : false,
   };
@@ -159,7 +159,7 @@ export const useSettingsStore = create<SettingsStoreState>((set, get) => ({
   },
 
   setCameraSensitivity: (sensitivity: number) => {
-    const cameraSensitivity = clamp(sensitivity, 0.1, 3.0);
+    const cameraSensitivity = clamp(sensitivity, 0.2, 5.0);
     set({ cameraSensitivity });
     persistSettings(get());
   },

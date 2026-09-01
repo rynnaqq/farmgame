@@ -87,11 +87,11 @@ describe('useSettingsStore', () => {
       useSettingsStore.getState().setCameraSensitivity(2.0);
       expect(useSettingsStore.getState().cameraSensitivity).toBe(2.0);
 
-      useSettingsStore.getState().setCameraSensitivity(5.0);
-      expect(useSettingsStore.getState().cameraSensitivity).toBe(3.0);
+      useSettingsStore.getState().setCameraSensitivity(10.0);
+      expect(useSettingsStore.getState().cameraSensitivity).toBe(5.0);
 
       useSettingsStore.getState().setCameraSensitivity(0.01);
-      expect(useSettingsStore.getState().cameraSensitivity).toBe(0.1);
+      expect(useSettingsStore.getState().cameraSensitivity).toBe(0.2);
     });
 
     it('toggles invertY', () => {

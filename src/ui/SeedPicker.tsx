@@ -9,6 +9,7 @@ import { audioManager } from '../game/audio/AudioManager';
 export interface SeedPickerProps {
   selectedSeed?: CropId;
   onSelectSeed?: (seed: CropId) => void;
+  onClose?: () => void;
   className?: string;
   disabled?: boolean;
 }
@@ -144,6 +145,7 @@ function CropSeedIcon({ cropId, isSelected }: { cropId: CropId; isSelected: bool
 export const SeedPicker: React.FC<SeedPickerProps> = ({
   selectedSeed: propSelectedSeed,
   onSelectSeed,
+  onClose,
   className = '',
   disabled = false,
 }) => {
@@ -162,6 +164,16 @@ export const SeedPicker: React.FC<SeedPickerProps> = ({
     },
     [disabled, activeModal, onSelectSeed]
   );
+
+  const handleClose = useCallback(() => {
+    if (disabled) return;
+    audioManager.playSfx('ui_click');
+    if (onClose) {
+      onClose();
+    } else {
+      useUiStore.getState().setSelectedTool('trowel');
+    }
+  }, [disabled, onClose]);
 
   const isInteractive = !disabled && activeModal === null;
 
@@ -186,7 +198,7 @@ export const SeedPicker: React.FC<SeedPickerProps> = ({
           Select Seed
         </span>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <span className="text-slate-400">▶</span>
           <span
             data-testid="seed-shortcut-next"
@@ -194,6 +206,15 @@ export const SeedPicker: React.FC<SeedPickerProps> = ({
           >
             E
           </span>
+          <button
+            type="button"
+            data-testid="seed-picker-close-button"
+            aria-label="Close seed selection"
+            onClick={handleClose}
+            className="ml-1 w-5 h-5 flex items-center justify-center rounded-full bg-slate-800/90 hover:bg-rose-900/60 active:bg-rose-800 border border-white/10 hover:border-rose-400/50 text-slate-400 hover:text-rose-200 text-[10px] font-bold transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+          >
+            ✕
+          </button>
         </div>
       </div>
 
