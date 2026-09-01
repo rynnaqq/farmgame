@@ -1,19 +1,65 @@
 import '@testing-library/jest-dom/vitest';
 
-// Mock window.matchMedia
-Object.defineProperty(window, 'matchMedia', {
+// LocalStorage mock for Node/jsdom test environments
+class LocalStorageMock implements Storage {
+  private store: Record<string, string> = {};
+
+  get length(): number {
+    return Object.keys(this.store).length;
+  }
+
+  clear(): void {
+    this.store = {};
+  }
+
+  getItem(key: string): string | null {
+    return this.store[key] ?? null;
+  }
+
+  key(index: number): string | null {
+    const keys = Object.keys(this.store);
+    return keys[index] ?? null;
+  }
+
+  removeItem(key: string): void {
+    delete this.store[key];
+  }
+
+  setItem(key: string, value: string): void {
+    this.store[key] = String(value);
+  }
+}
+
+const localStorageInstance = new LocalStorageMock();
+Object.defineProperty(globalThis, 'localStorage', {
+  value: localStorageInstance,
   writable: true,
-  value: (query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }),
+  configurable: true,
 });
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'localStorage', {
+    value: localStorageInstance,
+    writable: true,
+    configurable: true,
+  });
+}
+
+// Mock window.matchMedia
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }),
+  });
+}
 
 // Mock HTMLCanvasElement getContext
 if (typeof HTMLCanvasElement !== 'undefined') {
