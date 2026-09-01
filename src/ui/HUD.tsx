@@ -11,6 +11,7 @@ import {
   selectEquippedPet,
   selectTotalProduceCount,
 } from '../state/selectors';
+import { audioManager } from '../game/audio/AudioManager';
 
 export interface HUDProps {
   className?: string;
@@ -114,6 +115,7 @@ export const HUD: React.FC<HUDProps> = ({ className = '' }) => {
 
   // Inventory toggle
   const handleToggleInventory = useCallback(() => {
+    audioManager.playSfx('ui_click');
     if (activeModal === 'inventory') {
       useUiStore.getState().closeModal();
     } else {
@@ -123,6 +125,7 @@ export const HUD: React.FC<HUDProps> = ({ className = '' }) => {
 
   // Settings toggle
   const handleToggleSettings = useCallback(() => {
+    audioManager.playSfx('ui_click');
     if (activeModal === 'settings') {
       useUiStore.getState().closeModal();
     } else {

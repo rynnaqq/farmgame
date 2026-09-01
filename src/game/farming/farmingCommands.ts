@@ -21,6 +21,7 @@ import {
 } from '../world/gridCoordinates';
 import { getCropDefinition, calculateSaleValue } from './cropDefinitions';
 import { isPlotHarvestable } from './plotMachine';
+import { audioManager } from '../audio/AudioManager';
 
 /**
  * Validates that a target plot exists, is unlocked within current farm bounds,
@@ -100,6 +101,8 @@ export function tillPlot(
     tilled: true,
   });
 
+  audioManager.playSfx('till');
+
   return {
     ok: true,
     value: { plotId },
@@ -173,6 +176,7 @@ export function waterPlot(
   }
 
   store.updatePlots(plotUpdates);
+  audioManager.playSfx('water');
 
   return {
     ok: true,
@@ -252,6 +256,8 @@ export function plantCrop(
     },
   });
 
+  audioManager.playSfx('plant');
+
   return {
     ok: true,
     value: { cropId },
@@ -299,6 +305,11 @@ export function harvestCrop(
     ...plot,
     crop: null,
   });
+
+  audioManager.playSfx('harvest');
+  if (mutation !== 'none') {
+    audioManager.playSfx('mutation', { mutationType: mutation });
+  }
 
   return {
     ok: true,

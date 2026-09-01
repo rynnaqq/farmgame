@@ -6,6 +6,7 @@ import { SeededRNG } from '../game/core/rng';
 import { buyEgg } from '../game/economy/economyCommands';
 import { getEggCatalog } from '../game/economy/shopCatalog';
 import { MAX_PET_INVENTORY, type EggType } from '../game/core/constants';
+import { audioManager } from '../game/audio/AudioManager';
 
 export interface EggShopProps {
   className?: string;
@@ -83,10 +84,12 @@ export const EggShop: React.FC<EggShopProps> = ({ className = '', disabled = fal
       const result = buyEgg(eggType, rng);
 
       if (result.ok) {
+        audioManager.playSfx('coin');
         useUiStore
           .getState()
           .showToast(`Purchased ${eggType === 'rare' ? 'Rare' : 'Common'} Egg! Check Pet Sanctuary.`, 'success', 3000);
       } else {
+        audioManager.playSfx('error');
         useUiStore.getState().showToast(result.message, 'error', 3000);
       }
     },

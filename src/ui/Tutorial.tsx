@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useGameStore } from '../state/gameStore';
 import { useUiStore } from '../state/uiStore';
 import { useSettingsStore } from '../state/settingsStore';
+import { audioManager } from '../game/audio/AudioManager';
 
 export interface TutorialProps {
   forceTouch?: boolean;
@@ -115,12 +116,13 @@ export const Tutorial: React.FC<TutorialProps> = ({
 
   // Handle dismissal
   const handleDismiss = useCallback(() => {
+    audioManager.playSfx('ui_click');
     useGameStore.getState().dismissTutorial();
-    if (useUiStore.getState().activeModal === 'tutorial') {
+    if (activeModal === 'tutorial') {
       useUiStore.getState().closeModal();
     }
     onDismiss?.();
-  }, [onDismiss]);
+  }, [activeModal, onDismiss]);
 
   // Escape key listener to dismiss
   useEffect(() => {
@@ -163,6 +165,7 @@ export const Tutorial: React.FC<TutorialProps> = ({
   const isLastStep = stepIndex === TUTORIAL_STEPS.length - 1;
 
   const handleNext = () => {
+    audioManager.playSfx('ui_click');
     useGameStore.getState().completeTutorialStep(currentStep.id);
     if (isLastStep) {
       handleDismiss();
@@ -172,6 +175,7 @@ export const Tutorial: React.FC<TutorialProps> = ({
   };
 
   const handleBack = () => {
+    audioManager.playSfx('ui_click');
     setStepIndex((prev) => Math.max(0, prev - 1));
   };
 

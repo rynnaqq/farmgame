@@ -13,6 +13,7 @@ import {
 import { getSeedCatalog, getUpgradeCatalog } from '../game/economy/shopCatalog';
 import { calculateProduceSaleValue } from '../game/economy/economyDefinitions';
 import { MUTATION_MULTIPLIERS, type CropId, type MutationType } from '../game/core/constants';
+import { audioManager } from '../game/audio/AudioManager';
 
 export type ShopTabId = 'seeds' | 'sell' | 'upgrades' | 'eggs';
 
@@ -92,6 +93,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({
   }, [activeModal, initialTab]);
 
   const handleClose = useCallback(() => {
+    audioManager.playSfx('ui_click');
     useUiStore.getState().closeModal();
     onClose?.();
   }, [onClose]);
@@ -104,18 +106,16 @@ export const ShopModal: React.FC<ShopModalProps> = ({
       if (e.key === 'Escape') {
         e.preventDefault();
         handleClose();
-        return;
-      }
-
-      if (e.key === 'Tab' && dialogRef.current) {
-        const focusableElements = dialogRef.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]):not([disabled])'
+      } else if (e.key === 'Tab') {
+        // Focus trap
+        if (!dialogRef.current) return;
+        const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [tabindex]:not([tabindex="-1"])'
         );
+        if (focusable.length === 0) return;
 
-        if (focusableElements.length === 0) return;
-
-        const firstElement = focusableElements[0];
-        const lastElement = focusableElements[focusableElements.length - 1];
+        const firstElement = focusable[0];
+        const lastElement = focusable[focusable.length - 1];
 
         if (e.shiftKey) {
           if (document.activeElement === firstElement) {
@@ -147,8 +147,10 @@ export const ShopModal: React.FC<ShopModalProps> = ({
   const handleBuySeeds = useCallback((cropId: CropId, quantity: number) => {
     const result = buySeed(cropId, quantity);
     if (result.ok) {
+      audioManager.playSfx('coin');
       useUiStore.getState().showToast(result.message ?? `Purchased ${quantity}x seeds`, 'success', 2500);
     } else {
+      audioManager.playSfx('error');
       useUiStore.getState().showToast(result.message, 'error', 2500);
     }
   }, []);
@@ -157,8 +159,10 @@ export const ShopModal: React.FC<ShopModalProps> = ({
   const handleSellStack = useCallback((cropId: CropId, mutation: MutationType) => {
     const result = sellProduce(cropId, mutation);
     if (result.ok) {
+      audioManager.playSfx('coin');
       useUiStore.getState().showToast(result.message ?? 'Produce sold', 'success', 2500);
     } else {
+      audioManager.playSfx('error');
       useUiStore.getState().showToast(result.message, 'error', 2500);
     }
   }, []);
@@ -166,10 +170,12 @@ export const ShopModal: React.FC<ShopModalProps> = ({
   const handleSellAll = useCallback(() => {
     const result = sellAllProduce();
     if (result.ok) {
+      audioManager.playSfx('coin');
       useUiStore
         .getState()
         .showToast(result.message ?? `Sold all produce for ${result.value.totalCoinsEarned} coins!`, 'success', 3000);
     } else {
+      audioManager.playSfx('error');
       useUiStore.getState().showToast(result.message, 'error', 2500);
     }
   }, []);
@@ -178,8 +184,10 @@ export const ShopModal: React.FC<ShopModalProps> = ({
   const handleBuyGoldenCan = useCallback(() => {
     const result = buyGoldenWateringCan();
     if (result.ok) {
+      audioManager.playSfx('coin');
       useUiStore.getState().showToast('Purchased Golden Watering Can!', 'success', 3000);
     } else {
+      audioManager.playSfx('error');
       useUiStore.getState().showToast(result.message, 'error', 2500);
     }
   }, []);
@@ -187,8 +195,10 @@ export const ShopModal: React.FC<ShopModalProps> = ({
   const handleBuyExpansion = useCallback(() => {
     const result = buyGridExpansion();
     if (result.ok) {
+      audioManager.playSfx('coin');
       useUiStore.getState().showToast(result.message ?? 'Expanded farm grid!', 'success', 3500);
     } else {
+      audioManager.playSfx('error');
       useUiStore.getState().showToast(result.message, 'error', 2500);
     }
   }, []);
@@ -297,7 +307,10 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                 aria-controls={`pane-${tab.id}`}
                 aria-selected={isSelected}
                 data-testid={tab.testId}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  audioManager.playSfx('ui_click');
+                  setActiveTab(tab.id);
+                }}
                 className={`min-h-[44px] px-4 py-2 rounded-t-xl text-xs md:text-sm font-bold flex items-center gap-2 border-t border-x transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-amber-400 cursor-pointer ${
                   isSelected
                     ? 'bg-slate-900 border-amber-500/40 text-amber-300 border-b-transparent translate-y-[1px] shadow-sm'

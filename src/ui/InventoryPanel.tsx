@@ -12,6 +12,7 @@ import {
 } from '../game/core/constants';
 import { calculateProduceSaleValue } from '../game/economy/economyDefinitions';
 import { selectTotalProduceValue } from '../state/selectors';
+import { audioManager } from '../game/audio/AudioManager';
 
 export type InventoryTabId = 'seeds' | 'produce' | 'eggs';
 
@@ -71,6 +72,7 @@ export const InventoryPanel: React.FC<InventoryPanelProps> = ({
   }, [activeModal, initialTab]);
 
   const handleClose = useCallback(() => {
+    audioManager.playSfx('ui_click');
     useUiStore.getState().closeModal();
     onClose?.();
   }, [onClose]);
@@ -209,7 +211,10 @@ export const InventoryPanel: React.FC<InventoryPanelProps> = ({
                 aria-controls={`pane-${tab.id}`}
                 aria-selected={isSelected}
                 data-testid={tab.testId}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  audioManager.playSfx('ui_click');
+                  setActiveTab(tab.id);
+                }}
                 className={`min-h-[44px] px-4 py-2 rounded-t-xl text-xs md:text-sm font-bold flex items-center gap-2 border-t border-x transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 cursor-pointer ${
                   isSelected
                     ? 'bg-slate-900 border-emerald-500/40 text-emerald-300 border-b-transparent translate-y-[1px] shadow-sm'

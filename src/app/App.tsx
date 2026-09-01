@@ -12,6 +12,7 @@ import { InventoryPanel } from '../ui/InventoryPanel';
 import { SettingsModal } from '../ui/SettingsModal';
 import { Tutorial } from '../ui/Tutorial';
 import { ToastRegion } from '../ui/ToastRegion';
+import { audioManager } from '../game/audio/AudioManager';
 import type { PlotId } from '../state/storeTypes';
 
 export interface AppProps {
@@ -43,8 +44,16 @@ export const App: React.FC<AppProps> = ({
   useEffect(() => {
     if (typeof window !== 'undefined') {
       activeInputManager.attach(window);
+      audioManager.init();
+      const detachGestures = audioManager.attachUserGestureListeners(window);
+      const detachVisibility = audioManager.attachVisibilityListener(document);
+      const unbindSettings = audioManager.bindToSettingsStore();
+
       return () => {
         activeInputManager.detach();
+        detachGestures();
+        detachVisibility();
+        unbindSettings();
       };
     }
   }, [activeInputManager]);

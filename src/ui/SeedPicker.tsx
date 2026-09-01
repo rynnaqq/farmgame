@@ -4,6 +4,7 @@ import { useGameStore } from '../state/gameStore';
 import { useUiStore } from '../state/uiStore';
 import { CROPS, type CropId } from '../game/core/constants';
 import { CROP_IDS } from '../game/farming/cropDefinitions';
+import { audioManager } from '../game/audio/AudioManager';
 
 export interface SeedPickerProps {
   selectedSeed?: CropId;
@@ -143,6 +144,7 @@ export const SeedPicker: React.FC<SeedPickerProps> = ({
   const handleSelect = useCallback(
     (cropId: CropId) => {
       if (disabled || activeModal !== null) return;
+      audioManager.playSfx('ui_click');
       useUiStore.getState().setSelectedSeed(cropId);
       onSelectSeed?.(cropId);
     },

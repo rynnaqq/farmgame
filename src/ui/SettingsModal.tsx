@@ -3,6 +3,7 @@ import { useSettingsStore } from '../state/settingsStore';
 import { useGameStore } from '../state/gameStore';
 import { useUiStore } from '../state/uiStore';
 import type { QualityLevel } from '../game/core/constants';
+import { audioManager } from '../game/audio/AudioManager';
 
 export interface SettingsModalProps {
   onClose?: () => void;
@@ -41,6 +42,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const dialogRef = useRef<HTMLDivElement>(null);
 
   const handleClose = useCallback(() => {
+    audioManager.playSfx('ui_click');
     setIsConfirmingReset(false);
     useUiStore.getState().closeModal();
     onClose?.();

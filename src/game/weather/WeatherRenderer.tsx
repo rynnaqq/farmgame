@@ -12,6 +12,7 @@ import {
   getWeatherShadowConfig,
 } from './weatherRendererMath';
 import type { WeatherType } from '../../state/storeTypes';
+import { audioManager } from '../audio/AudioManager';
 
 /**
  * WeatherRenderer coordinates the dynamic 3D atmospheric environment:
@@ -49,9 +50,11 @@ export const WeatherRenderer: React.FC = () => {
     [effectiveQuality]
   );
 
-  // Detect weather changes and trigger 2-second crossfade
+  // Detect weather changes and trigger 2-second crossfade & audio ambience
   useEffect(() => {
+    audioManager.setWeatherAmbience(currentWeather, 2.0);
     if (currentWeather !== targetWeatherRef.current) {
+      audioManager.playSfx('weather_change');
       prevWeatherRef.current = targetWeatherRef.current;
       targetWeatherRef.current = currentWeather;
       transitionStartRef.current = performance.now();

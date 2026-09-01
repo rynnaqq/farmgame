@@ -6,6 +6,7 @@ import { CROPS } from '../game/core/constants';
 import type { ToolType } from '../state/storeTypes';
 import { SeedPicker } from './SeedPicker';
 import type { InputManager } from '../game/input/InputManager';
+import { audioManager } from '../game/audio/AudioManager';
 
 export interface ToolbeltProps {
   inputManager?: InputManager;
@@ -175,6 +176,7 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
   const handleSelectTool = useCallback(
     (tool: ToolType) => {
       if (!isInteractive) return;
+      audioManager.playSfx('ui_click');
       useUiStore.getState().setSelectedTool(tool);
     },
     [isInteractive]
