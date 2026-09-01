@@ -17,7 +17,7 @@ export const ISLAND_SIZE = 28; // 28x28 playable grass top
 export const ISLAND_WIDTH = 28;
 export const ISLAND_DEPTH = 28;
 export const ISLAND_FALL_Y_THRESHOLD = -5;
-export const PLAYER_SPAWN_POSITION = [0, 0.5, 0] as const;
+export const PLAYER_SPAWN_POSITION = [0, 0, 0] as const;
 
 // ==========================================
 // 3. Grid & Plot Layout
@@ -52,9 +52,11 @@ export const CAMERA_DEFAULT_PITCH_DEG = 40;
 export const CAMERA_DEFAULT_DISTANCE = 12;
 export const CAMERA_MIN_PITCH_DEG = 25;
 export const CAMERA_MAX_PITCH_DEG = 65;
-export const CAMERA_MIN_DISTANCE = 7;
-export const CAMERA_MAX_DISTANCE = 18;
-export const CAMERA_TARGET_HEIGHT_OFFSET = 1.2;
+export const CAMERA_MIN_DISTANCE = 0.0;
+export const CAMERA_MAX_DISTANCE = 20.0;
+export const CAMERA_TARGET_HEIGHT_OFFSET = 1.0;
+export const CAMERA_EYE_HEIGHT_OFFSET = 1.35;
+export const FIRST_PERSON_DISTANCE_THRESHOLD = 0.8;
 
 // ==========================================
 // 6. Interaction Ranges & Reaches

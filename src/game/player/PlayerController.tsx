@@ -9,6 +9,7 @@ import {
   PLAYER_SPAWN_POSITION,
 } from '../core/constants';
 import { useGameStore } from '../../state/gameStore';
+import { useUiStore } from '../../state/uiStore';
 import type { InputManager } from '../input/InputManager';
 import { PlayerModel } from './PlayerModel';
 import {
@@ -164,6 +165,8 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
     }
   });
 
+  const isFirstPerson = useUiStore((state) => state.isFirstPerson);
+
   return (
     <RigidBody
       ref={rigidBodyRef}
@@ -174,7 +177,7 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
       enabledRotations={[false, false, false]}
     >
       <CapsuleCollider args={[0.35, 0.3]} position={[0, 0.65, 0]} />
-      <group position={[0, 0.47, 0]}>
+      <group position={[0, 0.475, 0]} visible={!isFirstPerson}>
         <PlayerModel
           rootRef={rootModelRef}
           headRef={headRef}

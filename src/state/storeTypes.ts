@@ -177,4 +177,5 @@ export interface UiState {
   selectedSeed: CropId;
   hoveredPlotId: PlotId | null;
   targetedPlotId: PlotId | null;
+  isFirstPerson: boolean;
 }

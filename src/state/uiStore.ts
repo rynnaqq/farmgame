@@ -20,6 +20,7 @@ export interface UiStoreState extends UiState {
   setSelectedSeed: (seed: CropId) => void;
   setHoveredPlot: (plotId: PlotId | null) => void;
   setTargetedPlot: (plotId: PlotId | null) => void;
+  setIsFirstPerson: (isFirstPerson: boolean) => void;
   resetUi: () => void;
 }
 
@@ -38,6 +39,7 @@ function createInitialUiState(): UiState {
     selectedSeed: 'carrot',
     hoveredPlotId: null,
     targetedPlotId: null,
+    isFirstPerson: false,
   };
 }
 
@@ -128,6 +130,12 @@ export const useUiStore = create<UiStoreState>((set, get) => ({
 
   setTargetedPlot: (targetedPlotId: PlotId | null) => {
     set({ targetedPlotId });
+  },
+
+  setIsFirstPerson: (isFirstPerson: boolean) => {
+    if (get().isFirstPerson !== isFirstPerson) {
+      set({ isFirstPerson });
+    }
   },
 
   resetUi: () => {

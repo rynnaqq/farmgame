@@ -27,7 +27,7 @@ describe('useGameStore', () => {
     it('has standard starting parameters from game constants', () => {
       const state = useGameStore.getState();
       expect(state.player.coins).toBe(100);
-      expect(state.player.position).toEqual([0, 0.5, 0]);
+      expect(state.player.position).toEqual([0, 0, 0]);
       expect(state.player.totalDistance).toBe(0);
 
       expect(state.farm.gridSize).toBe(4);

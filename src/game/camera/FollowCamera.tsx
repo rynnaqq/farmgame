@@ -10,9 +10,12 @@ import {
   CAMERA_MIN_DISTANCE,
   CAMERA_MAX_DISTANCE,
   CAMERA_TARGET_HEIGHT_OFFSET,
+  CAMERA_EYE_HEIGHT_OFFSET,
+  FIRST_PERSON_DISTANCE_THRESHOLD,
 } from '../core/constants';
 import { useSettingsStore } from '../../state/settingsStore';
 import { useGameStore } from '../../state/gameStore';
+import { useUiStore } from '../../state/uiStore';
 import type { InputManager } from '../input/InputManager';
 import {
   degToRad,
@@ -129,7 +132,7 @@ export const FollowCamera: React.FC<FollowCameraProps> = ({
       // Touch pinch: deltaDist > 0 (fingers spreading) -> zoom in (- distance)
       targetDistanceRef.current = applyZoomDelta(
         targetDistanceRef.current,
-        -deltaDist * 0.04,
+        -deltaDist * 0.15,
         1.0,
         minDistance,
         maxDistance
@@ -202,7 +205,7 @@ export const FollowCamera: React.FC<FollowCameraProps> = ({
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
       // Scroll down (deltaY > 0) zooms out (+distance), scroll up (deltaY < 0) zooms in (-distance)
-      const zoomAmount = Math.sign(e.deltaY) * Math.min(1.5, Math.abs(e.deltaY) * 0.015);
+      const zoomAmount = Math.sign(e.deltaY) * Math.min(3.5, Math.max(1.2, Math.abs(e.deltaY) * 0.025));
       targetDistanceRef.current = applyZoomDelta(
         targetDistanceRef.current,
         zoomAmount,
@@ -263,8 +266,15 @@ export const FollowCamera: React.FC<FollowCameraProps> = ({
       basePos = useGameStore.getState().player.position;
     }
 
-    // Apply target height offset (Y + 1.2)
-    const goalTarget = computeCameraTarget(basePos, CAMERA_TARGET_HEIGHT_OFFSET);
+    // First person state detection and look target calculation
+    const isFirstPerson = currentDistanceRef.current < FIRST_PERSON_DISTANCE_THRESHOLD;
+    useUiStore.getState().setIsFirstPerson(isFirstPerson);
+
+    const firstPersonBlend = Math.max(0, Math.min(1, (1.2 - currentDistanceRef.current) / 0.8));
+    const targetHeight =
+      CAMERA_TARGET_HEIGHT_OFFSET +
+      (CAMERA_EYE_HEIGHT_OFFSET - CAMERA_TARGET_HEIGHT_OFFSET) * firstPersonBlend;
+    const goalTarget = computeCameraTarget(basePos, targetHeight);
 
     // Apply damping to target lookAt and spherical coordinates
     const posDamping = reducedMotion ? 30 : DEFAULT_POSITION_DAMPING;
@@ -297,7 +307,7 @@ export const FollowCamera: React.FC<FollowCameraProps> = ({
     let effectiveDistance = currentDistanceRef.current;
 
     // Raycast scene geometry to avoid obstacle clipping behind island props
-    if (enableCollisionAvoidance && scene && scene.children.length > 0) {
+    if (enableCollisionAvoidance && effectiveDistance > 0.5 && scene && scene.children.length > 0) {
       const desiredPos = sphericalToCartesian(
         currentYawRef.current,
         currentPitchRef.current,
@@ -327,20 +337,38 @@ export const FollowCamera: React.FC<FollowCameraProps> = ({
       );
     }
 
-    // Compute final camera Cartesian position
-    const finalCameraPos = sphericalToCartesian(
-      currentYawRef.current,
-      currentPitchRef.current,
-      effectiveDistance,
-      smoothedTargetPosRef.current
-    );
+    if (effectiveDistance <= 0.25) {
+      // First Person: Camera positioned directly at eye level looking in pitch/yaw direction
+      camera.position.set(
+        smoothedTargetPosRef.current.x,
+        smoothedTargetPosRef.current.y,
+        smoothedTargetPosRef.current.z
+      );
+      const forwardX =
+        smoothedTargetPosRef.current.x -
+        10 * Math.cos(currentPitchRef.current) * Math.sin(currentYawRef.current);
+      const forwardY =
+        smoothedTargetPosRef.current.y - 10 * Math.sin(currentPitchRef.current);
+      const forwardZ =
+        smoothedTargetPosRef.current.z -
+        10 * Math.cos(currentPitchRef.current) * Math.cos(currentYawRef.current);
+      camera.lookAt(forwardX, forwardY, forwardZ);
+    } else {
+      // Third Person: Camera orbiting target
+      const finalCameraPos = sphericalToCartesian(
+        currentYawRef.current,
+        currentPitchRef.current,
+        effectiveDistance,
+        smoothedTargetPosRef.current
+      );
 
-    camera.position.set(finalCameraPos.x, finalCameraPos.y, finalCameraPos.z);
-    camera.lookAt(
-      smoothedTargetPosRef.current.x,
-      smoothedTargetPosRef.current.y,
-      smoothedTargetPosRef.current.z
-    );
+      camera.position.set(finalCameraPos.x, finalCameraPos.y, finalCameraPos.z);
+      camera.lookAt(
+        smoothedTargetPosRef.current.x,
+        smoothedTargetPosRef.current.y,
+        smoothedTargetPosRef.current.z
+      );
+    }
 
     // Sync camera yaw to InputManager for directional movement
     if (inputManager) {

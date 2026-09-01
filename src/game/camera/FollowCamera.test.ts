@@ -79,31 +79,31 @@ describe('Camera Math Pure Calculations', () => {
       expect(clampPitchRad(degToRad(75))).toBeCloseTo(maxRad);
     });
 
-    it('clamps distance to [7, 18]', () => {
+    it('clamps distance to [0, 20]', () => {
       expect(clampDistance(CAMERA_DEFAULT_DISTANCE)).toBe(12);
-      expect(clampDistance(3)).toBe(CAMERA_MIN_DISTANCE); // 7
+      expect(clampDistance(-5)).toBe(CAMERA_MIN_DISTANCE); // 0
       expect(clampDistance(7)).toBe(7);
       expect(clampDistance(18)).toBe(18);
-      expect(clampDistance(25)).toBe(CAMERA_MAX_DISTANCE); // 18
+      expect(clampDistance(25)).toBe(CAMERA_MAX_DISTANCE); // 20
     });
   });
 
   describe('Spherical to Cartesian Transformation', () => {
-    it('computes default camera position at (6.5, 8.91, 6.5) for default angles and target (0, 1.2, 0)', () => {
+    it('computes default camera position at (6.5, 8.71, 6.5) for default angles and target (0, 1.0, 0)', () => {
       const yawRad = degToRad(CAMERA_DEFAULT_YAW_DEG); // 45°
       const pitchRad = degToRad(CAMERA_DEFAULT_PITCH_DEG); // 40°
       const distance = CAMERA_DEFAULT_DISTANCE; // 12
-      const target = { x: 0, y: CAMERA_TARGET_HEIGHT_OFFSET, z: 0 }; // (0, 1.2, 0)
+      const target = { x: 0, y: CAMERA_TARGET_HEIGHT_OFFSET, z: 0 }; // (0, 1.0, 0)
 
       const pos = sphericalToCartesian(yawRad, pitchRad, distance, target);
 
       // Distance 12:
-      // Y = 1.2 + 12 * sin(40°) = 1.2 + 7.71345 = 8.91345
+      // Y = 1.0 + 12 * sin(40°) = 1.0 + 7.71345 = 8.71345
       // horizRadius = 12 * cos(40°) = 9.19253
       // X = 0 + 9.19253 * sin(45°) = 6.4999... ≈ 6.5
       // Z = 0 + 9.19253 * cos(45°) = 6.4999... ≈ 6.5
       expect(pos.x).toBeCloseTo(6.5, 1);
-      expect(pos.y).toBeCloseTo(8.91, 1);
+      expect(pos.y).toBeCloseTo(8.71, 1);
       expect(pos.z).toBeCloseTo(6.5, 1);
     });
 
@@ -280,7 +280,7 @@ describe('Camera Math Pure Calculations', () => {
       const target = computeCameraTarget(playerPos);
 
       expect(target.x).toBe(0);
-      expect(target.y).toBe(1.2);
+      expect(target.y).toBe(CAMERA_TARGET_HEIGHT_OFFSET);
       expect(target.z).toBe(0);
     });
   });
@@ -304,18 +304,19 @@ describe('Camera Math Pure Calculations', () => {
       expect(distance).toBeCloseTo(9.2, 2);
     });
 
-    it('clamps shortened collision distance to minimum distance (7)', () => {
+    it('clamps shortened collision distance to minimum distance', () => {
       const desiredDistance = 12;
       const buffer = 0.3;
-      const hits = [{ distance: 5.0 }]; // Hit closer than min distance 7
+      const hits = [{ distance: 5.0 }];
+      const customMinDistance = 6.0;
 
       const distance = calculateCollisionOffsetDistance(
         desiredDistance,
         hits,
         buffer,
-        CAMERA_MIN_DISTANCE
+        customMinDistance
       );
-      expect(distance).toBe(CAMERA_MIN_DISTANCE); // Clamped to 7
+      expect(distance).toBe(customMinDistance); // 5.0 - 0.3 = 4.7 -> clamped to 6.0
     });
 
     it('ignores hits further than desired distance', () => {

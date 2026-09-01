@@ -27,7 +27,7 @@ describe('Player Animation & Kinematic Controller Math', () => {
       expect(PLAYER_WALK_SPEED).toBe(3.5);
       expect(PLAYER_RUN_SPEED).toBe(5.25);
       expect(ISLAND_FALL_Y_THRESHOLD).toBe(-5);
-      expect(PLAYER_SPAWN_POSITION).toEqual([0, 0.5, 0]);
+      expect(PLAYER_SPAWN_POSITION).toEqual([0, 0, 0]);
     });
   });
 
