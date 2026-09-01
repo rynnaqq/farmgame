@@ -3,8 +3,8 @@ import { useFrame } from '@react-three/fiber';
 import type * as THREE from 'three';
 import type { MutationType } from '../core/constants';
 import { useSettingsStore } from '../../state/settingsStore';
-
 import { getCosmicMotePositions } from './cropMeshGenerators';
+import { getGoldSparklePositions } from './mutationShaders';
 
 // ============================================================================
 // Visual Decorator Components
@@ -12,34 +12,74 @@ import { getCosmicMotePositions } from './cropMeshGenerators';
 
 export interface GoldVisualDecoratorProps {
   intensity?: number;
+  reducedMotion?: boolean;
 }
 
-export const GoldVisualDecorator: React.FC<GoldVisualDecoratorProps> = ({ intensity = 1.0 }) => {
+export const GoldVisualDecorator: React.FC<GoldVisualDecoratorProps> = ({
+  intensity = 1.0,
+  reducedMotion = false,
+}) => {
   const lightRef = useRef<THREE.PointLight>(null);
   const effectiveQuality = useSettingsStore((state) => state.effectiveQuality);
 
+  const initialSparkles = useMemo(() => getGoldSparklePositions(0), []);
+  const sparkleMeshes = useRef<THREE.Mesh[]>([]);
+
   useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+
     if (lightRef.current) {
-      const t = clock.getElapsedTime();
       const pulse = 1.0 + Math.sin(t * 3.5) * 0.25;
       lightRef.current.intensity = intensity * pulse;
     }
+
+    if (!reducedMotion && effectiveQuality !== 'low') {
+      const currentSparkles = getGoldSparklePositions(t);
+      sparkleMeshes.current.forEach((mesh, idx) => {
+        if (mesh && currentSparkles[idx]) {
+          mesh.position.set(...currentSparkles[idx].position);
+          const mat = mesh.material as THREE.MeshBasicMaterial;
+          if (mat) {
+            mat.opacity = currentSparkles[idx].opacity;
+          }
+        }
+      });
+    }
   });
 
-  // Only render point light if quality is medium or high for performance
-  if (effectiveQuality === 'low') {
-    return null;
-  }
-
   return (
-    <pointLight
-      ref={lightRef}
-      position={[0, 0.35, 0]}
-      color="#FFE082"
-      intensity={intensity}
-      distance={1.6}
-      decay={2}
-    />
+    <group name="GoldVisualDecorator">
+      {/* Sparkle particle motes on medium/high settings */}
+      {effectiveQuality !== 'low' &&
+        initialSparkles.map((sparkle, idx) => (
+          <mesh
+            key={idx}
+            ref={(el) => {
+              if (el) sparkleMeshes.current[idx] = el;
+            }}
+            position={sparkle.position}
+          >
+            <octahedronGeometry args={[sparkle.size, 0]} />
+            <meshBasicMaterial
+              color={sparkle.color}
+              transparent
+              opacity={sparkle.opacity}
+            />
+          </mesh>
+        ))}
+
+      {/* Pulsing point light on medium/high settings */}
+      {effectiveQuality !== 'low' && (
+        <pointLight
+          ref={lightRef}
+          position={[0, 0.35, 0]}
+          color="#FFE082"
+          intensity={intensity}
+          distance={1.6}
+          decay={2}
+        />
+      )}
+    </group>
   );
 };
 
@@ -121,7 +161,7 @@ export const MutationVisualDecorator: React.FC<MutationVisualDecoratorProps> = (
 }) => {
   switch (mutation) {
     case 'gold':
-      return <GoldVisualDecorator />;
+      return <GoldVisualDecorator reducedMotion={reducedMotion} />;
     case 'cosmic':
       return <CosmicVisualDecorator reducedMotion={reducedMotion} />;
     case 'giant':

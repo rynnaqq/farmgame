@@ -76,7 +76,7 @@ export function getMutationChance(
   }
   return {
     mutationType: config.mutationType,
-    chance: Math.min(1.0, chance),
+    chance: Math.max(0, Math.min(1.0, chance)),
   };
 }
 
