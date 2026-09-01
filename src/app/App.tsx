@@ -15,7 +15,14 @@ import { ToastRegion } from '../ui/ToastRegion';
 import { DiagnosticsOverlay } from '../game/effects/DiagnosticsPanel';
 import { isDiagnosticsEnabled } from '../game/core/autoQualityManager';
 import { audioManager } from '../game/audio/AudioManager';
+import { OfflineSummary } from '../ui/OfflineSummary';
+import { saveService } from '../persistence/saveService';
+import { simulateOfflineProgression } from '../persistence/offlineSimulation';
+import { useGameStore } from '../state/gameStore';
+import { useUiStore } from '../state/uiStore';
+import { AUTOSAVE_INTERVAL_MS } from '../game/core/constants';
 import type { PlotId } from '../state/storeTypes';
+
 
 export interface AppProps {
   children?: React.ReactNode;
@@ -53,14 +60,40 @@ export const App: React.FC<AppProps> = ({
       const detachVisibility = audioManager.attachVisibilityListener(document);
       const unbindSettings = audioManager.bindToSettingsStore();
 
+      let isMounted = true;
+      saveService.load().then(async ({ envelope }) => {
+        if (!isMounted) return;
+
+        const { updatedEnvelope, summary } = simulateOfflineProgression(envelope, Date.now());
+        useGameStore.getState().loadSaveEnvelope(updatedEnvelope);
+        await saveService.saveImmediate(updatedEnvelope);
+
+        if (summary.shouldDisplay) {
+          useUiStore.getState().openModal('offline_summary', summary);
+        } else if (summary.clockMovedBackward) {
+          useUiStore.getState().showToast(
+            'System clock moved backward; offline simulation paused.',
+            'warning'
+          );
+        }
+
+        saveService.startAutosave(AUTOSAVE_INTERVAL_MS, () =>
+          useGameStore.getState().toSaveEnvelope()
+        );
+        saveService.setupLifecycleListeners(() => useGameStore.getState().toSaveEnvelope());
+      });
+
       return () => {
+        isMounted = false;
         activeInputManager.detach();
         detachGestures();
         detachVisibility();
         unbindSettings();
+        saveService.dispose();
       };
     }
   }, [activeInputManager]);
+
 
   return (
     <ErrorBoundary>
@@ -94,8 +127,10 @@ export const App: React.FC<AppProps> = ({
             <InventoryPanel />
             <SettingsModal />
             <Tutorial />
+            <OfflineSummary />
             <ToastRegion />
             <DiagnosticsOverlay enabled={debugEnabled} />
+
           </div>
         </div>
       </Providers>
