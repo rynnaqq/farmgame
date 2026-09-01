@@ -1,0 +1,18 @@
+{
+  "name": "Garden Island 3D",
+  "short_name": "GardenIsland",
+  "description": "A cheerful 3D farming simulator on a floating island",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#082f49",
+  "theme_color": "#29B6F6",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
