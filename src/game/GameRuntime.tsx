@@ -6,6 +6,7 @@ import { SoilGrid } from './world/SoilGrid';
 import { Boundaries } from './world/Boundaries';
 import { Decorations } from './world/Decorations';
 import { Player } from './player/Player';
+import { FollowCamera } from './camera/FollowCamera';
 import type { InputManager } from './input/InputManager';
 
 export interface GameRuntimeProps {
@@ -51,7 +52,10 @@ export const GameRuntime: React.FC<GameRuntimeProps> = ({
       {/* 6. Procedural Player Character */}
       <Player inputManager={inputManager} onFall={onPlayerFall} />
 
-      {/* 7. Dynamic entities & extensions (Camera, Pets, Weather, Particles, etc.) */}
+      {/* 7. Third-Person Isometric Follow Camera with Orbit, Zoom & Collision Avoidance */}
+      <FollowCamera inputManager={inputManager} />
+
+      {/* 8. Dynamic entities & extensions (Pets, Weather, Particles, etc.) */}
       {children}
     </group>
   );
