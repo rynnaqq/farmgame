@@ -157,8 +157,10 @@ if (typeof window !== 'undefined' && !window.ResizeObserver) {
 // Mock WebGL2RenderingContext global
 if (typeof window !== 'undefined' && !window.WebGL2RenderingContext) {
   class WebGL2RenderingContextMock {}
-  window.WebGL2RenderingContext = WebGL2RenderingContextMock as unknown as typeof WebGL2RenderingContext;
-  globalThis.WebGL2RenderingContext = WebGL2RenderingContextMock as unknown as typeof WebGL2RenderingContext;
+  window.WebGL2RenderingContext =
+    WebGL2RenderingContextMock as unknown as typeof WebGL2RenderingContext;
+  globalThis.WebGL2RenderingContext =
+    WebGL2RenderingContextMock as unknown as typeof WebGL2RenderingContext;
 }
 
 // Mock PointerEvent global for JSDOM
@@ -187,4 +189,3 @@ if (typeof Element !== 'undefined') {
     Element.prototype.releasePointerCapture = () => {};
   }
 }
-

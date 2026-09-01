@@ -21,16 +21,37 @@ function EggGraphic({ type }: { type: EggType }) {
     return (
       <svg className="w-14 h-16 md:w-16 md:h-20 drop-shadow-md" viewBox="0 0 64 80" fill="none">
         <defs>
-          <linearGradient id="rareEggGrad" x1="16" y1="8" x2="48" y2="72" gradientUnits="userSpaceOnUse">
+          <linearGradient
+            id="rareEggGrad"
+            x1="16"
+            y1="8"
+            x2="48"
+            y2="72"
+            gradientUnits="userSpaceOnUse"
+          >
             <stop stopColor="#FDE047" />
             <stop offset="0.4" stopColor="#EAB308" />
             <stop offset="0.8" stopColor="#CA8A04" />
             <stop offset="1" stopColor="#854D0E" />
           </linearGradient>
         </defs>
-        <ellipse cx="32" cy="44" rx="26" ry="34" fill="url(#rareEggGrad)" stroke="#FEF08A" strokeWidth="2.5" />
+        <ellipse
+          cx="32"
+          cy="44"
+          rx="26"
+          ry="34"
+          fill="url(#rareEggGrad)"
+          stroke="#FEF08A"
+          strokeWidth="2.5"
+        />
         {/* Shimmer streaks and star marking */}
-        <path d="M22 28c4-12 16-16 22-12" stroke="#FEF9C3" strokeWidth="2" strokeLinecap="round" opacity="0.8" />
+        <path
+          d="M22 28c4-12 16-16 22-12"
+          stroke="#FEF9C3"
+          strokeWidth="2"
+          strokeLinecap="round"
+          opacity="0.8"
+        />
         <path
           d="M32 36l2.5 5 5.5.8-4 4 1 5.5-5-2.7-5 2.7 1-5.5-4-4 5.5-.8z"
           fill="#FEF08A"
@@ -44,14 +65,35 @@ function EggGraphic({ type }: { type: EggType }) {
   return (
     <svg className="w-14 h-16 md:w-16 md:h-20 drop-shadow-md" viewBox="0 0 64 80" fill="none">
       <defs>
-        <linearGradient id="commonEggGrad" x1="16" y1="8" x2="48" y2="72" gradientUnits="userSpaceOnUse">
+        <linearGradient
+          id="commonEggGrad"
+          x1="16"
+          y1="8"
+          x2="48"
+          y2="72"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop stopColor="#BAE6FD" />
           <stop offset="0.5" stopColor="#38BDF8" />
           <stop offset="1" stopColor="#0284C7" />
         </linearGradient>
       </defs>
-      <ellipse cx="32" cy="44" rx="26" ry="34" fill="url(#commonEggGrad)" stroke="#E0F2FE" strokeWidth="2.5" />
-      <path d="M22 28c4-12 16-16 22-12" stroke="#F0F9FF" strokeWidth="2" strokeLinecap="round" opacity="0.8" />
+      <ellipse
+        cx="32"
+        cy="44"
+        rx="26"
+        ry="34"
+        fill="url(#commonEggGrad)"
+        stroke="#E0F2FE"
+        strokeWidth="2.5"
+      />
+      <path
+        d="M22 28c4-12 16-16 22-12"
+        stroke="#F0F9FF"
+        strokeWidth="2"
+        strokeLinecap="round"
+        opacity="0.8"
+      />
       {/* Speckles */}
       <circle cx="26" cy="46" r="3" fill="#0369A1" opacity="0.6" />
       <circle cx="38" cy="38" r="2.5" fill="#0369A1" opacity="0.6" />
@@ -87,7 +129,11 @@ export const EggShop: React.FC<EggShopProps> = ({ className = '', disabled = fal
         audioManager.playSfx('coin');
         useUiStore
           .getState()
-          .showToast(`Purchased ${eggType === 'rare' ? 'Rare' : 'Common'} Egg! Check Pet Sanctuary.`, 'success', 3000);
+          .showToast(
+            `Purchased ${eggType === 'rare' ? 'Rare' : 'Common'} Egg! Check Pet Sanctuary.`,
+            'success',
+            3000
+          );
       } else {
         audioManager.playSfx('error');
         useUiStore.getState().showToast(result.message, 'error', 3000);
@@ -103,7 +149,8 @@ export const EggShop: React.FC<EggShopProps> = ({ className = '', disabled = fal
         <div>
           <h3 className="text-sm font-bold text-sky-300">Companion Pet Sanctuary</h3>
           <p className="text-xs text-slate-300">
-            Hatch eggs into loyal companions with automatic harvesting, growth boosts, and luck perks.
+            Hatch eggs into loyal companions with automatic harvesting, growth boosts, and luck
+            perks.
           </p>
         </div>
 
@@ -124,7 +171,8 @@ export const EggShop: React.FC<EggShopProps> = ({ className = '', disabled = fal
 
       {isInventoryFull && (
         <div className="bg-amber-950/60 border border-amber-500/50 rounded-lg p-2.5 text-xs text-amber-200 text-center font-medium">
-          Pet capacity full ({MAX_PET_INVENTORY}/{MAX_PET_INVENTORY}). Hatch existing eggs or manage pets to purchase more.
+          Pet capacity full ({MAX_PET_INVENTORY}/{MAX_PET_INVENTORY}). Hatch existing eggs or manage
+          pets to purchase more.
         </div>
       )}
 

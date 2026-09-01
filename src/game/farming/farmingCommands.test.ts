@@ -1,12 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useGameStore, resetGameStore } from '../../state/gameStore';
-import {
-  tillPlot,
-  waterPlot,
-  plantCrop,
-  harvestCrop,
-  executeToolAction,
-} from './farmingCommands';
+import { tillPlot, waterPlot, plantCrop, harvestCrop, executeToolAction } from './farmingCommands';
 import {
   FARMING_REACH,
   HYDRATION_DURATION_BASIC_MS,
@@ -207,9 +201,7 @@ describe('Task 11: Farming Commands & Atomic Validation', () => {
       const res = waterPlot('plot-1-1', undefined, true, 'sunny', baseNow);
       expect(res.ok).toBe(true);
       if (res.ok) {
-        expect(res.value.hydratedPlotIds).toEqual(
-          expect.arrayContaining(['plot-1-1', 'plot-0-1'])
-        );
+        expect(res.value.hydratedPlotIds).toEqual(expect.arrayContaining(['plot-1-1', 'plot-0-1']));
         expect(res.value.hydratedPlotIds.length).toBe(2);
       }
 
@@ -261,9 +253,7 @@ describe('Task 11: Farming Commands & Atomic Validation', () => {
       const res = waterPlot('plot-1-1', undefined, undefined, 'sunny', baseNow);
       expect(res.ok).toBe(true);
       if (res.ok) {
-        expect(res.value.hydratedPlotIds).toEqual(
-          expect.arrayContaining(['plot-1-1', 'plot-1-2'])
-        );
+        expect(res.value.hydratedPlotIds).toEqual(expect.arrayContaining(['plot-1-1', 'plot-1-2']));
       }
     });
   });
@@ -524,11 +514,7 @@ describe('Task 11: Farming Commands & Atomic Validation', () => {
     });
 
     it('returns wrong_tool for unrecognized tool', () => {
-      const res = executeToolAction(
-        'plot-0-0',
-        'invalid_tool' as unknown as ToolType,
-        'carrot'
-      );
+      const res = executeToolAction('plot-0-0', 'invalid_tool' as unknown as ToolType, 'carrot');
       expect(res.ok).toBe(false);
       if (!res.ok) {
         expect(res.reason).toBe('wrong_tool');
@@ -633,9 +619,7 @@ describe('Task 11: Farming Commands & Atomic Validation', () => {
       const res = harvestCrop('plot-0-0');
       expect(res.ok).toBe(true);
       if (res.ok) {
-        expect(res.value.saleValue).toBe(
-          CROPS.pumpkin.baseSalePrice * MUTATION_MULTIPLIERS.giant
-        );
+        expect(res.value.saleValue).toBe(CROPS.pumpkin.baseSalePrice * MUTATION_MULTIPLIERS.giant);
       }
     });
   });

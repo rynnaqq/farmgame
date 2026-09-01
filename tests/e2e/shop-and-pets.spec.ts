@@ -10,7 +10,9 @@ test.describe('Shop Economy, Upgrades, and Companion Pets E2E', () => {
     });
   });
 
-  test('shop seed purchasing verifies coin deduction and seed inventory increments', async ({ page }) => {
+  test('shop seed purchasing verifies coin deduction and seed inventory increments', async ({
+    page,
+  }) => {
     // 1. Open Shop Modal
     await page.evaluate(() => {
       window.__openModal?.('shop');
@@ -89,7 +91,9 @@ test.describe('Shop Economy, Upgrades, and Companion Pets E2E', () => {
     expect(stateAfterExpansion?.player.coins).toBe(1150); // 1900 - 750
   });
 
-  test('companion eggs: purchase common egg, incubate, fast-forward, hatch and verify pet equipped', async ({ page }) => {
+  test('companion eggs: purchase common egg, incubate, fast-forward, hatch and verify pet equipped', async ({
+    page,
+  }) => {
     // 1. Credit player and open shop
     await page.evaluate(() => {
       window.__addCoins?.(1000);

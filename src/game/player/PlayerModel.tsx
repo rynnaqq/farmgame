@@ -62,34 +62,19 @@ export const PlayerModel: React.FC<PlayerModelProps> = ({
         {/* Emerald Green Gardener Shirt */}
         <mesh position={[0, 0.08, 0]} castShadow receiveShadow>
           <boxGeometry args={[0.34, 0.32, 0.22]} />
-          <meshStandardMaterial
-            color="#10B981"
-            roughness={0.7}
-            metalness={0.05}
-            flatShading
-          />
+          <meshStandardMaterial color="#10B981" roughness={0.7} metalness={0.05} flatShading />
         </mesh>
 
         {/* Denim Overalls Body */}
         <mesh position={[0, -0.05, 0]} castShadow receiveShadow>
           <boxGeometry args={[0.36, 0.26, 0.24]} />
-          <meshStandardMaterial
-            color="#1E40AF"
-            roughness={0.75}
-            metalness={0.05}
-            flatShading
-          />
+          <meshStandardMaterial color="#1E40AF" roughness={0.75} metalness={0.05} flatShading />
         </mesh>
 
         {/* Front Overalls Pouch / Chest Pocket */}
         <mesh position={[0, 0.02, 0.125]} castShadow receiveShadow>
           <boxGeometry args={[0.16, 0.12, 0.02]} />
-          <meshStandardMaterial
-            color="#1D4ED8"
-            roughness={0.78}
-            metalness={0.05}
-            flatShading
-          />
+          <meshStandardMaterial color="#1D4ED8" roughness={0.78} metalness={0.05} flatShading />
         </mesh>
 
         {/* Left Shoulder Strap */}
@@ -118,32 +103,17 @@ export const PlayerModel: React.FC<PlayerModelProps> = ({
       {/* ========================================== */}
       {/* 2. Head, Face & Straw Hat                  */}
       {/* ========================================== */}
-      <group
-        ref={headRef}
-        name="HeadAndHat"
-        position={[0, 0.4, 0]}
-        rotation={[0, 0, headTiltZ]}
-      >
+      <group ref={headRef} name="HeadAndHat" position={[0, 0.4, 0]} rotation={[0, 0, headTiltZ]}>
         {/* Head Block */}
         <mesh position={[0, 0, 0]} castShadow receiveShadow>
           <boxGeometry args={[0.26, 0.26, 0.24]} />
-          <meshStandardMaterial
-            color="#FBD38D"
-            roughness={0.65}
-            metalness={0.0}
-            flatShading
-          />
+          <meshStandardMaterial color="#FBD38D" roughness={0.65} metalness={0.0} flatShading />
         </mesh>
 
         {/* Hair Back / Bangs Under Hat */}
         <mesh position={[0, 0.09, -0.02]} castShadow>
           <boxGeometry args={[0.27, 0.1, 0.25]} />
-          <meshStandardMaterial
-            color="#78350F"
-            roughness={0.85}
-            metalness={0.0}
-            flatShading
-          />
+          <meshStandardMaterial color="#78350F" roughness={0.85} metalness={0.0} flatShading />
         </mesh>
 
         {/* Eyes (Dark Charcoal Dots) */}
@@ -175,34 +145,19 @@ export const PlayerModel: React.FC<PlayerModelProps> = ({
         {/* Straw Hat Brim */}
         <mesh position={[0, 0.13, 0]} rotation={[0.04, 0, 0]} castShadow receiveShadow>
           <cylinderGeometry args={[0.4, 0.44, 0.03, 10]} />
-          <meshStandardMaterial
-            color="#FBBF24"
-            roughness={0.7}
-            metalness={0.05}
-            flatShading
-          />
+          <meshStandardMaterial color="#FBBF24" roughness={0.7} metalness={0.05} flatShading />
         </mesh>
 
         {/* Hat Ribbon Band */}
         <mesh position={[0, 0.165, 0]} castShadow>
           <cylinderGeometry args={[0.245, 0.245, 0.04, 10]} />
-          <meshStandardMaterial
-            color="#991B1B"
-            roughness={0.6}
-            metalness={0.1}
-            flatShading
-          />
+          <meshStandardMaterial color="#991B1B" roughness={0.6} metalness={0.1} flatShading />
         </mesh>
 
         {/* Straw Hat Crown */}
         <mesh position={[0, 0.24, 0]} castShadow receiveShadow>
           <cylinderGeometry args={[0.21, 0.24, 0.15, 10]} />
-          <meshStandardMaterial
-            color="#D97706"
-            roughness={0.72}
-            metalness={0.05}
-            flatShading
-          />
+          <meshStandardMaterial color="#D97706" roughness={0.72} metalness={0.05} flatShading />
         </mesh>
       </group>
 

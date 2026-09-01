@@ -86,7 +86,8 @@ export class AudioManager {
 
     if (
       typeof window !== 'undefined' &&
-      (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)
+      (window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)
     ) {
       this.isSupported = true;
     } else {
@@ -172,14 +173,18 @@ export class AudioManager {
       }
     }
 
-    this.isUnlocked = this.ctx ? this.ctx.state === 'running' || this.ctx.state === ('interrupted' as unknown) : false;
+    this.isUnlocked = this.ctx
+      ? this.ctx.state === 'running' || this.ctx.state === ('interrupted' as unknown)
+      : false;
     return this.isUnlocked;
   }
 
   /**
    * Attaches one-time gesture listeners to window to unlock audio on first interaction.
    */
-  public attachUserGestureListeners(target: EventTarget = typeof window !== 'undefined' ? window : ({} as EventTarget)): () => void {
+  public attachUserGestureListeners(
+    target: EventTarget = typeof window !== 'undefined' ? window : ({} as EventTarget)
+  ): () => void {
     if (!target || typeof target.addEventListener !== 'function') {
       return () => {};
     }
@@ -209,7 +214,9 @@ export class AudioManager {
   /**
    * Attaches visibility change listener to pause when the document is hidden.
    */
-  public attachVisibilityListener(doc: Document = typeof document !== 'undefined' ? document : ({} as Document)): () => void {
+  public attachVisibilityListener(
+    doc: Document = typeof document !== 'undefined' ? document : ({} as Document)
+  ): () => void {
     if (!doc || typeof doc.addEventListener !== 'function') {
       return () => {};
     }
@@ -370,10 +377,7 @@ export class AudioManager {
   /**
    * Sets the active ambient weather loop with a 2-second crossfade.
    */
-  public setWeatherAmbience(
-    weather: WeatherType,
-    crossfadeDurationSec: number = 2.0
-  ): void {
+  public setWeatherAmbience(weather: WeatherType, crossfadeDurationSec: number = 2.0): void {
     if (!this.init() || !this.ctx || !this.musicGain) {
       this.currentWeather = weather;
       return;

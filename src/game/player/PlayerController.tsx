@@ -38,11 +38,7 @@ export interface PlayerControllerProps {
  * - Enforces safety respawn if player drops below Y = -5
  */
 export const PlayerController: React.FC<PlayerControllerProps> = ({
-  initialPosition = [
-    PLAYER_SPAWN_POSITION[0],
-    PLAYER_SPAWN_POSITION[1],
-    PLAYER_SPAWN_POSITION[2],
-  ],
+  initialPosition = [PLAYER_SPAWN_POSITION[0], PLAYER_SPAWN_POSITION[1], PLAYER_SPAWN_POSITION[2]],
   inputManager,
   onFall,
 }) => {
@@ -85,16 +81,10 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
     }
 
     // 2. Velocity smoothing with walk (3.5) / run (5.25) speed
-    const targetSpeed =
-      magnitude > 0.01 ? (isRunning ? PLAYER_RUN_SPEED : PLAYER_WALK_SPEED) : 0;
+    const targetSpeed = magnitude > 0.01 ? (isRunning ? PLAYER_RUN_SPEED : PLAYER_WALK_SPEED) : 0;
     const targetDir = magnitude > 0.01 ? { x: moveX, z: moveZ } : { x: 0, z: 0 };
 
-    const smoothed = smoothVelocity(
-      velocityRef.current,
-      targetDir,
-      targetSpeed,
-      dt
-    );
+    const smoothed = smoothVelocity(velocityRef.current, targetDir, targetSpeed, dt);
     velocityRef.current = { x: smoothed.x, z: smoothed.z };
 
     // 3. Shortest-path facing rotation
@@ -111,11 +101,7 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
     if (smoothed.speed > 0.05) {
       const strideFreq = smoothed.speed * 2.8;
       walkPhaseRef.current += strideFreq * dt;
-      const swings = calculateLimbSwings(
-        smoothed.speed,
-        isRunning,
-        walkPhaseRef.current
-      );
+      const swings = calculateLimbSwings(smoothed.speed, isRunning, walkPhaseRef.current);
 
       if (leftLegRef.current) leftLegRef.current.rotation.x = swings.leftLegPitch;
       if (rightLegRef.current) rightLegRef.current.rotation.x = swings.rightLegPitch;

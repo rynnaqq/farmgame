@@ -2,9 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { CropData } from '../../state/storeTypes';
-import {
-  getCropDefinition,
-} from './cropDefinitions';
+import { getCropDefinition } from './cropDefinitions';
 import {
   getCropStage,
   getMutationScale,
@@ -26,20 +24,13 @@ import {
 // Shared GPU geometry cache to eliminate per-element heap allocation and geometry thrashing
 const CROP_GEOMETRY_CACHE = new Map<string, THREE.BufferGeometry>();
 
-function getOrCreateCropGeometry(
-  type: MeshElementType,
-  args: number[] = []
-): THREE.BufferGeometry {
+function getOrCreateCropGeometry(type: MeshElementType, args: number[] = []): THREE.BufferGeometry {
   const key = `${type}_${args.join('_')}`;
   let geo = CROP_GEOMETRY_CACHE.get(key);
   if (!geo) {
     switch (type) {
       case 'cone':
-        geo = new THREE.ConeGeometry(
-          args[0] ?? 0.05,
-          args[1] ?? 0.15,
-          args[2] ?? 5
-        );
+        geo = new THREE.ConeGeometry(args[0] ?? 0.05, args[1] ?? 0.15, args[2] ?? 5);
         break;
       case 'cylinder':
         geo = new THREE.CylinderGeometry(
@@ -50,41 +41,20 @@ function getOrCreateCropGeometry(
         );
         break;
       case 'sphere':
-        geo = new THREE.SphereGeometry(
-          args[0] ?? 0.08,
-          args[1] ?? 6,
-          args[2] ?? 6
-        );
+        geo = new THREE.SphereGeometry(args[0] ?? 0.08, args[1] ?? 6, args[2] ?? 6);
         break;
       case 'box':
-        geo = new THREE.BoxGeometry(
-          args[0] ?? 0.1,
-          args[1] ?? 0.1,
-          args[2] ?? 0.1
-        );
+        geo = new THREE.BoxGeometry(args[0] ?? 0.1, args[1] ?? 0.1, args[2] ?? 0.1);
         break;
       case 'dodecahedron':
-        geo = new THREE.DodecahedronGeometry(
-          args[0] ?? 0.1,
-          args[1] ?? 0
-        );
+        geo = new THREE.DodecahedronGeometry(args[0] ?? 0.1, args[1] ?? 0);
         break;
       case 'torus':
-        geo = new THREE.TorusGeometry(
-          args[0] ?? 0.08,
-          args[1] ?? 0.02,
-          args[2] ?? 4,
-          args[3] ?? 8
-        );
+        geo = new THREE.TorusGeometry(args[0] ?? 0.08, args[1] ?? 0.02, args[2] ?? 4, args[3] ?? 8);
         break;
       case 'star':
       default:
-        geo = new THREE.CylinderGeometry(
-          args[0] ?? 0.06,
-          args[1] ?? 0.06,
-          args[2] ?? 0.15,
-          5
-        );
+        geo = new THREE.CylinderGeometry(args[0] ?? 0.06, args[1] ?? 0.06, args[2] ?? 0.15, 5);
         break;
     }
     CROP_GEOMETRY_CACHE.set(key, geo);
@@ -121,9 +91,7 @@ export const ProceduralElement: React.FC<ProceduralElementProps> = ({
         roughness={matProps.roughness}
         metalness={matProps.metalness}
         emissive={matProps.emissive ?? element.emissive}
-        emissiveIntensity={
-          matProps.emissiveIntensity ?? element.emissiveIntensity ?? 0
-        }
+        emissiveIntensity={matProps.emissiveIntensity ?? element.emissiveIntensity ?? 0}
         transparent={isTransparent}
         opacity={opacity}
         flatShading
@@ -132,16 +100,12 @@ export const ProceduralElement: React.FC<ProceduralElementProps> = ({
   );
 };
 
-
 export interface CropRendererProps {
   crop: CropData;
   position?: [number, number, number];
 }
 
-export const CropRenderer: React.FC<CropRendererProps> = ({
-  crop,
-  position = [0, 0, 0],
-}) => {
+export const CropRenderer: React.FC<CropRendererProps> = ({ crop, position = [0, 0, 0] }) => {
   const rootRef = useRef<THREE.Group>(null);
   const reducedMotion = useSettingsStore((state) => state.reducedMotion);
 
@@ -207,10 +171,7 @@ export const CropRenderer: React.FC<CropRendererProps> = ({
       ))}
 
       {/* Mutation Visual Decorator (Gold pulsing glow, Cosmic star motes) */}
-      <MutationVisualDecorator
-        mutation={crop.mutation}
-        reducedMotion={reducedMotion}
-      />
+      <MutationVisualDecorator mutation={crop.mutation} reducedMotion={reducedMotion} />
     </group>
   );
 };

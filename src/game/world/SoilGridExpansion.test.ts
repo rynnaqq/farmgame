@@ -1,24 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import {
-  useGameStore,
-  resetGameStore,
-  generateDefaultPlots,
-} from '../../state/gameStore';
-import {
-  buyGridExpansion,
-  buyUpgrade,
-} from '../economy/economyCommands';
-import {
-  EXPANSION_1_COST,
-  EXPANSION_2_COST,
-  MAX_GRID_SIZE,
-} from '../core/constants';
-import {
-  getPlotId,
-  getPlotPosition,
-  getGridBounds,
-  getLockedPlotSlots,
-} from './gridCoordinates';
+import { useGameStore, resetGameStore, generateDefaultPlots } from '../../state/gameStore';
+import { buyGridExpansion, buyUpgrade } from '../economy/economyCommands';
+import { EXPANSION_1_COST, EXPANSION_2_COST, MAX_GRID_SIZE } from '../core/constants';
+import { getPlotId, getPlotPosition, getGridBounds, getLockedPlotSlots } from './gridCoordinates';
 import {
   EXPANSION_WAVE_RING_DELAY_MS,
   EXPANSION_WAVE_TOTAL_MAX_DURATION_MS,
@@ -422,17 +406,17 @@ describe('Task 17: Island Grid Expansion System', () => {
       const plotDuration = EXPANSION_WAVE_PLOT_DURATION_MS;
 
       // Before plot start time (< 1060ms): scale is 0
-      expect(
-        calculatePlotExpansionScale(900, waveStart, ringIndex, ringDelay, plotDuration)
-      ).toBe(0);
-      expect(
-        calculatePlotExpansionScale(1059, waveStart, ringIndex, ringDelay, plotDuration)
-      ).toBe(0);
+      expect(calculatePlotExpansionScale(900, waveStart, ringIndex, ringDelay, plotDuration)).toBe(
+        0
+      );
+      expect(calculatePlotExpansionScale(1059, waveStart, ringIndex, ringDelay, plotDuration)).toBe(
+        0
+      );
 
       // At start (1060ms): scale is 0
-      expect(
-        calculatePlotExpansionScale(1060, waveStart, ringIndex, ringDelay, plotDuration)
-      ).toBe(0);
+      expect(calculatePlotExpansionScale(1060, waveStart, ringIndex, ringDelay, plotDuration)).toBe(
+        0
+      );
 
       // Midway (1060 + plotDuration/2): scale is progressing > 0.5
       const midScale = calculatePlotExpansionScale(
@@ -464,15 +448,9 @@ describe('Task 17: Island Grid Expansion System', () => {
           plotDuration
         )
       ).toBe(1.0);
-      expect(
-        calculatePlotExpansionScale(
-          2000,
-          waveStart,
-          ringIndex,
-          ringDelay,
-          plotDuration
-        )
-      ).toBe(1.0);
+      expect(calculatePlotExpansionScale(2000, waveStart, ringIndex, ringDelay, plotDuration)).toBe(
+        1.0
+      );
     });
   });
 

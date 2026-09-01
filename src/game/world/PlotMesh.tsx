@@ -8,10 +8,7 @@ import { CropRenderer } from '../farming/CropRenderer';
 // Pre-allocated shared geometries for plot meshes to eliminate per-plot geometry churn
 const SHARED_SOIL_BOX_GEO = new THREE.BoxGeometry(PLOT_SIZE, 0.1, PLOT_SIZE);
 const SHARED_FURROW_RIDGE_GEO = new THREE.BoxGeometry(PLOT_SIZE * 0.9, 0.03, 0.18);
-const SHARED_HYDRATION_PLANE_GEO = new THREE.PlaneGeometry(
-  PLOT_SIZE * 0.94,
-  PLOT_SIZE * 0.94
-);
+const SHARED_HYDRATION_PLANE_GEO = new THREE.PlaneGeometry(PLOT_SIZE * 0.94, PLOT_SIZE * 0.94);
 const SHARED_OUTLINE_RING_GEO = new THREE.RingGeometry(
   (PLOT_SIZE * 0.98) / 2,
   (PLOT_SIZE * 1.04) / 2,
@@ -152,23 +149,14 @@ export const PlotMesh: React.FC<PlotMeshProps> = ({
       )}
 
       {/* Procedural 3D Crop Mesh */}
-      {plot.crop && (
-        <CropRenderer crop={plot.crop} position={[0, 0.055, 0]} />
-      )}
+      {plot.crop && <CropRenderer crop={plot.crop} position={[0, 0.055, 0]} />}
 
       {/* Hover / Targeted Selection Outline */}
       {showOutline && (
         <group position={[0, 0.06, 0]}>
           {/* Top border frame */}
-          <mesh
-            rotation={[-Math.PI / 2, 0, 0]}
-            geometry={SHARED_OUTLINE_RING_GEO}
-          >
-            <meshBasicMaterial
-              color={outlineColor}
-              transparent
-              opacity={isTargeted ? 0.9 : 0.65}
-            />
+          <mesh rotation={[-Math.PI / 2, 0, 0]} geometry={SHARED_OUTLINE_RING_GEO}>
+            <meshBasicMaterial color={outlineColor} transparent opacity={isTargeted ? 0.9 : 0.65} />
           </mesh>
         </group>
       )}

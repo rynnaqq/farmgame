@@ -7,12 +7,7 @@ import {
   type WeatherType,
   type PetType,
 } from '../core/constants';
-import {
-  getMutationChance,
-  rollMutation,
-  advancePlotGrowth,
-  tickFarmGrowth,
-} from './growthSystem';
+import { getMutationChance, rollMutation, advancePlotGrowth, tickFarmGrowth } from './growthSystem';
 import {
   getMutationScale,
   getMutationMaterialProps,
@@ -142,9 +137,9 @@ describe('Task 22: Procedural Mutation Engine & Custom Shaders', () => {
     it('consumes exactly 1 float from SeededRNG per roll', () => {
       const rng = new SeededRNG(42);
       const stateBefore = rng.getState();
-      
+
       rollMutation('blood_moon', 'pig', rng);
-      
+
       const expectedRng = new SeededRNG(42);
       expectedRng.nextFloat();
       expect(rng.getState()).toBe(expectedRng.getState());
@@ -209,15 +204,30 @@ describe('Task 22: Procedural Mutation Engine & Custom Shaders', () => {
       const plots: Record<PlotId, PlotData> = {
         plot_1_1: createMockPlot({
           id: 'plot_1_1',
-          crop: { cropId: 'carrot', plantedAtUtcMs: baseTime, growthProgressSec: 44, mutation: 'none' },
+          crop: {
+            cropId: 'carrot',
+            plantedAtUtcMs: baseTime,
+            growthProgressSec: 44,
+            mutation: 'none',
+          },
         }),
         plot_0_0: createMockPlot({
           id: 'plot_0_0',
-          crop: { cropId: 'carrot', plantedAtUtcMs: baseTime, growthProgressSec: 44, mutation: 'none' },
+          crop: {
+            cropId: 'carrot',
+            plantedAtUtcMs: baseTime,
+            growthProgressSec: 44,
+            mutation: 'none',
+          },
         }),
         plot_0_1: createMockPlot({
           id: 'plot_0_1',
-          crop: { cropId: 'carrot', plantedAtUtcMs: baseTime, growthProgressSec: 44, mutation: 'none' },
+          crop: {
+            cropId: 'carrot',
+            plantedAtUtcMs: baseTime,
+            growthProgressSec: 44,
+            mutation: 'none',
+          },
         }),
       };
 
@@ -227,7 +237,11 @@ describe('Task 22: Procedural Mutation Engine & Custom Shaders', () => {
       const resultA = tickFarmGrowth(plots, 2, 'heavy_rain', 'pig', rngA, baseTime);
       const resultB = tickFarmGrowth(plots, 2, 'heavy_rain', 'pig', rngB, baseTime);
 
-      expect(resultA.maturedPlots.map((m) => m.plotId)).toEqual(['plot_0_0', 'plot_0_1', 'plot_1_1']);
+      expect(resultA.maturedPlots.map((m) => m.plotId)).toEqual([
+        'plot_0_0',
+        'plot_0_1',
+        'plot_1_1',
+      ]);
       expect(resultA.maturedPlots).toEqual(resultB.maturedPlots);
       expect(resultA.updatedPlots).toEqual(resultB.updatedPlots);
       expect(rngA.getState()).toBe(rngB.getState());
@@ -263,7 +277,7 @@ describe('Task 22: Procedural Mutation Engine & Custom Shaders', () => {
       const p = 0.05;
       const sigma = Math.sqrt((p * (1 - p)) / TRIALS); // ~0.00218
       const measured = runMonteCarlo('sunny', null, 'gold', 101);
-      
+
       // 3-sigma tolerance: p ± 3.5*sigma (~0.042 - 0.058)
       expect(measured).toBeGreaterThanOrEqual(p - 3.5 * sigma);
       expect(measured).toBeLessThanOrEqual(p + 3.5 * sigma);

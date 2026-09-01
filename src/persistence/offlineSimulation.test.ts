@@ -1,18 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import {
-  simulateOfflineProgression,
-  formatOfflineDuration,
-} from './offlineSimulation';
+import { simulateOfflineProgression, formatOfflineDuration } from './offlineSimulation';
 import { createDefaultSaveEnvelope } from './saveSchema';
 import type { EggData, WeatherType } from '../state/storeTypes';
 import { SeededRNG } from '../game/core/rng';
 
-import {
-  CROPS,
-  MAX_OFFLINE_PROGRESSION_MS,
-} from '../game/core/constants';
+import { CROPS, MAX_OFFLINE_PROGRESSION_MS } from '../game/core/constants';
 import { rollNextWeather } from '../game/weather/weatherSystem';
-
 
 describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
   const BASE_TIME = 1_700_000_000_000; // Fixed epoch timestamp
@@ -99,7 +92,6 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
         expectedWeather = roll.nextWeather;
         nextEnd = nextEnd + roll.durationSeconds * 1000;
       }
-
 
       const result = simulateOfflineProgression(envelope, nowMs);
 
@@ -389,9 +381,7 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
       expect(result.updatedEnvelope.inventory.incubatingEggId).toBeNull();
       expect(result.updatedEnvelope.inventory.pets.length).toBe(1);
       expect(result.updatedEnvelope.inventory.pets[0].type).toBe('pig');
-      expect(result.summary.hatchedPets).toEqual([
-        expect.objectContaining({ type: 'pig' }),
-      ]);
+      expect(result.summary.hatchedPets).toEqual([expect.objectContaining({ type: 'pig' })]);
       // Auto-equipped since slot was empty
       expect(result.updatedEnvelope.inventory.equippedPetId).toBe(
         result.updatedEnvelope.inventory.pets[0].id

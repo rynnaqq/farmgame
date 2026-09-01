@@ -63,7 +63,17 @@ export const PostProcessing: React.FC = () => {
       composerRef.current = null;
       bloomPassRef.current = null;
     }
-  }, [bloomConfig.enabled, gl, scene, camera, size.width, size.height, bloomConfig.strength, bloomConfig.radius, bloomConfig.threshold]);
+  }, [
+    bloomConfig.enabled,
+    gl,
+    scene,
+    camera,
+    size.width,
+    size.height,
+    bloomConfig.strength,
+    bloomConfig.radius,
+    bloomConfig.threshold,
+  ]);
 
   // Update bloom properties dynamically
   useEffect(() => {
@@ -85,15 +95,18 @@ export const PostProcessing: React.FC = () => {
   }, [size.width, size.height]);
 
   // Custom frame render loop when post-processing is enabled (priority = 1 disables default render)
-  useFrame((_, delta) => {
-    if (composerRef.current && bloomConfig.enabled) {
-      try {
-        composerRef.current.render(delta);
-      } catch {
-        // Fallback silently if render fails
+  useFrame(
+    (_, delta) => {
+      if (composerRef.current && bloomConfig.enabled) {
+        try {
+          composerRef.current.render(delta);
+        } catch {
+          // Fallback silently if render fails
+        }
       }
-    }
-  }, bloomConfig.enabled ? 1 : 0);
+    },
+    bloomConfig.enabled ? 1 : 0
+  );
 
   return null;
 };

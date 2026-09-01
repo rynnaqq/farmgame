@@ -75,8 +75,20 @@ function CropSeedIcon({ cropId, isSelected }: { cropId: CropId; isSelected: bool
           {/* Pumpkin Stem */}
           <path d="M12 7V4c1 0 2 .5 2 1" stroke="#15803d" strokeWidth="2" />
           {/* Pumpkin Body */}
-          <ellipse cx="12" cy="14" rx="8" ry="6.5" fill="#ea580c" stroke="#c2410c" strokeWidth="1.5" />
-          <path d="M12 7.5v13M8.5 9c-.5 3-.5 7 0 10M15.5 9c.5 3 .5 7 0 10" stroke="#9a3412" strokeWidth="1.2" />
+          <ellipse
+            cx="12"
+            cy="14"
+            rx="8"
+            ry="6.5"
+            fill="#ea580c"
+            stroke="#c2410c"
+            strokeWidth="1.5"
+          />
+          <path
+            d="M12 7.5v13M8.5 9c-.5 3-.5 7 0 10M15.5 9c.5 3 .5 7 0 10"
+            stroke="#9a3412"
+            strokeWidth="1.2"
+          />
         </svg>
       );
 
@@ -232,8 +244,8 @@ export const SeedPicker: React.FC<SeedPickerProps> = ({
                   isEmpty
                     ? 'text-slate-400 bg-slate-900/80 border border-slate-700/50'
                     : isSelected
-                    ? 'text-emerald-200 bg-emerald-900/90 border border-emerald-400/50'
-                    : 'text-amber-200 bg-slate-900/80 border border-white/10'
+                      ? 'text-emerald-200 bg-emerald-900/90 border border-emerald-400/50'
+                      : 'text-amber-200 bg-slate-900/80 border border-white/10'
                 }`}
               >
                 {count}

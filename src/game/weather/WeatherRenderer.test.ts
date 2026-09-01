@@ -1,9 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
-import {
-  WEATHER_VISUAL_PRESETS,
-  type WeatherVisualPreset,
-} from './weatherDefinitions';
+import { WEATHER_VISUAL_PRESETS, type WeatherVisualPreset } from './weatherDefinitions';
 import { interpolateWeatherPreset, getWeatherShadowConfig } from './weatherRendererMath';
 import type { WeatherType } from '../../state/storeTypes';
 

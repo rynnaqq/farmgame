@@ -42,16 +42,12 @@ export interface PetRendererProps {
  * - Autonomous Dog crop harvesting: steers to mature plots and triggers atomic harvest
  * - Dynamic Incubating Egg 3D display with incubation wobbles and crack indicators
  */
-export const PetRenderer: React.FC<PetRendererProps> = ({
-  forcePetType,
-  forcePlayerPos,
-}) => {
+export const PetRenderer: React.FC<PetRendererProps> = ({ forcePetType, forcePlayerPos }) => {
   const storeEquippedPet = useGameStore(selectEquippedPet);
   const storeIncubatingEgg = useGameStore(selectIncubatingEgg);
 
-  const equippedPetType = forcePetType !== undefined
-    ? forcePetType
-    : storeEquippedPet?.type ?? null;
+  const equippedPetType =
+    forcePetType !== undefined ? forcePetType : (storeEquippedPet?.type ?? null);
 
   // Root Transforms
   const petRootRef = useRef<THREE.Group | null>(null);
@@ -106,11 +102,7 @@ export const PetRenderer: React.FC<PetRendererProps> = ({
     if (equippedPetType) {
       // 1.1 Initial placement
       if (!isInitializedRef.current) {
-        const initialTrailing = calculateTrailingTarget(
-          playerPos,
-          0,
-          PET_DEFAULT_FOLLOW_DISTANCE
-        );
+        const initialTrailing = calculateTrailingTarget(playerPos, 0, PET_DEFAULT_FOLLOW_DISTANCE);
         petPosRef.current = [initialTrailing[0], initialTrailing[1], initialTrailing[2]];
         isInitializedRef.current = true;
       }
@@ -155,11 +147,7 @@ export const PetRenderer: React.FC<PetRendererProps> = ({
 
       // 1.3 Teleportation Threshold Check (> 12.0 units)
       if (shouldTeleport(petPosRef.current, playerPos, PET_TELEPORT_DISTANCE)) {
-        const defaultTrailing = calculateTrailingTarget(
-          playerPos,
-          0,
-          PET_DEFAULT_FOLLOW_DISTANCE
-        );
+        const defaultTrailing = calculateTrailingTarget(playerPos, 0, PET_DEFAULT_FOLLOW_DISTANCE);
         petPosRef.current = [defaultTrailing[0], defaultTrailing[1], defaultTrailing[2]];
         velocityRef.current = { x: 0, z: 0 };
       } else {

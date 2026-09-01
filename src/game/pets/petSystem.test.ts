@@ -471,21 +471,21 @@ describe('Pet & Egg Domain Logic', () => {
       setupPlot('plot-1-1', { cropId: 'carrot', progress: 45 });
 
       // Dog position 1.0 unit away from plot-1-1
-      const dogPosNear: [number, number, number] = [
-        plot11Pos[0] + 1.0,
-        plot11Pos[1],
-        plot11Pos[2],
-      ];
-      const targetNear = findDogHarvestTarget(dogPosNear, useGameStore.getState().farm.plots, gridSize);
+      const dogPosNear: [number, number, number] = [plot11Pos[0] + 1.0, plot11Pos[1], plot11Pos[2]];
+      const targetNear = findDogHarvestTarget(
+        dogPosNear,
+        useGameStore.getState().farm.plots,
+        gridSize
+      );
       expect(targetNear).toBe('plot-1-1');
 
       // Dog position 2.5 units away from plot-1-1 (> 1.75 limit)
-      const dogPosFar: [number, number, number] = [
-        plot11Pos[0] + 2.5,
-        plot11Pos[1],
-        plot11Pos[2],
-      ];
-      const targetFar = findDogHarvestTarget(dogPosFar, useGameStore.getState().farm.plots, gridSize);
+      const dogPosFar: [number, number, number] = [plot11Pos[0] + 2.5, plot11Pos[1], plot11Pos[2]];
+      const targetFar = findDogHarvestTarget(
+        dogPosFar,
+        useGameStore.getState().farm.plots,
+        gridSize
+      );
       expect(targetFar).toBeNull();
     });
 
@@ -531,11 +531,7 @@ describe('Pet & Egg Domain Logic', () => {
 
       const plot11Pos = getPlotPosition(1, 1, gridSize);
       // Dog placed 0.2 units from plot-1-1 and 1.35 units from plot-1-2 (both < 1.75)
-      const dogPos: [number, number, number] = [
-        plot11Pos[0] + 0.2,
-        plot11Pos[1],
-        plot11Pos[2],
-      ];
+      const dogPos: [number, number, number] = [plot11Pos[0] + 0.2, plot11Pos[1], plot11Pos[2]];
 
       const target = findDogHarvestTarget(dogPos, useGameStore.getState().farm.plots, gridSize);
       expect(target).toBe('plot-1-1');

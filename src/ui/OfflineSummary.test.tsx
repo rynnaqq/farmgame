@@ -93,7 +93,6 @@ describe('OfflineSummary Component', () => {
     expect(within(petSection).getByText(/dog/i)).toBeInTheDocument();
   });
 
-
   it('renders empty state messages gracefully when no crops matured or pets hatched', () => {
     const emptySummary: OfflineSummaryData = {
       elapsedMs: 60_000,

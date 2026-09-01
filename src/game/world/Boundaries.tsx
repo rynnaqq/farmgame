@@ -1,9 +1,6 @@
 import React, { useCallback } from 'react';
 import { RigidBody, CuboidCollider } from '@react-three/rapier';
-import {
-  ISLAND_FALL_Y_THRESHOLD,
-  PLAYER_SPAWN_POSITION,
-} from '../core/constants';
+import { ISLAND_FALL_Y_THRESHOLD, PLAYER_SPAWN_POSITION } from '../core/constants';
 import { useGameStore } from '../../state/gameStore';
 
 export interface BoundariesProps {
@@ -50,11 +47,7 @@ export const Boundaries: React.FC<BoundariesProps> = ({ onPlayerFall }) => {
         name="FallKillzone"
         onIntersectionEnter={handleKillzoneIntersection}
       >
-        <CuboidCollider
-          args={[40, 0.5, 40]}
-          position={[0, ISLAND_FALL_Y_THRESHOLD, 0]}
-          sensor
-        />
+        <CuboidCollider args={[40, 0.5, 40]} position={[0, ISLAND_FALL_Y_THRESHOLD, 0]} sensor />
       </RigidBody>
     </group>
   );

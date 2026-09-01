@@ -80,13 +80,15 @@ describe('SaveService', () => {
     it('serializes and coalesces multiple concurrent save calls without out-of-order writes', async () => {
       const saveCallOrder: number[] = [];
 
-      vi.spyOn(saveService as unknown as { persistToStorage: (e: SaveEnvelope) => Promise<boolean> }, 'persistToStorage')
-        .mockImplementation(async (env: SaveEnvelope) => {
-          // Add artificial delay to simulate async I/O
-          await new Promise((resolve) => setTimeout(resolve, 50));
-          saveCallOrder.push(env.player.coins);
-          return true;
-        });
+      vi.spyOn(
+        saveService as unknown as { persistToStorage: (e: SaveEnvelope) => Promise<boolean> },
+        'persistToStorage'
+      ).mockImplementation(async (env: SaveEnvelope) => {
+        // Add artificial delay to simulate async I/O
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        saveCallOrder.push(env.player.coins);
+        return true;
+      });
 
       const env1 = createDefaultSaveEnvelope();
       env1.player.coins = 100;
@@ -185,7 +187,10 @@ describe('SaveService', () => {
   describe('Corrupt Save Backup and Recovery', () => {
     it('recovers from corrupt storage data by creating backup and fresh valid save', async () => {
       // Put completely corrupt data in localStorage and DB
-      localStorage.setItem('garden_island_save', JSON.stringify({ corrupt: true, coins: 'not-a-number' }));
+      localStorage.setItem(
+        'garden_island_save',
+        JSON.stringify({ corrupt: true, coins: 'not-a-number' })
+      );
 
       const loadResult = await saveService.load();
       expect(loadResult.status).toBe('corrupt_reset');

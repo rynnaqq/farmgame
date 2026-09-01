@@ -25,7 +25,6 @@ import { executeToolAction } from '../game/farming/farmingCommands';
 import { installTestClock } from '../test/testClock';
 import type { PlotId } from '../state/storeTypes';
 
-
 export interface AppProps {
   children?: React.ReactNode;
   forceWebGLSupported?: boolean;
@@ -74,10 +73,9 @@ export const App: React.FC<AppProps> = ({
         if (summary.shouldDisplay) {
           useUiStore.getState().openModal('offline_summary', summary);
         } else if (summary.clockMovedBackward) {
-          useUiStore.getState().showToast(
-            'System clock moved backward; offline simulation paused.',
-            'warning'
-          );
+          useUiStore
+            .getState()
+            .showToast('System clock moved backward; offline simulation paused.', 'warning');
         }
 
         saveService.startAutosave(AUTOSAVE_INTERVAL_MS, () =>
@@ -120,7 +118,8 @@ export const App: React.FC<AppProps> = ({
         if (uiState.selectedTool === 'trowel') audioManager.playSfx('till');
         else if (uiState.selectedTool === 'watering_can') audioManager.playSfx('water');
         else if (uiState.selectedTool === 'seed_bag') audioManager.playSfx('plant');
-        else if (uiState.selectedTool === 'hand' || uiState.selectedTool === 'scythe') audioManager.playSfx('harvest');
+        else if (uiState.selectedTool === 'hand' || uiState.selectedTool === 'scythe')
+          audioManager.playSfx('harvest');
       } else if (result.message) {
         uiState.showToast(result.message, 'warning', 2000);
       }
@@ -163,7 +162,6 @@ export const App: React.FC<AppProps> = ({
             <OfflineSummary />
             <ToastRegion />
             <DiagnosticsOverlay enabled={debugEnabled} />
-
           </div>
         </div>
       </Providers>

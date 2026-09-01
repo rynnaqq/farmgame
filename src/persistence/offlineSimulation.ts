@@ -228,8 +228,6 @@ export function simulateOfflineProgression(
     const equippedPet = getEquippedPetType();
     const growthMult = getEffectiveGrowthMultiplier(currentWeather, equippedPet);
 
-
-
     // 1. Identify earliest upcoming event boundary
     let nextEventTime = simEndMs;
 
@@ -378,8 +376,7 @@ export function simulateOfflineProgression(
 
       if (plot.crop.growthProgressSec >= cropDef.baseGrowthSec) {
         const isAlreadyHandled =
-          initiallyMaturePlotIds.has(plotId) ||
-          maturedEvents.some((e) => e.plotId === plotId);
+          initiallyMaturePlotIds.has(plotId) || maturedEvents.some((e) => e.plotId === plotId);
 
         if (!isAlreadyHandled) {
           const rolledMutation = rollMutation(currentWeather, getEquippedPetType(), rng);
@@ -410,7 +407,6 @@ export function simulateOfflineProgression(
       );
 
       for (const [plotId, harvest] of readyHarvestEntries) {
-
         const plot = plots[plotId];
         if (plot && plot.crop) {
           const existingStack = inventory.produce.find(
@@ -438,7 +434,6 @@ export function simulateOfflineProgression(
     } else {
       pendingDogHarvests.clear();
     }
-
 
     // D. Weather transition
     if (weather.endsAtUtcMs <= currentTime) {
@@ -485,7 +480,6 @@ export function simulateOfflineProgression(
     weather,
     rngState: rng.getState(),
   };
-
 
   // 6. Aggregate summary data
   const maturedCropsMap = new Map<string, MaturedCropSummary>();
@@ -541,8 +535,7 @@ export function simulateOfflineProgression(
   const dogHarvests = Array.from(dogHarvestsMap.values());
 
   const totalMaturedCount = maturedEvents.length;
-  const hasEvents =
-    totalMaturedCount > 0 || dogHarvestsCount > 0 || hatchedPetsList.length > 0;
+  const hasEvents = totalMaturedCount > 0 || dogHarvestsCount > 0 || hatchedPetsList.length > 0;
   const shouldDisplay = elapsedMs >= 30_000 && hasEvents;
 
   const summary: OfflineSummaryData = {

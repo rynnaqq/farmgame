@@ -24,7 +24,10 @@ export interface UpgradeDefinition {
   requiredGridSize?: 4 | 6;
 }
 
-export const UPGRADE_CONFIGS: Record<'golden_can' | 'expansion_6x6' | 'expansion_8x8', UpgradeDefinition> = {
+export const UPGRADE_CONFIGS: Record<
+  'golden_can' | 'expansion_6x6' | 'expansion_8x8',
+  UpgradeDefinition
+> = {
   golden_can: {
     id: 'golden_can',
     name: 'Golden Watering Can',

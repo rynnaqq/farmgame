@@ -10,10 +10,7 @@ export interface WebGLFallbackProps {
  * WebGLFallback provides an accessible, full-page screen when WebGL2 context
  * cannot be initialized or fails.
  */
-export const WebGLFallback: React.FC<WebGLFallbackProps> = ({
-  onRetry,
-  reason,
-}) => {
+export const WebGLFallback: React.FC<WebGLFallbackProps> = ({ onRetry, reason }) => {
   const handleRetry = () => {
     if (onRetry) {
       onRetry();
@@ -42,8 +39,8 @@ export const WebGLFallback: React.FC<WebGLFallbackProps> = ({
 
         {/* Description */}
         <p className="text-slate-300 text-sm sm:text-base leading-relaxed mb-6">
-          Garden Island 3D requires <strong className="text-amber-300">WebGL2</strong> to render
-          3D graphics, dynamic lighting, and physics simulations. Your browser or current device
+          Garden Island 3D requires <strong className="text-amber-300">WebGL2</strong> to render 3D
+          graphics, dynamic lighting, and physics simulations. Your browser or current device
           configuration does not support WebGL2 or hardware acceleration is disabled.
         </p>
 

@@ -279,7 +279,6 @@ export const PET_PERKS = {
 
 export const DOG_OFFLINE_HARVEST_DELAY_SEC = PET_PERKS.dog.offlineHarvestDelaySec;
 
-
 export interface EggDefinition {
   id: EggType;
   name: string;

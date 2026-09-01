@@ -4,7 +4,12 @@ import { ShopModal } from './ShopModal';
 import { useGameStore, resetGameStore } from '../state/gameStore';
 import { useUiStore, resetUiStore } from '../state/uiStore';
 import { resetSettingsStore } from '../state/settingsStore';
-import { CROPS, GOLDEN_WATERING_CAN_COST, EXPANSION_1_COST, EXPANSION_2_COST } from '../game/core/constants';
+import {
+  CROPS,
+  GOLDEN_WATERING_CAN_COST,
+  EXPANSION_1_COST,
+  EXPANSION_2_COST,
+} from '../game/core/constants';
 
 describe('Task 16: ShopModal & EggShop Component Tests', () => {
   beforeEach(() => {
@@ -176,7 +181,9 @@ describe('Task 16: ShopModal & EggShop Component Tests', () => {
       expect(useGameStore.getState().player.coins).toBe(100 - CROPS.carrot.seedCost);
       expect(useGameStore.getState().inventory.seeds.carrot).toBe(6); // 5 initial + 1
       expect(screen.getByTestId('seed-owned-carrot')).toHaveTextContent('6');
-      expect(screen.getByTestId('shop-player-coins')).toHaveTextContent(`${100 - CROPS.carrot.seedCost}`);
+      expect(screen.getByTestId('shop-player-coins')).toHaveTextContent(
+        `${100 - CROPS.carrot.seedCost}`
+      );
     });
 
     it('buys 5 seeds in batch when clicking Buy 5', () => {

@@ -6,10 +6,7 @@ import type {
   PlotId,
   WeatherType,
 } from '../../state/storeTypes';
-import {
-  PET_PERKS,
-  WEATHER_CONFIGS,
-} from '../core/constants';
+import { PET_PERKS, WEATHER_CONFIGS } from '../core/constants';
 import type { SeededRNG } from '../core/rng';
 import { getCropDefinition } from './cropDefinitions';
 

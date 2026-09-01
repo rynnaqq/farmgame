@@ -28,8 +28,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const isMobile =
       typeof window !== 'undefined' &&
       (window.innerWidth < 768 ||
-        (typeof navigator !== 'undefined' &&
-          navigator.maxTouchPoints > 0));
+        (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0));
 
     switch (effectiveQuality) {
       case 'low':
@@ -64,9 +63,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         }}
       >
         <Suspense fallback={null}>
-          <Physics gravity={[0, -9.81, 0]}>
-            {children}
-          </Physics>
+          <Physics gravity={[0, -9.81, 0]}>{children}</Physics>
         </Suspense>
       </Canvas>
     </div>

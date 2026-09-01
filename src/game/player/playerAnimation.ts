@@ -1,8 +1,4 @@
-import {
-  PLAYER_WALK_SPEED,
-  PLAYER_RUN_SPEED,
-  ISLAND_FALL_Y_THRESHOLD,
-} from '../core/constants';
+import { PLAYER_WALK_SPEED, PLAYER_RUN_SPEED, ISLAND_FALL_Y_THRESHOLD } from '../core/constants';
 
 // ==========================================
 // Animation Constants
@@ -17,7 +13,7 @@ export const RUN_SWING_FREQUENCY = 14.0; // rad/s run stride cycle
 
 export const WALK_LEG_SWING_MAX = 0.55; // ~31.5 degrees max leg rotation
 export const RUN_LEG_SWING_MAX = 0.78; // ~44.7 degrees max leg rotation
-export const WALK_ARM_SWING_MAX = 0.50; // ~28.6 degrees max arm rotation
+export const WALK_ARM_SWING_MAX = 0.5; // ~28.6 degrees max arm rotation
 export const RUN_ARM_SWING_MAX = 0.72; // ~41.2 degrees max arm rotation
 
 export const DEFAULT_ACCELERATION = 20.0; // units/s²
@@ -135,8 +131,7 @@ export function smoothVelocity(
   }
 
   const currentSpeed = Math.hypot(current.x, current.z);
-  const rate =
-    targetSpeed < 0.001 || targetSpeed < currentSpeed ? deceleration : acceleration;
+  const rate = targetSpeed < 0.001 || targetSpeed < currentSpeed ? deceleration : acceleration;
 
   const maxStep = rate * deltaSec;
   const step = Math.min(diffLen, maxStep);
@@ -236,9 +231,6 @@ export function calculateDeltaDistance(vx: number, vz: number, deltaSec: number)
 /**
  * Determines whether the player has fallen below the safety killzone threshold.
  */
-export function shouldRespawn(
-  posY: number,
-  thresholdY: number = ISLAND_FALL_Y_THRESHOLD
-): boolean {
+export function shouldRespawn(posY: number, thresholdY: number = ISLAND_FALL_Y_THRESHOLD): boolean {
   return posY < thresholdY;
 }

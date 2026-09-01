@@ -16,11 +16,7 @@ import {
   calculateProduceSaleValue,
   UPGRADE_CONFIGS,
 } from './economyDefinitions';
-import {
-  getSeedCatalog,
-  getUpgradeCatalog,
-  getEggCatalog,
-} from './shopCatalog';
+import { getSeedCatalog, getUpgradeCatalog, getEggCatalog } from './shopCatalog';
 import {
   CROPS,
   GOLDEN_WATERING_CAN_COST,
@@ -452,7 +448,10 @@ describe('Task 15: Economy Definitions, Catalog & Commands', () => {
       // 12th slot purchase should succeed
       const egg12Res = buyEgg('common', rng);
       expect(egg12Res.ok).toBe(true);
-      expect(useGameStore.getState().inventory.pets.length + useGameStore.getState().inventory.eggs.length).toBe(12);
+      expect(
+        useGameStore.getState().inventory.pets.length +
+          useGameStore.getState().inventory.eggs.length
+      ).toBe(12);
 
       // 13th slot purchase must fail with max_pets_reached
       const egg13Res = buyEgg('common', rng);

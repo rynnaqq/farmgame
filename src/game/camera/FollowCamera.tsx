@@ -276,12 +276,7 @@ export const FollowCamera: React.FC<FollowCameraProps> = ({
       dt
     );
 
-    currentYawRef.current = dampAngle(
-      currentYawRef.current,
-      targetYawRef.current,
-      rotDamping,
-      dt
-    );
+    currentYawRef.current = dampAngle(currentYawRef.current, targetYawRef.current, rotDamping, dt);
 
     currentPitchRef.current = dampValue(
       currentPitchRef.current,
@@ -311,11 +306,7 @@ export const FollowCamera: React.FC<FollowCameraProps> = ({
       const targetVec = smoothedTargetPosRef.current;
       rayOriginRef.current.set(targetVec.x, targetVec.y, targetVec.z);
       rayDirectionRef.current
-        .set(
-          desiredPos.x - targetVec.x,
-          desiredPos.y - targetVec.y,
-          desiredPos.z - targetVec.z
-        )
+        .set(desiredPos.x - targetVec.x, desiredPos.y - targetVec.y, desiredPos.z - targetVec.z)
         .normalize();
 
       const raycaster = raycasterRef.current;

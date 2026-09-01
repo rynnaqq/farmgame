@@ -253,7 +253,9 @@ describe('Weather System', () => {
         expect(result.transitioned).toBe(true);
         expect(result.state.current).not.toBe(prevWeather);
         expect(result.state.previousWeather).toBe(prevWeather);
-        expect(result.state.endsAtUtcMs - result.state.startedAtUtcMs).toBeGreaterThanOrEqual(180_000);
+        expect(result.state.endsAtUtcMs - result.state.startedAtUtcMs).toBeGreaterThanOrEqual(
+          180_000
+        );
         expect(result.state.endsAtUtcMs - result.state.startedAtUtcMs).toBeLessThanOrEqual(300_000);
 
         state = result.state;
@@ -365,9 +367,15 @@ describe('Weather System', () => {
 
     it('returns correct mutation config for each weather', () => {
       expect(getWeatherMutationConfig('sunny')).toEqual({ mutationType: 'gold', chance: 0.05 });
-      expect(getWeatherMutationConfig('heavy_rain')).toEqual({ mutationType: 'giant', chance: 0.08 });
+      expect(getWeatherMutationConfig('heavy_rain')).toEqual({
+        mutationType: 'giant',
+        chance: 0.08,
+      });
       expect(getWeatherMutationConfig('heatwave')).toEqual({ mutationType: 'gold', chance: 0.08 });
-      expect(getWeatherMutationConfig('blood_moon')).toEqual({ mutationType: 'cosmic', chance: 0.03 });
+      expect(getWeatherMutationConfig('blood_moon')).toEqual({
+        mutationType: 'cosmic',
+        chance: 0.03,
+      });
     });
   });
 });

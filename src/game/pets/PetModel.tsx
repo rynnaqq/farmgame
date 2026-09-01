@@ -1,11 +1,7 @@
 import React from 'react';
 import type * as THREE from 'three';
 import type { PetType } from '../core/constants';
-import type {
-  BeeAnimationState,
-  DogAnimationState,
-  PigAnimationState,
-} from './petSteeringMath';
+import type { BeeAnimationState, DogAnimationState, PigAnimationState } from './petSteeringMath';
 
 export interface PetModelProps {
   petType: PetType;
@@ -107,12 +103,7 @@ interface BeeMeshProps {
   anim?: Partial<BeeAnimationState>;
 }
 
-const BeeMesh: React.FC<BeeMeshProps> = ({
-  leftWingRef,
-  rightWingRef,
-  antennaeRef,
-  anim,
-}) => {
+const BeeMesh: React.FC<BeeMeshProps> = ({ leftWingRef, rightWingRef, antennaeRef, anim }) => {
   const hoverY = anim?.hoverY ?? 0;
   const bobY = anim?.bodyBobY ?? 0;
 
@@ -202,11 +193,7 @@ const BeeMesh: React.FC<BeeMeshProps> = ({
         ref={leftWingRef}
         name="BeeLeftWing"
         position={[-0.12, 0.14, 0]}
-        rotation={[
-          anim?.wingPitchLeft ?? 0,
-          0,
-          anim?.wingRollLeft ?? 0.3,
-        ]}
+        rotation={[anim?.wingPitchLeft ?? 0, 0, anim?.wingRollLeft ?? 0.3]}
       >
         <mesh position={[-0.14, 0.02, -0.04]} rotation={[0, 0, -0.15]}>
           <boxGeometry args={[0.26, 0.01, 0.18]} />
@@ -225,11 +212,7 @@ const BeeMesh: React.FC<BeeMeshProps> = ({
         ref={rightWingRef}
         name="BeeRightWing"
         position={[0.12, 0.14, 0]}
-        rotation={[
-          anim?.wingPitchRight ?? 0,
-          0,
-          anim?.wingRollRight ?? -0.3,
-        ]}
+        rotation={[anim?.wingPitchRight ?? 0, 0, anim?.wingRollRight ?? -0.3]}
       >
         <mesh position={[0.14, 0.02, -0.04]} rotation={[0, 0, 0.15]}>
           <boxGeometry args={[0.26, 0.01, 0.18]} />
@@ -330,21 +313,13 @@ const DogMesh: React.FC<DogMeshProps> = ({
         </mesh>
 
         {/* Left Floppy Ear */}
-        <mesh
-          position={[-0.16, 0.02, -0.02]}
-          rotation={[0.1, 0, -0.2]}
-          castShadow
-        >
+        <mesh position={[-0.16, 0.02, -0.02]} rotation={[0.1, 0, -0.2]} castShadow>
           <boxGeometry args={[0.06, 0.2, 0.12]} />
           <meshStandardMaterial color="#92400E" roughness={0.75} flatShading />
         </mesh>
 
         {/* Right Floppy Ear */}
-        <mesh
-          position={[0.16, 0.02, -0.02]}
-          rotation={[0.1, 0, 0.2]}
-          castShadow
-        >
+        <mesh position={[0.16, 0.02, -0.02]} rotation={[0.1, 0, 0.2]} castShadow>
           <boxGeometry args={[0.06, 0.2, 0.12]} />
           <meshStandardMaterial color="#92400E" roughness={0.75} flatShading />
         </mesh>
@@ -484,11 +459,7 @@ const PigMesh: React.FC<PigMeshProps> = ({
         </mesh>
 
         {/* Snout with Nostrils */}
-        <group
-          ref={snoutRef}
-          name="PigSnout"
-          position={[0, anim?.snoutTwitchY ?? 0, 0.12]}
-        >
+        <group ref={snoutRef} name="PigSnout" position={[0, anim?.snoutTwitchY ?? 0, 0.12]}>
           <mesh castShadow receiveShadow>
             <boxGeometry args={[0.16, 0.11, 0.08]} />
             <meshStandardMaterial color="#FB7185" roughness={0.55} flatShading />
@@ -516,19 +487,11 @@ const PigMesh: React.FC<PigMeshProps> = ({
         </mesh>
 
         {/* Floppy Triangular Ears */}
-        <mesh
-          position={[-0.14, 0.14, 0]}
-          rotation={[0.2, 0, -0.4]}
-          castShadow
-        >
+        <mesh position={[-0.14, 0.14, 0]} rotation={[0.2, 0, -0.4]} castShadow>
           <boxGeometry args={[0.08, 0.1, 0.05]} />
           <meshStandardMaterial color="#FB7185" roughness={0.6} flatShading />
         </mesh>
-        <mesh
-          position={[0.14, 0.14, 0]}
-          rotation={[0.2, 0, 0.4]}
-          castShadow
-        >
+        <mesh position={[0.14, 0.14, 0]} rotation={[0.2, 0, 0.4]} castShadow>
           <boxGeometry args={[0.08, 0.1, 0.05]} />
           <meshStandardMaterial color="#FB7185" roughness={0.6} flatShading />
         </mesh>

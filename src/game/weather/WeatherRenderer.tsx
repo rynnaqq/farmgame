@@ -3,14 +3,8 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore } from '../../state/gameStore';
 import { useSettingsStore } from '../../state/settingsStore';
-import {
-  WEATHER_VISUAL_PRESETS,
-  WEATHER_TRANSITION_DURATION_MS,
-} from './weatherDefinitions';
-import {
-  interpolateWeatherPreset,
-  getWeatherShadowConfig,
-} from './weatherRendererMath';
+import { WEATHER_VISUAL_PRESETS, WEATHER_TRANSITION_DURATION_MS } from './weatherDefinitions';
+import { interpolateWeatherPreset, getWeatherShadowConfig } from './weatherRendererMath';
 import type { WeatherType } from '../../state/storeTypes';
 import { audioManager } from '../audio/AudioManager';
 
@@ -45,10 +39,7 @@ export const WeatherRenderer: React.FC = () => {
   const tempFogColor = useMemo(() => new THREE.Color(), []);
 
   // Shadow configuration
-  const shadowConfig = useMemo(
-    () => getWeatherShadowConfig(effectiveQuality),
-    [effectiveQuality]
-  );
+  const shadowConfig = useMemo(() => getWeatherShadowConfig(effectiveQuality), [effectiveQuality]);
 
   // Detect weather changes and trigger 2-second crossfade & audio ambience
   useEffect(() => {
@@ -78,8 +69,7 @@ export const WeatherRenderer: React.FC = () => {
 
   // Initial fog & background setup
   useEffect(() => {
-    const initialPreset =
-      WEATHER_VISUAL_PRESETS[currentWeather] || WEATHER_VISUAL_PRESETS.sunny;
+    const initialPreset = WEATHER_VISUAL_PRESETS[currentWeather] || WEATHER_VISUAL_PRESETS.sunny;
     if (!scene.fog) {
       scene.fog = new THREE.Fog(
         initialPreset.fogColor,
@@ -156,8 +146,7 @@ export const WeatherRenderer: React.FC = () => {
     }
   });
 
-  const activePreset =
-    WEATHER_VISUAL_PRESETS[currentWeather] || WEATHER_VISUAL_PRESETS.sunny;
+  const activePreset = WEATHER_VISUAL_PRESETS[currentWeather] || WEATHER_VISUAL_PRESETS.sunny;
 
   return (
     <group name="WeatherRenderer">
@@ -184,9 +173,7 @@ export const WeatherRenderer: React.FC = () => {
         position={activePreset.dirLightPosition}
         castShadow={shadowConfig.castShadow}
         shadow-mapSize={
-          shadowConfig.castShadow
-            ? [shadowConfig.mapSize, shadowConfig.mapSize]
-            : undefined
+          shadowConfig.castShadow ? [shadowConfig.mapSize, shadowConfig.mapSize] : undefined
         }
         shadow-bias={-0.0005}
       />

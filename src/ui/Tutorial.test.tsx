@@ -55,7 +55,9 @@ describe('Task 19: Tutorial Component Tests', () => {
     it('starts at Step 1: Move & Camera and shows step indicator', () => {
       render(<Tutorial />);
 
-      expect(screen.getByTestId('tutorial-step-indicator')).toHaveTextContent(/1\s*\/\s*6|step 1 of 6/i);
+      expect(screen.getByTestId('tutorial-step-indicator')).toHaveTextContent(
+        /1\s*\/\s*6|step 1 of 6/i
+      );
       expect(screen.getByTestId('tutorial-title')).toHaveTextContent(/move|camera|movement/i);
     });
 
@@ -72,34 +74,48 @@ describe('Task 19: Tutorial Component Tests', () => {
 
       // Step 2: Tilling
       fireEvent.click(nextBtn);
-      expect(screen.getByTestId('tutorial-step-indicator')).toHaveTextContent(/2\s*\/\s*6|step 2 of 6/i);
+      expect(screen.getByTestId('tutorial-step-indicator')).toHaveTextContent(
+        /2\s*\/\s*6|step 2 of 6/i
+      );
       expect(screen.getByTestId('tutorial-title')).toHaveTextContent(/till|tilling/i);
       expect(screen.getByTestId('tutorial-back-button')).not.toBeDisabled();
 
       // Step 3: Planting
       fireEvent.click(nextBtn);
-      expect(screen.getByTestId('tutorial-step-indicator')).toHaveTextContent(/3\s*\/\s*6|step 3 of 6/i);
+      expect(screen.getByTestId('tutorial-step-indicator')).toHaveTextContent(
+        /3\s*\/\s*6|step 3 of 6/i
+      );
       expect(screen.getByTestId('tutorial-title')).toHaveTextContent(/plant|seed/i);
 
       // Step 4: Watering
       fireEvent.click(nextBtn);
-      expect(screen.getByTestId('tutorial-step-indicator')).toHaveTextContent(/4\s*\/\s*6|step 4 of 6/i);
+      expect(screen.getByTestId('tutorial-step-indicator')).toHaveTextContent(
+        /4\s*\/\s*6|step 4 of 6/i
+      );
       expect(screen.getByTestId('tutorial-title')).toHaveTextContent(/water|hydration/i);
 
       // Step 5: Harvesting & Selling
       fireEvent.click(nextBtn);
-      expect(screen.getByTestId('tutorial-step-indicator')).toHaveTextContent(/5\s*\/\s*6|step 5 of 6/i);
+      expect(screen.getByTestId('tutorial-step-indicator')).toHaveTextContent(
+        /5\s*\/\s*6|step 5 of 6/i
+      );
       expect(screen.getByTestId('tutorial-title')).toHaveTextContent(/harvest|sell/i);
 
       // Step 6: Weather & Pets
       fireEvent.click(nextBtn);
-      expect(screen.getByTestId('tutorial-step-indicator')).toHaveTextContent(/6\s*\/\s*6|step 6 of 6/i);
+      expect(screen.getByTestId('tutorial-step-indicator')).toHaveTextContent(
+        /6\s*\/\s*6|step 6 of 6/i
+      );
       expect(screen.getByTestId('tutorial-title')).toHaveTextContent(/weather|pet/i);
-      expect(screen.getByTestId('tutorial-next-button')).toHaveTextContent(/finish|done|got it|start farming/i);
+      expect(screen.getByTestId('tutorial-next-button')).toHaveTextContent(
+        /finish|done|got it|start farming/i
+      );
 
       // Step Back from 6 to 5
       fireEvent.click(screen.getByTestId('tutorial-back-button'));
-      expect(screen.getByTestId('tutorial-step-indicator')).toHaveTextContent(/5\s*\/\s*6|step 5 of 6/i);
+      expect(screen.getByTestId('tutorial-step-indicator')).toHaveTextContent(
+        /5\s*\/\s*6|step 5 of 6/i
+      );
     });
 
     it('records completed tutorial steps in gameStore', () => {
@@ -145,7 +161,9 @@ describe('Task 19: Tutorial Component Tests', () => {
 
       // Step 2 on Mobile (Tilling)
       fireEvent.click(screen.getByTestId('tutorial-next-button'));
-      expect(screen.getByTestId('tutorial-body').textContent).toMatch(/tap|action button|toolbelt/i);
+      expect(screen.getByTestId('tutorial-body').textContent).toMatch(
+        /tap|action button|toolbelt/i
+      );
       expect(screen.getByTestId('tutorial-body').textContent).not.toMatch(/WASD/i);
     });
 

@@ -3,10 +3,10 @@ export type QualityPreset = 'auto' | EffectiveQualityLevel;
 
 export interface AutoQualityConfig {
   fpsStepDownThreshold: number; // 45 FPS
-  fpsStepUpThreshold: number;   // 58 FPS
-  stepDownDurationSec: number;  // 5 seconds
-  stepUpDurationSec: number;    // 30 seconds
-  cooldownDurationSec: number;  // 10 seconds
+  fpsStepUpThreshold: number; // 58 FPS
+  stepDownDurationSec: number; // 5 seconds
+  stepUpDurationSec: number; // 30 seconds
+  cooldownDurationSec: number; // 10 seconds
 }
 
 export const DEFAULT_AUTO_QUALITY_CONFIG: AutoQualityConfig = {
@@ -97,7 +97,11 @@ export function isDiagnosticsEnabled(
   }
 
   // 2. Check provided globalWindow or window
-  const win = globalWindow ?? (typeof window !== 'undefined' ? (window as unknown as { __DEBUG__?: boolean; location?: { search?: string } }) : null);
+  const win =
+    globalWindow ??
+    (typeof window !== 'undefined'
+      ? (window as unknown as { __DEBUG__?: boolean; location?: { search?: string } })
+      : null);
   if (win) {
     if (win.__DEBUG__ === true) {
       return true;

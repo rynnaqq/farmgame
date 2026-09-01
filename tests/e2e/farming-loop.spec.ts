@@ -10,12 +10,16 @@ test.describe('Farming Loop E2E', () => {
     });
   });
 
-  test('full farming cycle: till, plant carrot, water, mature via test clock, harvest, and sell for coins', async ({ page }) => {
+  test('full farming cycle: till, plant carrot, water, mature via test clock, harvest, and sell for coins', async ({
+    page,
+  }) => {
     // Verify initial coins and carrot seed count
     const initialCoins = await page.evaluate(() => window.__getGameState?.().player.coins);
     expect(initialCoins).toBe(100);
 
-    const initialSeeds = await page.evaluate(() => window.__getGameState?.().inventory.seeds.carrot);
+    const initialSeeds = await page.evaluate(
+      () => window.__getGameState?.().inventory.seeds.carrot
+    );
     expect(initialSeeds).toBe(5);
 
     // 1. Select Trowel tool
@@ -51,7 +55,9 @@ test.describe('Farming Loop E2E', () => {
     expect(plotState?.crop?.cropId).toBe('carrot');
     expect(plotState?.crop?.growthProgressSec).toBe(0);
 
-    const seedsAfterPlanting = await page.evaluate(() => window.__getGameState?.().inventory.seeds.carrot);
+    const seedsAfterPlanting = await page.evaluate(
+      () => window.__getGameState?.().inventory.seeds.carrot
+    );
     expect(seedsAfterPlanting).toBe(4);
 
     // 5. Select Watering Can tool

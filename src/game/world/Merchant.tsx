@@ -22,10 +22,7 @@ export interface MerchantProps {
  * - Keyboard 'E' shortcut & click/tap interaction opening ShopModal
  * - Rapier physics body preventing player pass-through
  */
-export const Merchant: React.FC<MerchantProps> = ({
-  position = MERCHANT_POSITION,
-  onOpenShop,
-}) => {
+export const Merchant: React.FC<MerchantProps> = ({ position = MERCHANT_POSITION, onOpenShop }) => {
   const characterRef = useRef<THREE.Group>(null);
   const headRef = useRef<THREE.Group>(null);
 
@@ -84,11 +81,7 @@ export const Merchant: React.FC<MerchantProps> = ({
       </RigidBody>
 
       {/* Interactive Mesh Group */}
-      <group
-        position={[0, 0, 0.35]}
-        rotation={[0, Math.PI, 0]}
-        onClick={handleOpenShop}
-      >
+      <group position={[0, 0, 0.35]} rotation={[0, Math.PI, 0]} onClick={handleOpenShop}>
         <group ref={characterRef}>
           {/* ========================================== */}
           {/* 1. Body, Linen Shirt & Merchant Apron      */}
@@ -198,7 +191,12 @@ export const Merchant: React.FC<MerchantProps> = ({
           {/* ========================================== */}
           <group name="MerchantArms">
             {/* Left Arm */}
-            <mesh position={[-0.24, 0.72, 0.08]} rotation={[0.4, 0.2, -0.1]} castShadow receiveShadow>
+            <mesh
+              position={[-0.24, 0.72, 0.08]}
+              rotation={[0.4, 0.2, -0.1]}
+              castShadow
+              receiveShadow
+            >
               <boxGeometry args={[0.1, 0.22, 0.1]} />
               <meshStandardMaterial color="#FEF3C7" roughness={0.8} flatShading />
             </mesh>
@@ -208,7 +206,12 @@ export const Merchant: React.FC<MerchantProps> = ({
             </mesh>
 
             {/* Right Arm */}
-            <mesh position={[0.24, 0.72, 0.08]} rotation={[0.4, -0.2, 0.1]} castShadow receiveShadow>
+            <mesh
+              position={[0.24, 0.72, 0.08]}
+              rotation={[0.4, -0.2, 0.1]}
+              castShadow
+              receiveShadow
+            >
               <boxGeometry args={[0.1, 0.22, 0.1]} />
               <meshStandardMaterial color="#FEF3C7" roughness={0.8} flatShading />
             </mesh>

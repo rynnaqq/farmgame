@@ -8,13 +8,7 @@ import {
 export type CropStage = 'sprout' | 'mid' | 'grown';
 
 export type MeshElementType =
-  | 'cone'
-  | 'cylinder'
-  | 'sphere'
-  | 'box'
-  | 'dodecahedron'
-  | 'torus'
-  | 'star';
+  'cone' | 'cylinder' | 'sphere' | 'box' | 'dodecahedron' | 'torus' | 'star';
 
 export interface MeshElementDef {
   type: MeshElementType;
@@ -163,10 +157,7 @@ export function calculateStageTransition(
 // 15 Procedural Low-Poly Crop Stage Configurations
 // ============================================================================
 
-export const CROP_STAGE_CATALOG: Record<
-  CropId,
-  Record<CropStage, CropStageMeshConfig>
-> = {
+export const CROP_STAGE_CATALOG: Record<CropId, Record<CropStage, CropStageMeshConfig>> = {
   // --------------------------------------------------------------------------
   // 1. CARROT
   // --------------------------------------------------------------------------
@@ -841,7 +832,7 @@ export function getCosmicMotePositions(timeSec: number): CosmicMote[] {
 
     const x = Math.cos(currentAngle) * radius;
     const z = Math.sin(currentAngle) * radius;
-    const y = 0.15 + (i * 0.05) + Math.sin(timeSec * 2 + i) * 0.06;
+    const y = 0.15 + i * 0.05 + Math.sin(timeSec * 2 + i) * 0.06;
     const size = 0.02 + (i % 3) * 0.01;
     const color = COSMIC_COLORS[i % COSMIC_COLORS.length];
 
@@ -867,4 +858,3 @@ export function calculateCosmicColor(timeSec: number): string {
   const clamp = (val: number) => Math.max(0, Math.min(255, val)).toString(16).padStart(2, '0');
   return `#${clamp(r)}${clamp(g)}${clamp(b)}`;
 }
-

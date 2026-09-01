@@ -1,13 +1,5 @@
-import type {
-  PlotData,
-  PlotState,
-  CropStage,
-  ToolType,
-} from '../../state/storeTypes';
-import {
-  CROP_STAGE_MID_MIN,
-  CROP_STAGE_GROWN_MIN,
-} from '../core/constants';
+import type { PlotData, PlotState, CropStage, ToolType } from '../../state/storeTypes';
+import { CROP_STAGE_MID_MIN, CROP_STAGE_GROWN_MIN } from '../core/constants';
 import { getCropDefinition } from './cropDefinitions';
 
 export interface ValidToolActionResult {
@@ -22,10 +14,7 @@ export interface ValidToolActionResult {
  * - Mid: 33% - 74.99%
  * - Grown: 75% - 100%+
  */
-export function evaluateCropStage(
-  progressSeconds: number,
-  requiredSeconds: number
-): CropStage {
+export function evaluateCropStage(progressSeconds: number, requiredSeconds: number): CropStage {
   if (requiredSeconds <= 0) {
     return 'grown';
   }
@@ -100,10 +89,7 @@ export function evaluatePlotState(plot: PlotData, nowMs: number): PlotState {
 /**
  * Determines valid tool interactions and the primary recommended action for the plot.
  */
-export function getValidToolActions(
-  plot: PlotData,
-  nowMs: number
-): ValidToolActionResult {
+export function getValidToolActions(plot: PlotData, nowMs: number): ValidToolActionResult {
   const plotState = evaluatePlotState(plot, nowMs);
 
   switch (plotState) {
@@ -144,11 +130,7 @@ export function getValidToolActions(
 /**
  * Generates descriptive context feedback when aiming or hovering a tool over a plot.
  */
-export function describeNextAction(
-  plot: PlotData,
-  _nowMs: number,
-  selectedTool: ToolType
-): string {
+export function describeNextAction(plot: PlotData, _nowMs: number, selectedTool: ToolType): string {
   const isMature = isPlotHarvestable(plot);
   const hasCrop = plot.crop !== null;
 

@@ -13,11 +13,7 @@ import {
 } from '../core/constants';
 import type { CommandResult, EggData } from '../../state/storeTypes';
 import type { SeededRNG } from '../core/rng';
-import {
-  calculateProduceSaleValue,
-  rollEggOutcome,
-  type UpgradeId,
-} from './economyDefinitions';
+import { calculateProduceSaleValue, rollEggOutcome, type UpgradeId } from './economyDefinitions';
 
 /**
  * Purchases a batch of seeds for a given crop type.
@@ -92,9 +88,7 @@ export function sellProduce(
   }
 
   const store = useGameStore.getState();
-  const stack = store.inventory.produce.find(
-    (p) => p.cropId === cropId && p.mutation === mutation
-  );
+  const stack = store.inventory.produce.find((p) => p.cropId === cropId && p.mutation === mutation);
 
   if (!stack || stack.quantity <= 0) {
     return {

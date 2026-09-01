@@ -116,9 +116,7 @@ function createMockAudioContext() {
       return filterNode;
     }),
     createBuffer: vi.fn((channels: number, length: number, sampleRate: number) => {
-      const channelData = new Array(channels)
-        .fill(null)
-        .map(() => new Float32Array(length));
+      const channelData = new Array(channels).fill(null).map(() => new Float32Array(length));
       return {
         numberOfChannels: channels,
         length,
@@ -377,9 +375,7 @@ describe('Web Audio Engine & Synthesizer', () => {
         removeEventListener: vi.fn(),
       };
 
-      const detach = manager.attachUserGestureListeners(
-        mockTarget as unknown as EventTarget
-      );
+      const detach = manager.attachUserGestureListeners(mockTarget as unknown as EventTarget);
 
       expect(mockTarget.addEventListener).toHaveBeenCalledWith(
         'pointerdown',

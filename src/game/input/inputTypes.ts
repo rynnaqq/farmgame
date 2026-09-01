@@ -1,6 +1,4 @@
-import {
-  JOYSTICK_DEADZONE_RATIO,
-} from '../core/constants';
+import { JOYSTICK_DEADZONE_RATIO } from '../core/constants';
 import type { ToolType } from '../../state/storeTypes';
 
 // ==========================================

@@ -94,9 +94,7 @@ export const ParticlePool: React.FC = () => {
   const rainSplashBufferRef = useRef<ParticleBuffer>(
     createParticleBuffer(BASE_CAPACITIES.rainSplash)
   );
-  const heatMoteBufferRef = useRef<ParticleBuffer>(
-    createParticleBuffer(BASE_CAPACITIES.heatMote)
-  );
+  const heatMoteBufferRef = useRef<ParticleBuffer>(createParticleBuffer(BASE_CAPACITIES.heatMote));
   const bloodMoteBufferRef = useRef<ParticleBuffer>(
     createParticleBuffer(BASE_CAPACITIES.bloodMote)
   );
@@ -144,10 +142,7 @@ export const ParticlePool: React.FC = () => {
   useEffect(() => {
     const unsubscribe = subscribeParticleBursts((event) => {
       const burstBuf = burstBufferRef.current;
-      const count = Math.min(
-        event.count ?? 15,
-        Math.floor(burstCap * 0.4)
-      );
+      const count = Math.min(event.count ?? 15, Math.floor(burstCap * 0.4));
 
       let color: [number, number, number] = [1.0, 1.0, 1.0];
       if (Array.isArray(event.color)) {
@@ -213,12 +208,20 @@ export const ParticlePool: React.FC = () => {
       for (let i = 0; i < rainCap; i++) {
         if (rainBuf.active[i] === 1) {
           const pIdx = i * 3;
-          dummyPos.set(rainBuf.positions[pIdx], rainBuf.positions[pIdx + 1], rainBuf.positions[pIdx + 2]);
+          dummyPos.set(
+            rainBuf.positions[pIdx],
+            rainBuf.positions[pIdx + 1],
+            rainBuf.positions[pIdx + 2]
+          );
           dummyScale.set(rainBuf.scales[i], rainBuf.scales[i] * 3.5, rainBuf.scales[i]);
           dummyMatrix.compose(dummyPos, dummyQuat, dummyScale);
           mesh.setMatrixAt(i, dummyMatrix);
 
-          dummyColor.setRGB(rainBuf.colors[pIdx], rainBuf.colors[pIdx + 1], rainBuf.colors[pIdx + 2]);
+          dummyColor.setRGB(
+            rainBuf.colors[pIdx],
+            rainBuf.colors[pIdx + 1],
+            rainBuf.colors[pIdx + 2]
+          );
           mesh.setColorAt(i, dummyColor);
         } else {
           dummyScale.set(0, 0, 0);
@@ -235,12 +238,20 @@ export const ParticlePool: React.FC = () => {
         for (let i = 0; i < rainSplashCap; i++) {
           if (splashBuf.active[i] === 1) {
             const pIdx = i * 3;
-            dummyPos.set(splashBuf.positions[pIdx], splashBuf.positions[pIdx + 1], splashBuf.positions[pIdx + 2]);
+            dummyPos.set(
+              splashBuf.positions[pIdx],
+              splashBuf.positions[pIdx + 1],
+              splashBuf.positions[pIdx + 2]
+            );
             dummyScale.setScalar(splashBuf.scales[i]);
             dummyMatrix.compose(dummyPos, dummyQuat, dummyScale);
             splashMesh.setMatrixAt(i, dummyMatrix);
 
-            dummyColor.setRGB(splashBuf.colors[pIdx], splashBuf.colors[pIdx + 1], splashBuf.colors[pIdx + 2]);
+            dummyColor.setRGB(
+              splashBuf.colors[pIdx],
+              splashBuf.colors[pIdx + 1],
+              splashBuf.colors[pIdx + 2]
+            );
             splashMesh.setColorAt(i, dummyColor);
           } else {
             dummyScale.set(0, 0, 0);
@@ -258,23 +269,26 @@ export const ParticlePool: React.FC = () => {
     // ------------------------------------------------------------------------
     if (weather === 'heatwave' && heatMoteMeshRef.current) {
       const heatBuf = heatMoteBufferRef.current;
-      stepHeatMoteParticles(
-        heatBuf,
-        delta,
-        ISLAND_BOUNDS,
-        reducedMotion ? 0 : elapsedTime
-      );
+      stepHeatMoteParticles(heatBuf, delta, ISLAND_BOUNDS, reducedMotion ? 0 : elapsedTime);
 
       const mesh = heatMoteMeshRef.current;
       for (let i = 0; i < heatMoteCap; i++) {
         if (heatBuf.active[i] === 1) {
           const pIdx = i * 3;
-          dummyPos.set(heatBuf.positions[pIdx], heatBuf.positions[pIdx + 1], heatBuf.positions[pIdx + 2]);
+          dummyPos.set(
+            heatBuf.positions[pIdx],
+            heatBuf.positions[pIdx + 1],
+            heatBuf.positions[pIdx + 2]
+          );
           dummyScale.setScalar(heatBuf.scales[i]);
           dummyMatrix.compose(dummyPos, dummyQuat, dummyScale);
           mesh.setMatrixAt(i, dummyMatrix);
 
-          dummyColor.setRGB(heatBuf.colors[pIdx], heatBuf.colors[pIdx + 1], heatBuf.colors[pIdx + 2]);
+          dummyColor.setRGB(
+            heatBuf.colors[pIdx],
+            heatBuf.colors[pIdx + 1],
+            heatBuf.colors[pIdx + 2]
+          );
           mesh.setColorAt(i, dummyColor);
         } else {
           dummyScale.set(0, 0, 0);
@@ -291,23 +305,26 @@ export const ParticlePool: React.FC = () => {
     // ------------------------------------------------------------------------
     if (weather === 'blood_moon' && bloodMoteMeshRef.current) {
       const bloodBuf = bloodMoteBufferRef.current;
-      stepBloodMoteParticles(
-        bloodBuf,
-        delta,
-        ISLAND_BOUNDS,
-        reducedMotion ? 0 : elapsedTime
-      );
+      stepBloodMoteParticles(bloodBuf, delta, ISLAND_BOUNDS, reducedMotion ? 0 : elapsedTime);
 
       const mesh = bloodMoteMeshRef.current;
       for (let i = 0; i < bloodMoteCap; i++) {
         if (bloodBuf.active[i] === 1) {
           const pIdx = i * 3;
-          dummyPos.set(bloodBuf.positions[pIdx], bloodBuf.positions[pIdx + 1], bloodBuf.positions[pIdx + 2]);
+          dummyPos.set(
+            bloodBuf.positions[pIdx],
+            bloodBuf.positions[pIdx + 1],
+            bloodBuf.positions[pIdx + 2]
+          );
           dummyScale.setScalar(bloodBuf.scales[i]);
           dummyMatrix.compose(dummyPos, dummyQuat, dummyScale);
           mesh.setMatrixAt(i, dummyMatrix);
 
-          dummyColor.setRGB(bloodBuf.colors[pIdx], bloodBuf.colors[pIdx + 1], bloodBuf.colors[pIdx + 2]);
+          dummyColor.setRGB(
+            bloodBuf.colors[pIdx],
+            bloodBuf.colors[pIdx + 1],
+            bloodBuf.colors[pIdx + 2]
+          );
           mesh.setColorAt(i, dummyColor);
         } else {
           dummyScale.set(0, 0, 0);
@@ -331,12 +348,20 @@ export const ParticlePool: React.FC = () => {
         for (let i = 0; i < burstCap; i++) {
           if (burstBuf.active[i] === 1) {
             const pIdx = i * 3;
-            dummyPos.set(burstBuf.positions[pIdx], burstBuf.positions[pIdx + 1], burstBuf.positions[pIdx + 2]);
+            dummyPos.set(
+              burstBuf.positions[pIdx],
+              burstBuf.positions[pIdx + 1],
+              burstBuf.positions[pIdx + 2]
+            );
             dummyScale.setScalar(burstBuf.scales[i]);
             dummyMatrix.compose(dummyPos, dummyQuat, dummyScale);
             mesh.setMatrixAt(i, dummyMatrix);
 
-            dummyColor.setRGB(burstBuf.colors[pIdx], burstBuf.colors[pIdx + 1], burstBuf.colors[pIdx + 2]);
+            dummyColor.setRGB(
+              burstBuf.colors[pIdx],
+              burstBuf.colors[pIdx + 1],
+              burstBuf.colors[pIdx + 2]
+            );
             mesh.setColorAt(i, dummyColor);
           } else {
             dummyScale.set(0, 0, 0);

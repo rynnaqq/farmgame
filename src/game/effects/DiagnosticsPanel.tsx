@@ -1,6 +1,10 @@
 import React, { useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useDiagnosticsStore, updateDiagnosticsData, formatDiagnosticsStats } from './diagnosticsStore';
+import {
+  useDiagnosticsStore,
+  updateDiagnosticsData,
+  formatDiagnosticsStats,
+} from './diagnosticsStore';
 import { useSettingsStore } from '../../state/settingsStore';
 import { autoQualityManager } from '../core/autoQualityManager';
 
@@ -12,9 +16,7 @@ export interface DiagnosticsOverlayProps {
   enabled?: boolean;
 }
 
-export const DiagnosticsOverlay: React.FC<DiagnosticsOverlayProps> = ({
-  enabled = false,
-}) => {
+export const DiagnosticsOverlay: React.FC<DiagnosticsOverlayProps> = ({ enabled = false }) => {
   const stats = useDiagnosticsStore();
 
   if (!enabled) {

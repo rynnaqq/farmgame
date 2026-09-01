@@ -20,11 +20,15 @@ declare global {
     __advanceDistance?: (deltaUnits: number) => void;
     __tillPlot?: (
       plotId: import('./state/storeTypes').PlotId
-    ) => import('./state/storeTypes').CommandResult<{ plotId: import('./state/storeTypes').PlotId }>;
+    ) => import('./state/storeTypes').CommandResult<{
+      plotId: import('./state/storeTypes').PlotId;
+    }>;
     __plantCrop?: (
       plotId: import('./state/storeTypes').PlotId,
       cropId: import('./state/storeTypes').CropId
-    ) => import('./state/storeTypes').CommandResult<{ cropId: import('./state/storeTypes').CropId }>;
+    ) => import('./state/storeTypes').CommandResult<{
+      cropId: import('./state/storeTypes').CropId;
+    }>;
     __waterPlot?: (
       plotId: import('./state/storeTypes').PlotId
     ) => import('./state/storeTypes').CommandResult<{

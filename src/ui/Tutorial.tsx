@@ -79,8 +79,7 @@ function checkIsTouchDevice(): boolean {
   if (typeof window === 'undefined') return false;
 
   const hasCoarsePointer =
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(pointer: coarse)').matches;
+    typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
 
   const hasTouchCapability =
     'ontouchstart' in window ||
@@ -95,11 +94,7 @@ function checkIsTouchDevice(): boolean {
  * 6-step interactive/skippable onboarding tutorial with device-aware instructions
  * (desktop WASD vs mobile joystick/touch) and persistence in gameStore.
  */
-export const Tutorial: React.FC<TutorialProps> = ({
-  forceTouch,
-  className = '',
-  onDismiss,
-}) => {
+export const Tutorial: React.FC<TutorialProps> = ({ forceTouch, className = '', onDismiss }) => {
   const tutorial = useGameStore((state) => state.tutorial);
   const activeModal = useUiStore((state) => state.activeModal);
   const inputMode = useSettingsStore((state) => state.inputMode);
@@ -126,8 +121,7 @@ export const Tutorial: React.FC<TutorialProps> = ({
 
   // Escape key listener to dismiss
   useEffect(() => {
-    const isVisible =
-      activeModal === 'tutorial' || (!tutorial.dismissed && activeModal === null);
+    const isVisible = activeModal === 'tutorial' || (!tutorial.dismissed && activeModal === null);
 
     if (!isVisible) return;
 
@@ -234,8 +228,8 @@ export const Tutorial: React.FC<TutorialProps> = ({
                 idx === stepIndex
                   ? 'w-6 bg-emerald-400 shadow-sm shadow-emerald-400/50'
                   : idx < stepIndex
-                  ? 'w-2 bg-emerald-700/60'
-                  : 'w-2 bg-slate-700'
+                    ? 'w-2 bg-emerald-700/60'
+                    : 'w-2 bg-slate-700'
               }`}
             />
           ))}

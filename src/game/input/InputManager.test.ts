@@ -1,9 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import {
-  processJoystickDeadzone,
-  transformCameraRelative,
-  mergeInputVectors,
-} from './inputTypes';
+import { processJoystickDeadzone, transformCameraRelative, mergeInputVectors } from './inputTypes';
 import { KeyboardInput } from './KeyboardInput';
 import { TouchInput } from './TouchInput';
 import { InputManager } from './InputManager';
@@ -302,16 +298,31 @@ describe('Task 6: Cross-Platform Input Pipeline', () => {
       touchInput.onOrbit = orbitSpy;
 
       targetEl.dispatchEvent(
-        new PointerEvent('pointerdown', { pointerId: 1, clientX: 100, clientY: 100, pointerType: 'touch' })
+        new PointerEvent('pointerdown', {
+          pointerId: 1,
+          clientX: 100,
+          clientY: 100,
+          pointerType: 'touch',
+        })
       );
       targetEl.dispatchEvent(
-        new PointerEvent('pointermove', { pointerId: 1, clientX: 120, clientY: 110, pointerType: 'touch' })
+        new PointerEvent('pointermove', {
+          pointerId: 1,
+          clientX: 120,
+          clientY: 110,
+          pointerType: 'touch',
+        })
       );
 
       expect(orbitSpy).toHaveBeenCalledWith(20, 10);
 
       targetEl.dispatchEvent(
-        new PointerEvent('pointerup', { pointerId: 1, clientX: 120, clientY: 110, pointerType: 'touch' })
+        new PointerEvent('pointerup', {
+          pointerId: 1,
+          clientX: 120,
+          clientY: 110,
+          pointerType: 'touch',
+        })
       );
       expect(touchInput.getActivePointerCount()).toBe(0);
     });
@@ -322,16 +333,31 @@ describe('Task 6: Cross-Platform Input Pipeline', () => {
 
       // Finger 1 down at (100, 100)
       targetEl.dispatchEvent(
-        new PointerEvent('pointerdown', { pointerId: 1, clientX: 100, clientY: 100, pointerType: 'touch' })
+        new PointerEvent('pointerdown', {
+          pointerId: 1,
+          clientX: 100,
+          clientY: 100,
+          pointerType: 'touch',
+        })
       );
       // Finger 2 down at (200, 100) -> initial distance = 100
       targetEl.dispatchEvent(
-        new PointerEvent('pointerdown', { pointerId: 2, clientX: 200, clientY: 100, pointerType: 'touch' })
+        new PointerEvent('pointerdown', {
+          pointerId: 2,
+          clientX: 200,
+          clientY: 100,
+          pointerType: 'touch',
+        })
       );
 
       // Move finger 2 to (250, 100) -> new distance = 150 (pinching out / zoom in)
       targetEl.dispatchEvent(
-        new PointerEvent('pointermove', { pointerId: 2, clientX: 250, clientY: 100, pointerType: 'touch' })
+        new PointerEvent('pointermove', {
+          pointerId: 2,
+          clientX: 250,
+          clientY: 100,
+          pointerType: 'touch',
+        })
       );
 
       expect(zoomSpy).toHaveBeenCalled();
@@ -344,16 +370,31 @@ describe('Task 6: Cross-Platform Input Pipeline', () => {
       touchInput.onOrbit = orbitSpy;
 
       targetEl.dispatchEvent(
-        new PointerEvent('pointerdown', { pointerId: 1, clientX: 100, clientY: 100, pointerType: 'touch' })
+        new PointerEvent('pointerdown', {
+          pointerId: 1,
+          clientX: 100,
+          clientY: 100,
+          pointerType: 'touch',
+        })
       );
       targetEl.dispatchEvent(
-        new PointerEvent('pointercancel', { pointerId: 1, clientX: 105, clientY: 105, pointerType: 'touch' })
+        new PointerEvent('pointercancel', {
+          pointerId: 1,
+          clientX: 105,
+          clientY: 105,
+          pointerType: 'touch',
+        })
       );
 
       expect(touchInput.getActivePointerCount()).toBe(0);
 
       targetEl.dispatchEvent(
-        new PointerEvent('pointerdown', { pointerId: 2, clientX: 100, clientY: 100, pointerType: 'touch' })
+        new PointerEvent('pointerdown', {
+          pointerId: 2,
+          clientX: 100,
+          clientY: 100,
+          pointerType: 'touch',
+        })
       );
       window.dispatchEvent(new Event('blur'));
       expect(touchInput.getActivePointerCount()).toBe(0);

@@ -303,30 +303,50 @@ describe('Task 10: Farming State Machine & Evaluator', () => {
 
     it('provides accurate feedback for trowel', () => {
       expect(describeNextAction(untilledPlot, baseTime, 'trowel').toLowerCase()).toContain('till');
-      expect(describeNextAction(emptyTilledPlot, baseTime, 'trowel').toLowerCase()).toContain('already tilled');
+      expect(describeNextAction(emptyTilledPlot, baseTime, 'trowel').toLowerCase()).toContain(
+        'already tilled'
+      );
       expect(describeNextAction(growingPlot, baseTime, 'trowel').toLowerCase()).toContain('crop');
     });
 
     it('provides accurate feedback for watering_can', () => {
-      expect(describeNextAction(untilledPlot, baseTime, 'watering_can').toLowerCase()).toContain('till');
-      expect(describeNextAction(emptyTilledPlot, baseTime, 'watering_can').toLowerCase()).toContain('water');
-      expect(describeNextAction(growingPlot, baseTime, 'watering_can').toLowerCase()).toContain('water');
-      expect(describeNextAction(harvestablePlot, baseTime, 'watering_can').toLowerCase()).toContain('harvest');
+      expect(describeNextAction(untilledPlot, baseTime, 'watering_can').toLowerCase()).toContain(
+        'till'
+      );
+      expect(describeNextAction(emptyTilledPlot, baseTime, 'watering_can').toLowerCase()).toContain(
+        'water'
+      );
+      expect(describeNextAction(growingPlot, baseTime, 'watering_can').toLowerCase()).toContain(
+        'water'
+      );
+      expect(describeNextAction(harvestablePlot, baseTime, 'watering_can').toLowerCase()).toContain(
+        'harvest'
+      );
     });
 
     it('provides accurate feedback for seed_bag', () => {
-      expect(describeNextAction(untilledPlot, baseTime, 'seed_bag').toLowerCase()).toContain('till');
-      expect(describeNextAction(emptyTilledPlot, baseTime, 'seed_bag').toLowerCase()).toContain('plant');
-      expect(describeNextAction(growingPlot, baseTime, 'seed_bag').toLowerCase()).toContain('already');
+      expect(describeNextAction(untilledPlot, baseTime, 'seed_bag').toLowerCase()).toContain(
+        'till'
+      );
+      expect(describeNextAction(emptyTilledPlot, baseTime, 'seed_bag').toLowerCase()).toContain(
+        'plant'
+      );
+      expect(describeNextAction(growingPlot, baseTime, 'seed_bag').toLowerCase()).toContain(
+        'already'
+      );
     });
 
     it('provides accurate feedback for scythe and hand', () => {
       const tools: ToolType[] = ['scythe', 'hand'];
       tools.forEach((tool) => {
         expect(describeNextAction(untilledPlot, baseTime, tool).toLowerCase()).toContain('no crop');
-        expect(describeNextAction(emptyTilledPlot, baseTime, tool).toLowerCase()).toContain('no crop');
+        expect(describeNextAction(emptyTilledPlot, baseTime, tool).toLowerCase()).toContain(
+          'no crop'
+        );
         expect(describeNextAction(growingPlot, baseTime, tool).toLowerCase()).toContain('growing');
-        expect(describeNextAction(harvestablePlot, baseTime, tool).toLowerCase()).toContain('harvest');
+        expect(describeNextAction(harvestablePlot, baseTime, tool).toLowerCase()).toContain(
+          'harvest'
+        );
       });
     });
   });

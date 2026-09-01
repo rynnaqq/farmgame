@@ -148,7 +148,9 @@ export const ShopModal: React.FC<ShopModalProps> = ({
     const result = buySeed(cropId, quantity);
     if (result.ok) {
       audioManager.playSfx('coin');
-      useUiStore.getState().showToast(result.message ?? `Purchased ${quantity}x seeds`, 'success', 2500);
+      useUiStore
+        .getState()
+        .showToast(result.message ?? `Purchased ${quantity}x seeds`, 'success', 2500);
     } else {
       audioManager.playSfx('error');
       useUiStore.getState().showToast(result.message, 'error', 2500);
@@ -173,7 +175,11 @@ export const ShopModal: React.FC<ShopModalProps> = ({
       audioManager.playSfx('coin');
       useUiStore
         .getState()
-        .showToast(result.message ?? `Sold all produce for ${result.value.totalCoinsEarned} coins!`, 'success', 3000);
+        .showToast(
+          result.message ?? `Sold all produce for ${result.value.totalCoinsEarned} coins!`,
+          'success',
+          3000
+        );
     } else {
       audioManager.playSfx('error');
       useUiStore.getState().showToast(result.message, 'error', 2500);
@@ -248,10 +254,15 @@ export const ShopModal: React.FC<ShopModalProps> = ({
               🏪
             </span>
             <div>
-              <h2 id="shop-dialog-title" className="text-base md:text-lg font-bold text-amber-200 tracking-wide">
+              <h2
+                id="shop-dialog-title"
+                className="text-base md:text-lg font-bold text-amber-200 tracking-wide"
+              >
                 Merchant's Island Shop
               </h2>
-              <p className="text-xs text-amber-300/70">Seeds, produce trading, farm expansions & companion eggs</p>
+              <p className="text-xs text-amber-300/70">
+                Seeds, produce trading, farm expansions & companion eggs
+              </p>
             </div>
           </div>
 
@@ -274,7 +285,13 @@ export const ShopModal: React.FC<ShopModalProps> = ({
               onClick={handleClose}
               className="min-w-[36px] min-h-[36px] w-9 h-9 flex items-center justify-center rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-white/10 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg
+                className="w-5 h-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
                 <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
@@ -332,9 +349,15 @@ export const ShopModal: React.FC<ShopModalProps> = ({
           {/* TAB 1: SEEDS                           */}
           {/* -------------------------------------- */}
           {activeTab === 'seeds' && (
-            <div data-testid="pane-seeds" role="tabpanel" aria-labelledby="tab-seeds" className="flex flex-col gap-3">
+            <div
+              data-testid="pane-seeds"
+              role="tabpanel"
+              aria-labelledby="tab-seeds"
+              className="flex flex-col gap-3"
+            >
               <div className="text-xs text-slate-400 mb-1">
-                Purchase seeds to plant in your tilled plots. Higher tier crops yield greater profits and higher mutation rewards.
+                Purchase seeds to plant in your tilled plots. Higher tier crops yield greater
+                profits and higher mutation rewards.
               </div>
 
               <div className="grid grid-cols-1 gap-3">
@@ -371,7 +394,8 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                               ⏳ <strong className="text-slate-300">{item.baseGrowthSec}s</strong>
                             </span>
                             <span>
-                              💰 Base Sell: <strong className="text-amber-300">{item.baseSalePrice}c</strong>
+                              💰 Base Sell:{' '}
+                              <strong className="text-amber-300">{item.baseSalePrice}c</strong>
                             </span>
                           </div>
                         </div>
@@ -420,7 +444,12 @@ export const ShopModal: React.FC<ShopModalProps> = ({
           {/* TAB 2: SELL PRODUCE                    */}
           {/* -------------------------------------- */}
           {activeTab === 'sell' && (
-            <div data-testid="pane-sell" role="tabpanel" aria-labelledby="tab-sell" className="flex flex-col gap-4">
+            <div
+              data-testid="pane-sell"
+              role="tabpanel"
+              aria-labelledby="tab-sell"
+              className="flex flex-col gap-4"
+            >
               {/* Header & Sell All Bar */}
               <div className="flex items-center justify-between bg-slate-800/80 border border-slate-700/60 rounded-xl p-3.5">
                 <div>
@@ -442,7 +471,9 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                   }`}
                 >
                   <span>Sell All</span>
-                  {totalProduceValue > 0 && <span className="font-mono">(+{totalProduceValue.toLocaleString()}c)</span>}
+                  {totalProduceValue > 0 && (
+                    <span className="font-mono">(+{totalProduceValue.toLocaleString()}c)</span>
+                  )}
                 </button>
               </div>
 
@@ -455,7 +486,8 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                   <span className="text-3xl">🧺</span>
                   <p className="text-sm font-bold text-slate-300">No produce in inventory</p>
                   <p className="text-xs text-slate-400 max-w-sm">
-                    Grow crops and harvest them with your hand or scythe to sell them here for coins.
+                    Grow crops and harvest them with your hand or scythe to sell them here for
+                    coins.
                   </p>
                 </div>
               ) : (
@@ -463,7 +495,11 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                   {produceStacks.map((stack) => {
                     const mult = MUTATION_MULTIPLIERS[stack.mutation] ?? 1;
                     const unitPrice = calculateProduceSaleValue(stack.cropId, stack.mutation, 1);
-                    const stackTotal = calculateProduceSaleValue(stack.cropId, stack.mutation, stack.quantity);
+                    const stackTotal = calculateProduceSaleValue(
+                      stack.cropId,
+                      stack.mutation,
+                      stack.quantity
+                    );
 
                     return (
                       <div
@@ -478,8 +514,12 @@ export const ShopModal: React.FC<ShopModalProps> = ({
 
                           <div>
                             <div className="flex items-center gap-2">
-                              <h4 className="text-sm font-bold text-white capitalize">{stack.cropId.replace('_', ' ')}</h4>
-                              <span className="text-xs font-bold text-emerald-300 font-mono">x{stack.quantity}</span>
+                              <h4 className="text-sm font-bold text-white capitalize">
+                                {stack.cropId.replace('_', ' ')}
+                              </h4>
+                              <span className="text-xs font-bold text-emerald-300 font-mono">
+                                x{stack.quantity}
+                              </span>
 
                               {/* Mutation Badge */}
                               {stack.mutation !== 'none' && (
@@ -489,8 +529,8 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                                     stack.mutation === 'gold'
                                       ? 'bg-amber-950 text-amber-300 border border-amber-500/60'
                                       : stack.mutation === 'giant'
-                                      ? 'bg-indigo-950 text-indigo-300 border border-indigo-500/60'
-                                      : 'bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-500/60 animate-pulse'
+                                        ? 'bg-indigo-950 text-indigo-300 border border-indigo-500/60'
+                                        : 'bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-500/60 animate-pulse'
                                   }`}
                                 >
                                   {stack.mutation} ({mult}x)
@@ -500,7 +540,9 @@ export const ShopModal: React.FC<ShopModalProps> = ({
 
                             <div className="text-xs text-slate-400 font-mono mt-0.5">
                               <span>Unit: {unitPrice}c</span> ·{' '}
-                              <span className="text-amber-300 font-bold">Total: {stackTotal.toLocaleString()}c</span>
+                              <span className="text-amber-300 font-bold">
+                                Total: {stackTotal.toLocaleString()}c
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -525,9 +567,15 @@ export const ShopModal: React.FC<ShopModalProps> = ({
           {/* TAB 3: UPGRADES                        */}
           {/* -------------------------------------- */}
           {activeTab === 'upgrades' && (
-            <div data-testid="pane-upgrades" role="tabpanel" aria-labelledby="tab-upgrades" className="flex flex-col gap-3">
+            <div
+              data-testid="pane-upgrades"
+              role="tabpanel"
+              aria-labelledby="tab-upgrades"
+              className="flex flex-col gap-3"
+            >
               <div className="text-xs text-slate-400 mb-1">
-                Permanent farm upgrades to accelerate crop watering and expand your island farming territory.
+                Permanent farm upgrades to accelerate crop watering and expand your island farming
+                territory.
               </div>
 
               <div className="grid grid-cols-1 gap-3">
@@ -562,8 +610,8 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                         upgrade.isOwned
                           ? 'border-emerald-500/40 bg-emerald-950/20'
                           : upgrade.isAvailable
-                          ? 'border-slate-700 hover:border-slate-600'
-                          : 'border-slate-800 opacity-60'
+                            ? 'border-slate-700 hover:border-slate-600'
+                            : 'border-slate-800 opacity-60'
                       }`}
                     >
                       <div className="flex items-start gap-3.5">
@@ -580,7 +628,9 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">{upgrade.description}</p>
+                          <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
+                            {upgrade.description}
+                          </p>
                         </div>
                       </div>
 
@@ -594,8 +644,8 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                             upgrade.isOwned
                               ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-600/50 cursor-default'
                               : isInteractive && isAffordable
-                              ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-md shadow-amber-900/30 cursor-pointer active:scale-95'
-                              : 'bg-slate-800 text-slate-500 border border-slate-700/60 cursor-not-allowed opacity-60'
+                                ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-md shadow-amber-900/30 cursor-pointer active:scale-95'
+                                : 'bg-slate-800 text-slate-500 border border-slate-700/60 cursor-not-allowed opacity-60'
                           }`}
                         >
                           {buttonText}

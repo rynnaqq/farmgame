@@ -7,12 +7,7 @@ import {
   type MutationType,
   type WeatherType,
 } from '../core/constants';
-import type {
-  PlotId,
-  PlotData,
-  ToolType,
-  CommandResult,
-} from '../../state/storeTypes';
+import type { PlotId, PlotData, ToolType, CommandResult } from '../../state/storeTypes';
 import {
   getPlotPosition,
   getPlotDistance,
@@ -30,9 +25,7 @@ import { audioManager } from '../audio/AudioManager';
 function getPlotAndValidateRange(
   plotId: PlotId,
   playerPos?: [number, number, number]
-):
-  | { ok: true; plot: PlotData; gridSize: 4 | 6 | 8 }
-  | { ok: false; result: CommandResult<never> } {
+): { ok: true; plot: PlotData; gridSize: 4 | 6 | 8 } | { ok: false; result: CommandResult<never> } {
   const store = useGameStore.getState();
   const plot = store.farm.plots[plotId];
   const gridSize = store.farm.gridSize;
@@ -141,9 +134,7 @@ export function waterPlot(
 
   const effectiveWeather = weather ?? store.weather.current;
   const durationMs =
-    effectiveWeather === 'heatwave'
-      ? HYDRATION_DURATION_HEATWAVE_MS
-      : HYDRATION_DURATION_BASIC_MS;
+    effectiveWeather === 'heatwave' ? HYDRATION_DURATION_HEATWAVE_MS : HYDRATION_DURATION_BASIC_MS;
   const targetHydratedUntil = nowMs + durationMs;
 
   const effectiveGoldenCan = isGoldenCan ?? store.farm.goldenWateringCanOwned;
@@ -336,13 +327,7 @@ export function executeToolAction(
     case 'trowel':
       return tillPlot(plotId, playerPos);
     case 'watering_can':
-      return waterPlot(
-        plotId,
-        playerPos,
-        options?.isGoldenCan,
-        options?.weather,
-        options?.nowMs
-      );
+      return waterPlot(plotId, playerPos, options?.isGoldenCan, options?.weather, options?.nowMs);
     case 'seed_bag':
       return plantCrop(plotId, selectedSeedId, playerPos, options?.nowMs);
     case 'scythe':

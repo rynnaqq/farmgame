@@ -210,12 +210,7 @@ export function applyZoomDelta(
 /**
  * Exponential decay scalar damping function (frame-rate independent).
  */
-export function dampValue(
-  current: number,
-  target: number,
-  decay: number,
-  dt: number
-): number {
+export function dampValue(current: number, target: number, decay: number, dt: number): number {
   const factor = 1 - Math.exp(-decay * Math.max(0, dt));
   return current + (target - current) * Math.min(1, Math.max(0, factor));
 }
@@ -332,4 +327,3 @@ export function isCameraObstacle(obj: ObstacleCandidate): boolean {
   }
   return true;
 }
-

@@ -25,7 +25,10 @@ const PET_ICONS: Record<PetType, string> = {
   pig: '🐷',
 };
 
-const MUTATION_CONFIGS: Record<MutationType, { label: string; bg: string; text: string; border: string }> = {
+const MUTATION_CONFIGS: Record<
+  MutationType,
+  { label: string; bg: string; text: string; border: string }
+> = {
   none: { label: '', bg: '', text: '', border: '' },
   gold: {
     label: '✨ Gold (5x)',
@@ -47,10 +50,7 @@ const MUTATION_CONFIGS: Record<MutationType, { label: string; bg: string; text: 
   },
 };
 
-export const OfflineSummary: React.FC<OfflineSummaryProps> = ({
-  onClose,
-  className = '',
-}) => {
+export const OfflineSummary: React.FC<OfflineSummaryProps> = ({ onClose, className = '' }) => {
   const activeModal = useUiStore((state) => state.activeModal);
   const rawModalData = useUiStore((state) => state.modalData);
   const modalData = rawModalData as OfflineSummaryData | null;

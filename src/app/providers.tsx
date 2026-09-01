@@ -31,9 +31,7 @@ export const Providers: React.FC<ProvidersProps> = ({
     }
 
     const isAvailable =
-      typeof forceWebGLSupported === 'boolean'
-        ? forceWebGLSupported
-        : isWebGL2Available();
+      typeof forceWebGLSupported === 'boolean' ? forceWebGLSupported : isWebGL2Available();
 
     setWebglAvailable(isAvailable);
 

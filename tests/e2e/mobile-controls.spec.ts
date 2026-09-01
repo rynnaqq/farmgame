@@ -16,7 +16,9 @@ test.describe('Mobile Controls & Touch Viewport E2E', () => {
     });
   });
 
-  test('mobile HUD, virtual joystick, and action button are displayed on mobile viewport', async ({ page }) => {
+  test('mobile HUD, virtual joystick, and action button are displayed on mobile viewport', async ({
+    page,
+  }) => {
     const mobileHud = page.locator('[data-testid="mobile-hud-container"]');
     await expect(mobileHud).toBeVisible();
 
@@ -27,7 +29,9 @@ test.describe('Mobile Controls & Touch Viewport E2E', () => {
     await expect(actionBtn).toBeVisible();
   });
 
-  test('virtual joystick touch interaction updates input manager and active joystick state', async ({ page }) => {
+  test('virtual joystick touch interaction updates input manager and active joystick state', async ({
+    page,
+  }) => {
     const joystickBase = page.locator('[data-testid="virtual-joystick-base"]');
     await expect(joystickBase).toBeVisible();
 
@@ -46,7 +50,9 @@ test.describe('Mobile Controls & Touch Viewport E2E', () => {
     await expect(knob).toBeVisible();
   });
 
-  test('mobile action button performs contextual interactions and updates plot', async ({ page }) => {
+  test('mobile action button performs contextual interactions and updates plot', async ({
+    page,
+  }) => {
     // 1. Select Trowel tool
     const trowelBtn = page.locator('[data-testid="tool-trowel"]');
     await trowelBtn.click();

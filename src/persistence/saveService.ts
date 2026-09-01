@@ -159,7 +159,10 @@ export class SaveService {
             rawData = JSON.parse(json);
           } catch (jsonErr) {
             const errorMsg = jsonErr instanceof Error ? jsonErr.message : 'Invalid JSON';
-            const backupId = await this.backupCorruptSave(json, `Corrupt JSON in storage: ${errorMsg}`);
+            const backupId = await this.backupCorruptSave(
+              json,
+              `Corrupt JSON in storage: ${errorMsg}`
+            );
             const defaultEnv = createDefaultSaveEnvelope();
             await this.persistToStorage(defaultEnv);
             this.onCorruptRecovery?.(backupId, errorMsg);
@@ -263,7 +266,12 @@ export class SaveService {
           if (raw && !backups.some((b) => b.id === key)) {
             try {
               const parsed = JSON.parse(raw);
-              if (parsed && typeof parsed === 'object' && 'reason' in parsed && 'payload' in parsed) {
+              if (
+                parsed &&
+                typeof parsed === 'object' &&
+                'reason' in parsed &&
+                'payload' in parsed
+              ) {
                 backups.push({
                   id: (parsed.id as string) || key,
                   payload: parsed.payload,

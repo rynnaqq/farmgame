@@ -83,10 +83,42 @@ const BOULDERS: BoulderItem[] = [
   { id: 'rock-ne', x: 10.0, z: -9.5, scale: 0.9, rotY: 1.2, minDensity: 0.6, hasCollision: true },
   { id: 'rock-sw', x: -9.8, z: 9.2, scale: 1.2, rotY: 0.8, minDensity: 0.5, hasCollision: true },
   { id: 'rock-se', x: 10.5, z: 8.8, scale: 0.8, rotY: 2.1, minDensity: 0.7, hasCollision: true },
-  { id: 'rock-s-mid', x: 0.0, z: 12.2, scale: 0.85, rotY: 1.7, minDensity: 0.5, hasCollision: true },
-  { id: 'rock-n-mid', x: 0.0, z: -12.2, scale: 0.9, rotY: 0.3, minDensity: 0.6, hasCollision: true },
-  { id: 'rock-w-sm', x: -10.0, z: 3.5, scale: 0.5, rotY: 0.9, minDensity: 0.8, hasCollision: false },
-  { id: 'rock-e-sm', x: 10.5, z: -2.0, scale: 0.55, rotY: 1.5, minDensity: 0.85, hasCollision: false },
+  {
+    id: 'rock-s-mid',
+    x: 0.0,
+    z: 12.2,
+    scale: 0.85,
+    rotY: 1.7,
+    minDensity: 0.5,
+    hasCollision: true,
+  },
+  {
+    id: 'rock-n-mid',
+    x: 0.0,
+    z: -12.2,
+    scale: 0.9,
+    rotY: 0.3,
+    minDensity: 0.6,
+    hasCollision: true,
+  },
+  {
+    id: 'rock-w-sm',
+    x: -10.0,
+    z: 3.5,
+    scale: 0.5,
+    rotY: 0.9,
+    minDensity: 0.8,
+    hasCollision: false,
+  },
+  {
+    id: 'rock-e-sm',
+    x: 10.5,
+    z: -2.0,
+    scale: 0.55,
+    rotY: 1.5,
+    minDensity: 0.85,
+    hasCollision: false,
+  },
 ];
 
 // Deterministic flower patches
@@ -132,55 +164,23 @@ const LowPolyTree: React.FC<{ tree: TreeItem }> = ({ tree }) => {
   return (
     <group position={[tree.x, 0, tree.z]} scale={[scale, scale, scale]}>
       {/* Tree Trunk */}
-      <mesh
-        geometry={TRUNK_GEO}
-        position={[0, 0.7, 0]}
-        castShadow
-        receiveShadow
-      >
+      <mesh geometry={TRUNK_GEO} position={[0, 0.7, 0]} castShadow receiveShadow>
         <meshStandardMaterial color="#5D4037" roughness={0.85} flatShading />
       </mesh>
 
       {/* Layer 1 - Lower foliage cone */}
-      <mesh
-        geometry={FOLIAGE_CONE_1_GEO}
-        position={[0, 1.6, 0]}
-        castShadow
-        receiveShadow
-      >
-        <meshStandardMaterial
-          color={primaryColor}
-          roughness={0.75}
-          flatShading
-        />
+      <mesh geometry={FOLIAGE_CONE_1_GEO} position={[0, 1.6, 0]} castShadow receiveShadow>
+        <meshStandardMaterial color={primaryColor} roughness={0.75} flatShading />
       </mesh>
 
       {/* Layer 2 - Mid foliage cone */}
-      <mesh
-        geometry={FOLIAGE_CONE_2_GEO}
-        position={[0, 2.3, 0]}
-        castShadow
-        receiveShadow
-      >
-        <meshStandardMaterial
-          color={secondaryColor}
-          roughness={0.75}
-          flatShading
-        />
+      <mesh geometry={FOLIAGE_CONE_2_GEO} position={[0, 2.3, 0]} castShadow receiveShadow>
+        <meshStandardMaterial color={secondaryColor} roughness={0.75} flatShading />
       </mesh>
 
       {/* Layer 3 - Top foliage cone */}
-      <mesh
-        geometry={FOLIAGE_CONE_3_GEO}
-        position={[0, 2.95, 0]}
-        castShadow
-        receiveShadow
-      >
-        <meshStandardMaterial
-          color={primaryColor}
-          roughness={0.75}
-          flatShading
-        />
+      <mesh geometry={FOLIAGE_CONE_3_GEO} position={[0, 2.95, 0]} castShadow receiveShadow>
+        <meshStandardMaterial color={primaryColor} roughness={0.75} flatShading />
       </mesh>
     </group>
   );
@@ -228,24 +228,12 @@ const FlowerCluster: React.FC<{ flower: FlowerClusterItem }> = ({ flower }) => {
       ].map(([px, py, pz], idx) => (
         <group key={idx} position={[px, 0, pz]}>
           {/* Green Stem */}
-          <mesh
-            geometry={FLOWER_STEM_GEO}
-            position={[0, py / 2, 0]}
-            scale={[1, py, 1]}
-          >
+          <mesh geometry={FLOWER_STEM_GEO} position={[0, py / 2, 0]} scale={[1, py, 1]}>
             <meshStandardMaterial color="#4CAF50" roughness={0.8} />
           </mesh>
           {/* Petal Head */}
-          <mesh
-            geometry={FLOWER_PETAL_GEO}
-            position={[0, py, 0]}
-            castShadow
-          >
-            <meshStandardMaterial
-              color={flower.color}
-              roughness={0.6}
-              flatShading
-            />
+          <mesh geometry={FLOWER_PETAL_GEO} position={[0, py, 0]} castShadow>
+            <meshStandardMaterial color={flower.color} roughness={0.6} flatShading />
           </mesh>
         </group>
       ))}

@@ -83,7 +83,8 @@ export function runSaveMigrations(rawPayload: unknown): MigrationResult {
 
   const record = { ...(rawPayload as Record<string, unknown>) };
   const rawVersion = record.schemaVersion;
-  const initialVersion = typeof rawVersion === 'number' && Number.isFinite(rawVersion) ? rawVersion : 0;
+  const initialVersion =
+    typeof rawVersion === 'number' && Number.isFinite(rawVersion) ? rawVersion : 0;
 
   if (initialVersion > CURRENT_SCHEMA_VERSION) {
     throw new Error(

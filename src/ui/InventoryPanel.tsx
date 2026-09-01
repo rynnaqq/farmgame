@@ -25,15 +25,35 @@ export interface InventoryPanelProps {
 function CropIcon({ cropId }: { cropId: CropId }) {
   switch (cropId) {
     case 'carrot':
-      return <span className="text-xl" role="img" aria-label="Carrot">🥕</span>;
+      return (
+        <span className="text-xl" role="img" aria-label="Carrot">
+          🥕
+        </span>
+      );
     case 'tomato':
-      return <span className="text-xl" role="img" aria-label="Tomato">🍅</span>;
+      return (
+        <span className="text-xl" role="img" aria-label="Tomato">
+          🍅
+        </span>
+      );
     case 'pumpkin':
-      return <span className="text-xl" role="img" aria-label="Pumpkin">🎃</span>;
+      return (
+        <span className="text-xl" role="img" aria-label="Pumpkin">
+          🎃
+        </span>
+      );
     case 'golden_berry':
-      return <span className="text-xl" role="img" aria-label="Golden Berry">🌟</span>;
+      return (
+        <span className="text-xl" role="img" aria-label="Golden Berry">
+          🌟
+        </span>
+      );
     case 'starfruit':
-      return <span className="text-xl" role="img" aria-label="Starfruit">⭐</span>;
+      return (
+        <span className="text-xl" role="img" aria-label="Starfruit">
+          ⭐
+        </span>
+      );
   }
 }
 
@@ -165,10 +185,15 @@ export const InventoryPanel: React.FC<InventoryPanelProps> = ({
               🎒
             </span>
             <div>
-              <h2 id="inventory-dialog-title" className="text-base md:text-lg font-bold text-emerald-200 tracking-wide">
+              <h2
+                id="inventory-dialog-title"
+                className="text-base md:text-lg font-bold text-emerald-200 tracking-wide"
+              >
                 Farm Inventory
               </h2>
-              <p className="text-xs text-emerald-300/70">Seeds stock, harvested produce & companion eggs</p>
+              <p className="text-xs text-emerald-300/70">
+                Seeds stock, harvested produce & companion eggs
+              </p>
             </div>
           </div>
 
@@ -180,7 +205,13 @@ export const InventoryPanel: React.FC<InventoryPanelProps> = ({
             onClick={handleClose}
             className="min-w-[36px] min-h-[36px] w-9 h-9 flex items-center justify-center rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-white/10 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 cursor-pointer"
           >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <svg
+              className="w-5 h-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+            >
               <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
@@ -236,7 +267,12 @@ export const InventoryPanel: React.FC<InventoryPanelProps> = ({
           {/* TAB 1: PRODUCE                         */}
           {/* -------------------------------------- */}
           {activeTab === 'produce' && (
-            <div data-testid="pane-produce" role="tabpanel" aria-labelledby="tab-produce" className="flex flex-col gap-3">
+            <div
+              data-testid="pane-produce"
+              role="tabpanel"
+              aria-labelledby="tab-produce"
+              className="flex flex-col gap-3"
+            >
               {produceStacks.length === 0 ? (
                 <div
                   data-testid="produce-empty-state"
@@ -253,7 +289,11 @@ export const InventoryPanel: React.FC<InventoryPanelProps> = ({
                   {produceStacks.map((stack) => {
                     const mult = MUTATION_MULTIPLIERS[stack.mutation] ?? 1;
                     const unitPrice = calculateProduceSaleValue(stack.cropId, stack.mutation, 1);
-                    const stackTotal = calculateProduceSaleValue(stack.cropId, stack.mutation, stack.quantity);
+                    const stackTotal = calculateProduceSaleValue(
+                      stack.cropId,
+                      stack.mutation,
+                      stack.quantity
+                    );
 
                     return (
                       <div
@@ -282,19 +322,23 @@ export const InventoryPanel: React.FC<InventoryPanelProps> = ({
                                   stack.mutation === 'gold'
                                     ? 'bg-amber-950 text-amber-300 border border-amber-500/60'
                                     : stack.mutation === 'giant'
-                                    ? 'bg-indigo-950 text-indigo-300 border border-indigo-500/60'
-                                    : stack.mutation === 'cosmic'
-                                    ? 'bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-500/60 animate-pulse'
-                                    : 'bg-slate-800 text-slate-400 border border-slate-700'
+                                      ? 'bg-indigo-950 text-indigo-300 border border-indigo-500/60'
+                                      : stack.mutation === 'cosmic'
+                                        ? 'bg-fuchsia-950 text-fuchsia-300 border border-fuchsia-500/60 animate-pulse'
+                                        : 'bg-slate-800 text-slate-400 border border-slate-700'
                                 }`}
                               >
-                                {stack.mutation === 'none' ? 'Normal (1x)' : `${stack.mutation} (${mult}x)`}
+                                {stack.mutation === 'none'
+                                  ? 'Normal (1x)'
+                                  : `${stack.mutation} (${mult}x)`}
                               </span>
                             </div>
 
                             <div className="text-xs text-slate-400 font-mono mt-1">
                               <span>Unit: {unitPrice}c</span> ·{' '}
-                              <span className="text-amber-300 font-bold">Stack Total: {stackTotal.toLocaleString()}c</span>
+                              <span className="text-amber-300 font-bold">
+                                Stack Total: {stackTotal.toLocaleString()}c
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -310,7 +354,12 @@ export const InventoryPanel: React.FC<InventoryPanelProps> = ({
           {/* TAB 2: SEEDS                           */}
           {/* -------------------------------------- */}
           {activeTab === 'seeds' && (
-            <div data-testid="pane-seeds" role="tabpanel" aria-labelledby="tab-seeds" className="flex flex-col gap-3">
+            <div
+              data-testid="pane-seeds"
+              role="tabpanel"
+              aria-labelledby="tab-seeds"
+              className="flex flex-col gap-3"
+            >
               <div className="grid grid-cols-1 gap-2.5">
                 {cropList.map((crop) => {
                   const count = inventorySeeds[crop.id] ?? 0;
@@ -356,7 +405,12 @@ export const InventoryPanel: React.FC<InventoryPanelProps> = ({
           {/* TAB 3: EGGS                            */}
           {/* -------------------------------------- */}
           {activeTab === 'eggs' && (
-            <div data-testid="pane-eggs" role="tabpanel" aria-labelledby="tab-eggs" className="flex flex-col gap-3">
+            <div
+              data-testid="pane-eggs"
+              role="tabpanel"
+              aria-labelledby="tab-eggs"
+              className="flex flex-col gap-3"
+            >
               {eggs.length === 0 ? (
                 <div
                   data-testid="eggs-empty-state"
@@ -365,7 +419,8 @@ export const InventoryPanel: React.FC<InventoryPanelProps> = ({
                   <span className="text-3xl">🥚</span>
                   <p className="text-sm font-bold text-slate-300">No pet eggs in inventory</p>
                   <p className="text-xs text-slate-400 max-w-sm">
-                    Purchase companion eggs from the Merchant shop to hatch loyal animal pets that help you farm.
+                    Purchase companion eggs from the Merchant shop to hatch loyal animal pets that
+                    help you farm.
                   </p>
                 </div>
               ) : (
@@ -401,7 +456,8 @@ export const InventoryPanel: React.FC<InventoryPanelProps> = ({
                             <div className="text-xs text-slate-400 font-mono mt-0.5">
                               {egg.incubating ? (
                                 <span>
-                                  Walk distance: {egg.distanceTraveled.toFixed(0)} / {EGG_HATCH_DISTANCE}m
+                                  Walk distance: {egg.distanceTraveled.toFixed(0)} /{' '}
+                                  {EGG_HATCH_DISTANCE}m
                                 </span>
                               ) : (
                                 <span>Place in incubator or walk to hatch</span>

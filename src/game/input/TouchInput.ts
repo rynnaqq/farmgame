@@ -1,7 +1,4 @@
-import type {
-  CameraOrbitCallback,
-  CameraZoomCallback,
-} from './inputTypes';
+import type { CameraOrbitCallback, CameraZoomCallback } from './inputTypes';
 
 interface PointerPosition {
   clientX: number;

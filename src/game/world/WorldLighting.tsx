@@ -8,4 +8,3 @@ import { WeatherRenderer } from '../weather/WeatherRenderer';
 export const WorldLighting: React.FC = () => {
   return <WeatherRenderer />;
 };
-

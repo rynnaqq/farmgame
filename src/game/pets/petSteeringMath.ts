@@ -7,11 +7,7 @@ import {
 // ==========================================
 // Pet Steering & Animation Constants
 // ==========================================
-export {
-  PET_FOLLOW_MIN_DISTANCE,
-  PET_FOLLOW_MAX_DISTANCE,
-  PET_TELEPORT_DISTANCE,
-};
+export { PET_FOLLOW_MIN_DISTANCE, PET_FOLLOW_MAX_DISTANCE, PET_TELEPORT_DISTANCE };
 
 export const PET_DEFAULT_FOLLOW_DISTANCE = 1.85;
 export const PET_STEERING_SPEED = 4.8; // units/s follow speed
@@ -95,10 +91,7 @@ export function distance2D(
 /**
  * Calculates 3D Euclidean distance in world space.
  */
-export function distance3D(
-  p1: [number, number, number],
-  p2: [number, number, number]
-): number {
+export function distance3D(p1: [number, number, number], p2: [number, number, number]): number {
   const dx = p2[0] - p1[0];
   const dy = p2[1] - p1[1];
   const dz = p2[2] - p1[2];

@@ -94,8 +94,7 @@ export function hatchEgg(
   }
 
   const isReady =
-    egg.elapsedIncubationSec >= EGG_HATCH_SECONDS ||
-    egg.distanceTraveled >= EGG_HATCH_DISTANCE;
+    egg.elapsedIncubationSec >= EGG_HATCH_SECONDS || egg.distanceTraveled >= EGG_HATCH_DISTANCE;
 
   if (!isReady) {
     return {

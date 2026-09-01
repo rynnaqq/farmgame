@@ -55,10 +55,7 @@ export function createNoiseBuffer(
 let cachedWhiteNoiseBuffer: AudioBuffer | null = null;
 let cachedPinkNoiseBuffer: AudioBuffer | null = null;
 
-function getCachedNoiseBuffer(
-  ctx: AudioContext,
-  type: 'white' | 'pink' = 'white'
-): AudioBuffer {
+function getCachedNoiseBuffer(ctx: AudioContext, type: 'white' | 'pink' = 'white'): AudioBuffer {
   if (type === 'pink') {
     if (!cachedPinkNoiseBuffer || cachedPinkNoiseBuffer.sampleRate !== ctx.sampleRate) {
       cachedPinkNoiseBuffer = createNoiseBuffer(ctx, 2.0, 'pink');
@@ -218,11 +215,7 @@ export function synthesizeWater(
   b2.start(now + 0.05);
   b2.stop(now + 0.15);
 
-  scheduleCleanup(
-    ctx,
-    [noiseSource, noiseFilter, noiseGain, b1, b1Gain, b2, b2Gain],
-    duration
-  );
+  scheduleCleanup(ctx, [noiseSource, noiseFilter, noiseGain, b1, b1Gain, b2, b2Gain], duration);
 }
 
 /**
@@ -327,11 +320,7 @@ export function synthesizeHarvest(
   overtone.start(now);
   overtone.stop(now + 0.35);
 
-  scheduleCleanup(
-    ctx,
-    [pop, popGain, ring, ringGain, overtone, overtoneGain],
-    duration
-  );
+  scheduleCleanup(ctx, [pop, popGain, ring, ringGain, overtone, overtoneGain], duration);
 }
 
 /**
@@ -456,10 +445,7 @@ export function synthesizeWeatherChange(
   const filter = ctx.createBiquadFilter();
   filter.type = 'lowpass';
   filter.frequency.setValueAtTime(180 * pitchMultiplier, now);
-  filter.frequency.exponentialRampToValueAtTime(
-    Math.max(50, 1100 * pitchMultiplier),
-    now + 0.55
-  );
+  filter.frequency.exponentialRampToValueAtTime(Math.max(50, 1100 * pitchMultiplier), now + 0.55);
   filter.frequency.exponentialRampToValueAtTime(
     Math.max(50, 220 * pitchMultiplier),
     now + duration
@@ -526,11 +512,7 @@ export function synthesizeEggHatch(
   chirp.start(chirpTime);
   chirp.stop(chirpTime + 0.22);
 
-  scheduleCleanup(
-    ctx,
-    [crack, crackFilter, crackGain, chirp, chirpGain],
-    duration
-  );
+  scheduleCleanup(ctx, [crack, crackFilter, crackGain, chirp, chirpGain], duration);
 }
 
 /**
@@ -548,10 +530,7 @@ export function synthesizeUiClick(
   const clickGain = ctx.createGain();
   click.type = 'triangle';
   click.frequency.setValueAtTime(1800 * pitchMultiplier, now);
-  click.frequency.exponentialRampToValueAtTime(
-    Math.max(10, 400 * pitchMultiplier),
-    now + duration
-  );
+  click.frequency.exponentialRampToValueAtTime(Math.max(10, 400 * pitchMultiplier), now + duration);
 
   clickGain.gain.setValueAtTime(0.35, now);
   clickGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
@@ -720,25 +699,28 @@ export function createWeatherAmbienceNode(
       // Ignore
     }
 
-    setTimeout(() => {
-      try {
-        activeNodes.forEach((node) => {
-          try {
-            if (node.stop) node.stop();
-          } catch {
-            // Ignore
-          }
-          try {
-            node.disconnect();
-          } catch {
-            // Ignore
-          }
-        });
-        masterAmbienceGain.disconnect();
-      } catch {
-        // Ignore
-      }
-    }, Math.ceil(fadeDurationSec * 1000) + 50);
+    setTimeout(
+      () => {
+        try {
+          activeNodes.forEach((node) => {
+            try {
+              if (node.stop) node.stop();
+            } catch {
+              // Ignore
+            }
+            try {
+              node.disconnect();
+            } catch {
+              // Ignore
+            }
+          });
+          masterAmbienceGain.disconnect();
+        } catch {
+          // Ignore
+        }
+      },
+      Math.ceil(fadeDurationSec * 1000) + 50
+    );
   };
 
   return {

@@ -74,10 +74,14 @@ describe('Particle Pool Math & Buffer Management', () => {
       const buffer = createParticleBuffer(10);
       const index = spawnParticle(
         buffer,
-        1, 2, 3,       // pos
-        0.1, 0.2, 0.3, // vel
-        1.5,           // scale
-        2.0,           // lifetime
+        1,
+        2,
+        3, // pos
+        0.1,
+        0.2,
+        0.3, // vel
+        1.5, // scale
+        2.0, // lifetime
         [1.0, 0.5, 0.2] // color
       );
 

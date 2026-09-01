@@ -69,20 +69,12 @@ export const EggRenderer: React.FC<EggRendererProps> = ({
         {/* Outer Twig Ring */}
         <mesh receiveShadow castShadow>
           <torusGeometry args={[0.26, 0.07, 6, 12]} />
-          <meshStandardMaterial
-            color="#78350F"
-            roughness={0.9}
-            flatShading
-          />
+          <meshStandardMaterial color="#78350F" roughness={0.9} flatShading />
         </mesh>
         {/* Soft Moss Cushion */}
         <mesh position={[0, -0.02, 0]} receiveShadow>
           <cylinderGeometry args={[0.22, 0.24, 0.06, 8]} />
-          <meshStandardMaterial
-            color="#15803D"
-            roughness={0.8}
-            flatShading
-          />
+          <meshStandardMaterial color="#15803D" roughness={0.8} flatShading />
         </mesh>
       </group>
 
@@ -167,19 +159,11 @@ export const EggRenderer: React.FC<EggRendererProps> = ({
           <>
             <mesh position={[0, 0.22, 0.16]} rotation={[0, 0, -0.5]}>
               <boxGeometry args={[0.025, 0.18, 0.015]} />
-              <meshStandardMaterial
-                color="#FFFFFF"
-                emissive="#FBBF24"
-                emissiveIntensity={1.5}
-              />
+              <meshStandardMaterial color="#FFFFFF" emissive="#FBBF24" emissiveIntensity={1.5} />
             </mesh>
             <mesh position={[0.08, -0.06, 0.2]} rotation={[0, 0.5, 0.6]}>
               <boxGeometry args={[0.025, 0.14, 0.015]} />
-              <meshStandardMaterial
-                color="#FFFFFF"
-                emissive="#FBBF24"
-                emissiveIntensity={1.5}
-              />
+              <meshStandardMaterial color="#FFFFFF" emissive="#FBBF24" emissiveIntensity={1.5} />
             </mesh>
           </>
         )}

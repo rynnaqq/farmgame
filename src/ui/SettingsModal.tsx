@@ -10,10 +10,7 @@ export interface SettingsModalProps {
   className?: string;
 }
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({
-  onClose,
-  className = '',
-}) => {
+export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, className = '' }) => {
   const activeModal = useUiStore((state) => state.activeModal);
 
   const masterVolume = useSettingsStore((state) => state.masterVolume);

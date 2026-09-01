@@ -1,16 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useGameStore } from '../state/gameStore';
 import { useUiStore } from '../state/uiStore';
-import {
-  WEATHER_CONFIGS,
-  type WeatherType,
-  type PetType,
-} from '../game/core/constants';
-import {
-  selectCoins,
-  selectEquippedPet,
-  selectTotalProduceCount,
-} from '../state/selectors';
+import { WEATHER_CONFIGS, type WeatherType, type PetType } from '../game/core/constants';
+import { selectCoins, selectEquippedPet, selectTotalProduceCount } from '../state/selectors';
 import { audioManager } from '../game/audio/AudioManager';
 
 export interface HUDProps {
@@ -25,25 +17,53 @@ interface CoinDelta {
 function getWeatherIcon(weather: WeatherType) {
   switch (weather) {
     case 'heavy_rain':
-      return <span role="img" aria-label="Heavy Rain">🌧️</span>;
+      return (
+        <span role="img" aria-label="Heavy Rain">
+          🌧️
+        </span>
+      );
     case 'heatwave':
-      return <span role="img" aria-label="Heatwave">🌡️</span>;
+      return (
+        <span role="img" aria-label="Heatwave">
+          🌡️
+        </span>
+      );
     case 'blood_moon':
-      return <span role="img" aria-label="Blood Moon">🩸</span>;
+      return (
+        <span role="img" aria-label="Blood Moon">
+          🩸
+        </span>
+      );
     case 'sunny':
     default:
-      return <span role="img" aria-label="Sunny">☀️</span>;
+      return (
+        <span role="img" aria-label="Sunny">
+          ☀️
+        </span>
+      );
   }
 }
 
 function getPetIcon(type: PetType) {
   switch (type) {
     case 'dog':
-      return <span role="img" aria-label="Dog">🐶</span>;
+      return (
+        <span role="img" aria-label="Dog">
+          🐶
+        </span>
+      );
     case 'bee':
-      return <span role="img" aria-label="Bee">🐝</span>;
+      return (
+        <span role="img" aria-label="Bee">
+          🐝
+        </span>
+      );
     case 'pig':
-      return <span role="img" aria-label="Pig">🐷</span>;
+      return (
+        <span role="img" aria-label="Pig">
+          🐷
+        </span>
+      );
   }
 }
 
@@ -230,7 +250,10 @@ export const HUD: React.FC<HUDProps> = ({ className = '' }) => {
               </div>
             </>
           ) : (
-            <div data-testid="hud-no-pet" className="flex items-center gap-1.5 text-slate-400 text-xs font-medium">
+            <div
+              data-testid="hud-no-pet"
+              className="flex items-center gap-1.5 text-slate-400 text-xs font-medium"
+            >
               <span className="text-sm">🐾</span>
               <span className="hidden sm:inline">No Pet</span>
             </div>

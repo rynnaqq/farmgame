@@ -7,14 +7,7 @@ import {
   MAX_PET_INVENTORY,
 } from '../game/core/constants';
 import type { GameStoreState } from './gameStore';
-import type {
-  CropId,
-  PlotId,
-  PlotData,
-  ProduceStack,
-  PetData,
-  EggData,
-} from './storeTypes';
+import type { CropId, PlotId, PlotData, ProduceStack, PetData, EggData } from './storeTypes';
 
 export const selectCoins = (state: GameStoreState): number => state.player.coins;
 
@@ -90,11 +83,9 @@ export const selectActivePerks = (state: GameStoreState): ActivePerks => {
   }
 
   return {
-    growthSpeedMultiplier:
-      pet.type === 'bee' ? PET_PERKS.bee.growthSpeedMultiplier : 1.0,
+    growthSpeedMultiplier: pet.type === 'bee' ? PET_PERKS.bee.growthSpeedMultiplier : 1.0,
     autoHarvest: pet.type === 'dog',
-    mutationChanceMultiplier:
-      pet.type === 'pig' ? PET_PERKS.pig.mutationChanceMultiplier : 1.0,
+    mutationChanceMultiplier: pet.type === 'pig' ? PET_PERKS.pig.mutationChanceMultiplier : 1.0,
   };
 };
 

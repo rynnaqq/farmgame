@@ -46,20 +46,29 @@ describe('Task 9: Mobile Virtual Joystick & Touch Controls', () => {
       window.innerWidth = 1024;
       const { unmount } = render(<VirtualJoystick inputManager={inputManager} />);
       const baseStandard = screen.getByTestId('virtual-joystick-base');
-      expect(baseStandard).toHaveStyle({ width: `${JOYSTICK_BASE_DIAMETER}px`, height: `${JOYSTICK_BASE_DIAMETER}px` });
+      expect(baseStandard).toHaveStyle({
+        width: `${JOYSTICK_BASE_DIAMETER}px`,
+        height: `${JOYSTICK_BASE_DIAMETER}px`,
+      });
       unmount();
 
       // Small screen (360px)
       window.innerWidth = 360;
       render(<VirtualJoystick inputManager={inputManager} />);
       const baseSmall = screen.getByTestId('virtual-joystick-base');
-      expect(baseSmall).toHaveStyle({ width: `${JOYSTICK_BASE_DIAMETER_SMALL}px`, height: `${JOYSTICK_BASE_DIAMETER_SMALL}px` });
+      expect(baseSmall).toHaveStyle({
+        width: `${JOYSTICK_BASE_DIAMETER_SMALL}px`,
+        height: `${JOYSTICK_BASE_DIAMETER_SMALL}px`,
+      });
     });
 
     it('knob has 48px diameter', () => {
       render(<VirtualJoystick inputManager={inputManager} />);
       const knob = screen.getByTestId('virtual-joystick-knob');
-      expect(knob).toHaveStyle({ width: `${JOYSTICK_KNOB_DIAMETER}px`, height: `${JOYSTICK_KNOB_DIAMETER}px` });
+      expect(knob).toHaveStyle({
+        width: `${JOYSTICK_KNOB_DIAMETER}px`,
+        height: `${JOYSTICK_KNOB_DIAMETER}px`,
+      });
     });
   });
 
@@ -332,21 +341,36 @@ describe('Task 9: Mobile Virtual Joystick & Touch Controls', () => {
 
     it('displays contextual label and icon for selected tool (trowel -> Till, watering_can -> Water, seed_bag -> Plant, scythe -> Harvest)', () => {
       const { rerender } = render(<MobileActionButton selectedTool="trowel" hasTarget={true} />);
-      expect(screen.getByTestId('mobile-action-button')).toHaveAttribute('aria-label', expect.stringMatching(/till/i));
+      expect(screen.getByTestId('mobile-action-button')).toHaveAttribute(
+        'aria-label',
+        expect.stringMatching(/till/i)
+      );
 
       rerender(<MobileActionButton selectedTool="watering_can" hasTarget={true} />);
-      expect(screen.getByTestId('mobile-action-button')).toHaveAttribute('aria-label', expect.stringMatching(/water/i));
+      expect(screen.getByTestId('mobile-action-button')).toHaveAttribute(
+        'aria-label',
+        expect.stringMatching(/water/i)
+      );
 
       rerender(<MobileActionButton selectedTool="seed_bag" hasTarget={true} />);
-      expect(screen.getByTestId('mobile-action-button')).toHaveAttribute('aria-label', expect.stringMatching(/plant/i));
+      expect(screen.getByTestId('mobile-action-button')).toHaveAttribute(
+        'aria-label',
+        expect.stringMatching(/plant/i)
+      );
 
       rerender(<MobileActionButton selectedTool="scythe" hasTarget={true} />);
-      expect(screen.getByTestId('mobile-action-button')).toHaveAttribute('aria-label', expect.stringMatching(/harvest/i));
+      expect(screen.getByTestId('mobile-action-button')).toHaveAttribute(
+        'aria-label',
+        expect.stringMatching(/harvest/i)
+      );
     });
 
     it('displays Merchant Shop action when nearMerchant is true', () => {
       render(<MobileActionButton nearMerchant={true} />);
-      expect(screen.getByTestId('mobile-action-button')).toHaveAttribute('aria-label', expect.stringMatching(/shop|merchant/i));
+      expect(screen.getByTestId('mobile-action-button')).toHaveAttribute(
+        'aria-label',
+        expect.stringMatching(/shop|merchant/i)
+      );
     });
 
     it('triggers navigator.vibrate(15) on tap when haptics setting is true', () => {

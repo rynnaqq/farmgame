@@ -7,14 +7,7 @@ import type {
   QualityLevel,
 } from '../game/core/constants';
 
-export type {
-  CropId,
-  WeatherType,
-  MutationType,
-  PetType,
-  EggType,
-  QualityLevel,
-};
+export type { CropId, WeatherType, MutationType, PetType, EggType, QualityLevel };
 
 export type PlotId = string;
 
@@ -162,12 +155,7 @@ export interface SettingsState {
 }
 
 export type ModalType =
-  | 'shop'
-  | 'settings'
-  | 'offline_summary'
-  | 'tutorial'
-  | 'reset_confirm'
-  | 'inventory';
+  'shop' | 'settings' | 'offline_summary' | 'tutorial' | 'reset_confirm' | 'inventory';
 
 export type ToastType = 'info' | 'success' | 'warning' | 'error';
 

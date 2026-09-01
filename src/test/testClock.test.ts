@@ -50,7 +50,9 @@ describe('src/test/testClock.ts Unit Tests', () => {
       // Advance by 45s (45,000 ms)
       const { updatedEnvelope, summary } = advanceGameTime(45_000, false);
 
-      expect(updatedEnvelope.farm.plots[0].crop?.growthProgressSec).toBe(CROPS.carrot.baseGrowthSec);
+      expect(updatedEnvelope.farm.plots[0].crop?.growthProgressSec).toBe(
+        CROPS.carrot.baseGrowthSec
+      );
       expect(useGameStore.getState().farm.plots['plot-0-0'].crop?.growthProgressSec).toBe(
         CROPS.carrot.baseGrowthSec
       );

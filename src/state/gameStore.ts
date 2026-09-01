@@ -291,9 +291,7 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
     if (quantity <= 0) return;
     set((state) => {
       const produce = [...state.inventory.produce];
-      const index = produce.findIndex(
-        (p) => p.cropId === cropId && p.mutation === mutation
-      );
+      const index = produce.findIndex((p) => p.cropId === cropId && p.mutation === mutation);
       if (index >= 0) {
         produce[index] = {
           ...produce[index],
@@ -315,9 +313,7 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
   removeProduce: (cropId: CropId, mutation: MutationType, quantity: number): boolean => {
     if (quantity <= 0) return false;
     const produce = get().inventory.produce;
-    const index = produce.findIndex(
-      (p) => p.cropId === cropId && p.mutation === mutation
-    );
+    const index = produce.findIndex((p) => p.cropId === cropId && p.mutation === mutation);
     if (index === -1 || produce[index].quantity < quantity) {
       return false;
     }
@@ -396,9 +392,7 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
     set((state) => ({
       inventory: {
         ...state.inventory,
-        eggs: state.inventory.eggs.map((e) =>
-          e.id === eggId ? { ...e, ...updates } : e
-        ),
+        eggs: state.inventory.eggs.map((e) => (e.id === eggId ? { ...e, ...updates } : e)),
       },
       isDirty: true,
     }));

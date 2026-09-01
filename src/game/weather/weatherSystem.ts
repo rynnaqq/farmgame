@@ -22,9 +22,7 @@ import {
  * Initial weather is always Sunny, lasting a randomized duration between 180s and 300s.
  */
 export function createInitialWeatherState(nowMs: number, rng?: SeededRNG): WeatherState {
-  const durationSeconds = rng
-    ? rng.range(WEATHER_DURATION_MIN_SEC, WEATHER_DURATION_MAX_SEC)
-    : 240;
+  const durationSeconds = rng ? rng.range(WEATHER_DURATION_MIN_SEC, WEATHER_DURATION_MAX_SEC) : 240;
 
   return {
     current: INITIAL_WEATHER,

@@ -12,11 +12,15 @@ vi.mock('@react-three/fiber', () => ({
 }));
 
 vi.mock('@react-three/drei', () => ({
-  Html: ({ children }: { children: React.ReactNode }) => <div data-testid="drei-html">{children}</div>,
+  Html: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="drei-html">{children}</div>
+  ),
 }));
 
 vi.mock('@react-three/rapier', () => ({
-  RigidBody: ({ children }: { children: React.ReactNode }) => <group data-testid="rigid-body">{children}</group>,
+  RigidBody: ({ children }: { children: React.ReactNode }) => (
+    <group data-testid="rigid-body">{children}</group>
+  ),
   CylinderCollider: () => <mesh data-testid="cylinder-collider" />,
   CuboidCollider: () => <mesh data-testid="cuboid-collider" />,
 }));
@@ -35,11 +39,9 @@ describe('Merchant NPC & Interaction Tests', () => {
   describe('1. Proximity Detection & Keyboard E Trigger', () => {
     it('opens shop modal on "E" key press when player is within interaction range', () => {
       // Place player close to merchant
-      useGameStore.getState().setPlayerPosition([
-        MERCHANT_POSITION[0] + 1.0,
-        0,
-        MERCHANT_POSITION[2],
-      ]);
+      useGameStore
+        .getState()
+        .setPlayerPosition([MERCHANT_POSITION[0] + 1.0, 0, MERCHANT_POSITION[2]]);
 
       render(<Merchant />);
 
@@ -50,11 +52,9 @@ describe('Merchant NPC & Interaction Tests', () => {
     });
 
     it('supports uppercase "E" key press as well', () => {
-      useGameStore.getState().setPlayerPosition([
-        MERCHANT_POSITION[0],
-        0,
-        MERCHANT_POSITION[2] + 1.5,
-      ]);
+      useGameStore
+        .getState()
+        .setPlayerPosition([MERCHANT_POSITION[0], 0, MERCHANT_POSITION[2] + 1.5]);
 
       render(<Merchant />);
 
@@ -73,11 +73,7 @@ describe('Merchant NPC & Interaction Tests', () => {
     });
 
     it('ignores "E" key press when a modal is already open', () => {
-      useGameStore.getState().setPlayerPosition([
-        MERCHANT_POSITION[0],
-        0,
-        MERCHANT_POSITION[2],
-      ]);
+      useGameStore.getState().setPlayerPosition([MERCHANT_POSITION[0], 0, MERCHANT_POSITION[2]]);
       useUiStore.getState().openModal('settings');
 
       render(<Merchant />);
@@ -88,11 +84,7 @@ describe('Merchant NPC & Interaction Tests', () => {
     });
 
     it('ignores "E" key press when typing inside an input element', () => {
-      useGameStore.getState().setPlayerPosition([
-        MERCHANT_POSITION[0],
-        0,
-        MERCHANT_POSITION[2],
-      ]);
+      useGameStore.getState().setPlayerPosition([MERCHANT_POSITION[0], 0, MERCHANT_POSITION[2]]);
 
       render(
         <div>

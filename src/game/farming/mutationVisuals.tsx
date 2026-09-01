@@ -60,11 +60,7 @@ export const GoldVisualDecorator: React.FC<GoldVisualDecoratorProps> = ({
             position={sparkle.position}
           >
             <octahedronGeometry args={[sparkle.size, 0]} />
-            <meshBasicMaterial
-              color={sparkle.color}
-              transparent
-              opacity={sparkle.opacity}
-            />
+            <meshBasicMaterial color={sparkle.color} transparent opacity={sparkle.opacity} />
           </mesh>
         ))}
 

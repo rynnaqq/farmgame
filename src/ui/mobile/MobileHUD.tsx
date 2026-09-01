@@ -22,8 +22,7 @@ function checkIsTouchDevice(): boolean {
   if (typeof window === 'undefined') return false;
 
   const hasCoarsePointer =
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(pointer: coarse)').matches;
+    typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
 
   const hasTouchCapability =
     'ontouchstart' in window ||
@@ -87,14 +86,9 @@ export const MobileHUD: React.FC<MobileHUDProps> = ({
   const playerYaw = inputManager ? inputManager.getCameraYaw() : 0;
 
   const targetPlotResult = useMemo(() => {
-    return findNearestTargetPlot(
-      playerPosition,
-      playerYaw,
-      farmPlots,
-      gridSize,
-      selectedTool,
-      { filterByTool: false }
-    );
+    return findNearestTargetPlot(playerPosition, playerYaw, farmPlots, gridSize, selectedTool, {
+      filterByTool: false,
+    });
   }, [playerPosition, playerYaw, farmPlots, gridSize, selectedTool]);
 
   // Check merchant proximity
@@ -145,10 +139,7 @@ export const MobileHUD: React.FC<MobileHUDProps> = ({
       <div className="w-full flex items-end justify-between pointer-events-none">
         {/* Lower-left: Virtual Joystick */}
         <div className="pointer-events-auto">
-          <VirtualJoystick
-            inputManager={inputManager}
-            disabled={isModalOpen}
-          />
+          <VirtualJoystick inputManager={inputManager} disabled={isModalOpen} />
         </div>
 
         {/* Lower-right: Contextual Action Button */}

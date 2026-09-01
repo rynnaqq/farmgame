@@ -5,12 +5,7 @@ import type { QualityLevel } from '../core/constants';
 // ============================================================================
 
 export type ParticleType =
-  | 'rain'
-  | 'rain_splash'
-  | 'heat_mote'
-  | 'blood_mote'
-  | 'splash'
-  | 'sparkle';
+  'rain' | 'rain_splash' | 'heat_mote' | 'blood_mote' | 'splash' | 'sparkle';
 
 export interface ParticleBuffer {
   capacity: number;
@@ -375,7 +370,8 @@ export function stepHeatMoteParticles(
     if (buffer.positions[pIdx + 1] >= bounds.maxY) {
       buffer.positions[pIdx] = (bounds.minX + Math.random() * (bounds.maxX - bounds.minX)) * 0.85;
       buffer.positions[pIdx + 1] = bounds.minY + 0.2 + Math.random() * 0.5;
-      buffer.positions[pIdx + 2] = (bounds.minZ + Math.random() * (bounds.maxZ - bounds.minZ)) * 0.85;
+      buffer.positions[pIdx + 2] =
+        (bounds.minZ + Math.random() * (bounds.maxZ - bounds.minZ)) * 0.85;
     }
   }
 }
@@ -437,7 +433,8 @@ export function stepBloodMoteParticles(
     if (buffer.positions[pIdx + 1] >= bounds.maxY) {
       buffer.positions[pIdx] = (bounds.minX + Math.random() * (bounds.maxX - bounds.minX)) * 0.9;
       buffer.positions[pIdx + 1] = bounds.minY + 0.5 + Math.random() * 0.5;
-      buffer.positions[pIdx + 2] = (bounds.minZ + Math.random() * (bounds.maxZ - bounds.minZ)) * 0.9;
+      buffer.positions[pIdx + 2] =
+        (bounds.minZ + Math.random() * (bounds.maxZ - bounds.minZ)) * 0.9;
     }
   }
 }
@@ -504,11 +501,7 @@ export function spawnBurst(
 /**
  * Steps burst particles with gravity and shrinks scale as lifetime expires.
  */
-export function stepBurstParticles(
-  buffer: ParticleBuffer,
-  deltaSec: number,
-  gravity = 9.8
-): void {
+export function stepBurstParticles(buffer: ParticleBuffer, deltaSec: number, gravity = 9.8): void {
   for (let i = 0; i < buffer.capacity; i++) {
     if (buffer.active[i] === 0) continue;
 

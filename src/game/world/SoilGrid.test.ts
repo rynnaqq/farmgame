@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  PLOT_SIZE,
-  PLOT_SPACING,
-  PLOT_TOTAL_SIZE,
-  MAX_GRID_SIZE,
-} from '../core/constants';
+import { PLOT_SIZE, PLOT_SPACING, PLOT_TOTAL_SIZE, MAX_GRID_SIZE } from '../core/constants';
 import {
   getPlotPosition,
   getGridBounds,

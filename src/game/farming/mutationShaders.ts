@@ -151,12 +151,12 @@ export function createCosmicShaderMaterial(
   const baseColor =
     typeof options?.baseColor === 'string'
       ? new THREE.Color(options.baseColor)
-      : options?.baseColor ?? new THREE.Color('#7C4DFF');
+      : (options?.baseColor ?? new THREE.Color('#7C4DFF'));
 
   const glowColor =
     typeof options?.glowColor === 'string'
       ? new THREE.Color(options.glowColor)
-      : options?.glowColor ?? new THREE.Color('#00E5FF');
+      : (options?.glowColor ?? new THREE.Color('#00E5FF'));
 
   return new THREE.ShaderMaterial({
     vertexShader: COSMIC_SHADER_VERTEX,
@@ -173,10 +173,7 @@ export function createCosmicShaderMaterial(
   });
 }
 
-export function updateCosmicShaderUniforms(
-  material: THREE.ShaderMaterial,
-  timeSec: number
-): void {
+export function updateCosmicShaderUniforms(material: THREE.ShaderMaterial, timeSec: number): void {
   if (material.uniforms?.uTime) {
     material.uniforms.uTime.value = timeSec;
   }
@@ -196,12 +193,12 @@ export function createGoldShaderMaterial(
   const goldColor =
     typeof options?.goldColor === 'string'
       ? new THREE.Color(options.goldColor)
-      : options?.goldColor ?? new THREE.Color('#FFD700');
+      : (options?.goldColor ?? new THREE.Color('#FFD700'));
 
   const auraColor =
     typeof options?.auraColor === 'string'
       ? new THREE.Color(options.auraColor)
-      : options?.auraColor ?? new THREE.Color('#FFE082');
+      : (options?.auraColor ?? new THREE.Color('#FFE082'));
 
   return new THREE.ShaderMaterial({
     vertexShader: GOLD_SHADER_VERTEX,
@@ -218,10 +215,7 @@ export function createGoldShaderMaterial(
   });
 }
 
-export function updateGoldShaderUniforms(
-  material: THREE.ShaderMaterial,
-  timeSec: number
-): void {
+export function updateGoldShaderUniforms(material: THREE.ShaderMaterial, timeSec: number): void {
   if (material.uniforms?.uTime) {
     material.uniforms.uTime.value = timeSec;
   }

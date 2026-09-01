@@ -85,10 +85,7 @@ function persistSettings(state: SettingsState): void {
 function createDefaultSettings(): SettingsState {
   const stored = getStoredSettings();
   const quality = (stored.quality as QualityLevel) ?? 'auto';
-  const effectiveQuality =
-    quality === 'auto'
-      ? (stored.effectiveQuality ?? 'medium')
-      : quality;
+  const effectiveQuality = quality === 'auto' ? (stored.effectiveQuality ?? 'medium') : quality;
 
   return {
     masterVolume: typeof stored.masterVolume === 'number' ? clamp(stored.masterVolume, 0, 1) : 0.8,
@@ -98,9 +95,7 @@ function createDefaultSettings(): SettingsState {
     quality,
     effectiveQuality,
     reducedMotion:
-      typeof stored.reducedMotion === 'boolean'
-        ? stored.reducedMotion
-        : getDefaultReducedMotion(),
+      typeof stored.reducedMotion === 'boolean' ? stored.reducedMotion : getDefaultReducedMotion(),
     haptics: typeof stored.haptics === 'boolean' ? stored.haptics : true,
     inputMode: stored.inputMode ?? 'auto',
     cameraSensitivity:

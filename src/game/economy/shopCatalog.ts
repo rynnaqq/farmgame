@@ -1,15 +1,6 @@
-import {
-  CROPS,
-  EGG_CONFIGS,
-  type CropId,
-  type EggType,
-  type PetType,
-} from '../core/constants';
+import { CROPS, EGG_CONFIGS, type CropId, type EggType, type PetType } from '../core/constants';
 import { CROP_IDS } from '../farming/cropDefinitions';
-import {
-  UPGRADE_CONFIGS,
-  type UpgradeId,
-} from './economyDefinitions';
+import { UPGRADE_CONFIGS, type UpgradeId } from './economyDefinitions';
 import { useGameStore } from '../../state/gameStore';
 
 export interface SeedCatalogItem {

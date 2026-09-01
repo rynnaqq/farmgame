@@ -5,9 +5,7 @@ import {
   stepQualityLevel,
   isDiagnosticsEnabled,
 } from '../core/autoQualityManager';
-import {
-  DiagnosticsOverlay,
-} from './DiagnosticsPanel';
+import { DiagnosticsOverlay } from './DiagnosticsPanel';
 import {
   resetDiagnosticsStore,
   updateDiagnosticsData,

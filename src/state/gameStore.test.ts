@@ -237,7 +237,9 @@ describe('useGameStore', () => {
       expect(useGameStore.getState().inventory.incubatingEggId).toBe('egg-1');
       expect(useGameStore.getState().inventory.eggs[0].incubating).toBe(true);
 
-      useGameStore.getState().updateEgg('egg-1', { elapsedIncubationSec: 45, distanceTraveled: 60 });
+      useGameStore
+        .getState()
+        .updateEgg('egg-1', { elapsedIncubationSec: 45, distanceTraveled: 60 });
       expect(useGameStore.getState().inventory.eggs[0].elapsedIncubationSec).toBe(45);
       expect(useGameStore.getState().inventory.eggs[0].distanceTraveled).toBe(60);
 

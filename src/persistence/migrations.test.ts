@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  migrateSaveEnvelope,
-  runSaveMigrations,
-  CURRENT_SCHEMA_VERSION,
-} from './migrations';
+import { migrateSaveEnvelope, runSaveMigrations, CURRENT_SCHEMA_VERSION } from './migrations';
 import { createDefaultSaveEnvelope } from './saveSchema';
 
 describe('migrations (Save Schema Migration Pipeline)', () => {

@@ -67,7 +67,12 @@ function ToolIcon({
               strokeWidth="2"
             />
             {/* Sparkle */}
-            <path d="M12 7l1 2 2 1-2 1-1 2-1-2-2-1 2-1z" fill="#fef08a" stroke="#ca8a04" strokeWidth="0.5" />
+            <path
+              d="M12 7l1 2 2 1-2 1-1 2-1-2-2-1 2-1z"
+              fill="#fef08a"
+              stroke="#ca8a04"
+              strokeWidth="0.5"
+            />
           </svg>
         );
       }
@@ -83,11 +88,7 @@ function ToolIcon({
           strokeLinecap="round"
           strokeLinejoin="round"
         >
-          <path
-            d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"
-            fill="currentColor"
-            fillOpacity="0.2"
-          />
+          <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" fill="currentColor" fillOpacity="0.2" />
         </svg>
       );
 
@@ -242,9 +243,7 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
           type="button"
           data-testid="tool-watering_can"
           data-golden={goldenWateringCanOwned ? 'true' : 'false'}
-          aria-label={
-            goldenWateringCanOwned ? 'Golden Watering Can (2)' : 'Watering Can (2)'
-          }
+          aria-label={goldenWateringCanOwned ? 'Golden Watering Can (2)' : 'Watering Can (2)'}
           aria-pressed={isWateringActive}
           disabled={!isInteractive}
           onClick={() => handleSelectTool('watering_can')}
@@ -254,8 +253,8 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
                 ? 'border-2 border-amber-400 ring-2 ring-amber-400/50 bg-amber-950/80 scale-105 shadow-md shadow-amber-500/30 z-10 text-amber-200'
                 : 'border-amber-500/50 bg-amber-950/40 hover:bg-amber-900/50 hover:border-amber-400 scale-100 opacity-90 hover:opacity-100 text-amber-300'
               : isWateringActive
-              ? 'border-2 border-cyan-400 ring-2 ring-cyan-400/40 bg-cyan-950/80 scale-105 shadow-md shadow-cyan-500/20 z-10'
-              : 'border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 scale-100 opacity-80 hover:opacity-100'
+                ? 'border-2 border-cyan-400 ring-2 ring-cyan-400/40 bg-cyan-950/80 scale-105 shadow-md shadow-cyan-500/20 z-10'
+                : 'border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 scale-100 opacity-80 hover:opacity-100'
           } ${!isInteractive ? 'cursor-not-allowed opacity-40' : ''}`}
         >
           {/* Key shortcut badge */}

@@ -47,7 +47,9 @@ test.describe('Persistence and Offline Simulation E2E', () => {
     expect(plot11?.crop?.cropId).toBe('carrot');
   });
 
-  test('offline progression calculates crop maturity and displays OfflineSummary modal', async ({ page }) => {
+  test('offline progression calculates crop maturity and displays OfflineSummary modal', async ({
+    page,
+  }) => {
     // 1. Till, plant carrot, and water plot
     await page.evaluate(() => {
       window.__tillPlot?.('plot-0-0');
@@ -85,7 +87,9 @@ test.describe('Persistence and Offline Simulation E2E', () => {
     expect(plotState?.crop?.growthProgressSec).toBe(45);
   });
 
-  test('offline simulation idempotency: immediate reload produces 0s and does not re-open modal', async ({ page }) => {
+  test('offline simulation idempotency: immediate reload produces 0s and does not re-open modal', async ({
+    page,
+  }) => {
     await page.evaluate(async () => {
       window.__tillPlot?.('plot-0-0');
       window.__plantCrop?.('plot-0-0', 'carrot');

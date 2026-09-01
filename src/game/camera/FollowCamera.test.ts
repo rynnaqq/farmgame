@@ -157,7 +157,7 @@ describe('Camera Math Pure Calculations', () => {
         initialYaw,
         initialPitch,
         10, // deltaX
-        5,  // deltaY
+        5, // deltaY
         1.0, // sensitivity
         false // invertY
       );
@@ -309,7 +309,12 @@ describe('Camera Math Pure Calculations', () => {
       const buffer = 0.3;
       const hits = [{ distance: 5.0 }]; // Hit closer than min distance 7
 
-      const distance = calculateCollisionOffsetDistance(desiredDistance, hits, buffer, CAMERA_MIN_DISTANCE);
+      const distance = calculateCollisionOffsetDistance(
+        desiredDistance,
+        hits,
+        buffer,
+        CAMERA_MIN_DISTANCE
+      );
       expect(distance).toBe(CAMERA_MIN_DISTANCE); // Clamped to 7
     });
 
@@ -336,10 +341,7 @@ describe('Camera Math Pure Calculations', () => {
 
 describe('FollowCamera Scene Obstacle Filtering (isCameraObstacle)', () => {
   it('identifies standard visible meshes as camera obstacles', () => {
-    const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(1, 1, 1),
-      new THREE.MeshBasicMaterial()
-    );
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial());
     mesh.name = 'IslandTerrainCliff';
     mesh.visible = true;
 
@@ -347,10 +349,7 @@ describe('FollowCamera Scene Obstacle Filtering (isCameraObstacle)', () => {
   });
 
   it('rejects invisible meshes', () => {
-    const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(1, 1, 1),
-      new THREE.MeshBasicMaterial()
-    );
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial());
     mesh.visible = false;
 
     expect(isCameraObstacle(mesh)).toBe(false);

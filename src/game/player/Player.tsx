@@ -13,11 +13,7 @@ export interface PlayerProps {
  * Composes the kinematic Rapier PlayerController, physics capsule collider,
  * and procedural low-poly gardener PlayerModel.
  */
-export const Player: React.FC<PlayerProps> = ({
-  initialPosition,
-  inputManager,
-  onFall,
-}) => {
+export const Player: React.FC<PlayerProps> = ({ initialPosition, inputManager, onFall }) => {
   return (
     <PlayerController
       initialPosition={initialPosition}

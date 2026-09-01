@@ -6,10 +6,7 @@ import {
   findNearestTargetPlot,
   isMerchantInRange,
 } from './targetPlotFinder';
-import {
-  MOBILE_ACTION_REACH,
-  MOBILE_ACTION_CONE_DEG,
-} from '../../game/core/constants';
+import { MOBILE_ACTION_REACH, MOBILE_ACTION_CONE_DEG } from '../../game/core/constants';
 import type { PlotData } from '../../state/storeTypes';
 
 describe('targetPlotFinder Unit Tests', () => {
@@ -190,14 +187,9 @@ describe('targetPlotFinder Unit Tests', () => {
       plots['plot-2-3'].tilled = false;
 
       // With trowel tool, should skip tilled plot-1-3 if filterByTool is true
-      const target = findNearestTargetPlot(
-        [-0.775, 0.5, -4.0],
-        0,
-        plots,
-        4,
-        'trowel',
-        { filterByTool: true }
-      );
+      const target = findNearestTargetPlot([-0.775, 0.5, -4.0], 0, plots, 4, 'trowel', {
+        filterByTool: true,
+      });
 
       expect(target).not.toBeNull();
       expect(target?.plot.row).toBe(2);

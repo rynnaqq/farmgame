@@ -182,7 +182,7 @@ describe('Task 12: Growth Simulation System', () => {
 
     it('rollMutation consumes exactly one float from RNG', () => {
       const rng = new SeededRNG(999);
-      
+
       // Call rollMutation
       rollMutation('sunny', null, rng);
 
@@ -397,11 +397,21 @@ describe('Task 12: Growth Simulation System', () => {
       const makePlots = (): Record<PlotId, PlotData> => ({
         plot_0_0: createMockPlot({
           id: 'plot_0_0',
-          crop: { cropId: 'carrot', plantedAtUtcMs: baseTime, growthProgressSec: 44, mutation: 'none' },
+          crop: {
+            cropId: 'carrot',
+            plantedAtUtcMs: baseTime,
+            growthProgressSec: 44,
+            mutation: 'none',
+          },
         }),
         plot_0_1: createMockPlot({
           id: 'plot_0_1',
-          crop: { cropId: 'carrot', plantedAtUtcMs: baseTime, growthProgressSec: 44, mutation: 'none' },
+          crop: {
+            cropId: 'carrot',
+            plantedAtUtcMs: baseTime,
+            growthProgressSec: 44,
+            mutation: 'none',
+          },
         }),
       });
 
@@ -411,8 +421,12 @@ describe('Task 12: Growth Simulation System', () => {
       expect(res1.maturedPlots).toHaveLength(2);
       expect(res2.maturedPlots).toHaveLength(2);
       expect(res1.maturedPlots).toEqual(res2.maturedPlots);
-      expect(res1.updatedPlots.plot_0_0.crop?.mutation).toBe(res2.updatedPlots.plot_0_0.crop?.mutation);
-      expect(res1.updatedPlots.plot_0_1.crop?.mutation).toBe(res2.updatedPlots.plot_0_1.crop?.mutation);
+      expect(res1.updatedPlots.plot_0_0.crop?.mutation).toBe(
+        res2.updatedPlots.plot_0_0.crop?.mutation
+      );
+      expect(res1.updatedPlots.plot_0_1.crop?.mutation).toBe(
+        res2.updatedPlots.plot_0_1.crop?.mutation
+      );
     });
 
     it('returns empty maturedPlots when no crops mature during tick', () => {
@@ -420,7 +434,12 @@ describe('Task 12: Growth Simulation System', () => {
       const plots: Record<PlotId, PlotData> = {
         plot_0_0: createMockPlot({
           id: 'plot_0_0',
-          crop: { cropId: 'pumpkin', plantedAtUtcMs: baseTime, growthProgressSec: 10, mutation: 'none' },
+          crop: {
+            cropId: 'pumpkin',
+            plantedAtUtcMs: baseTime,
+            growthProgressSec: 10,
+            mutation: 'none',
+          },
         }),
       };
 
@@ -450,7 +469,9 @@ describe('Task 12: Growth Simulation System', () => {
       const runA = runSequence(seed);
       const runB = runSequence(seed);
       expect(runA).toEqual(runB);
-      expect(runA.some((r) => r.includes('gold') || r.includes('giant') || r.includes('cosmic'))).toBe(true);
+      expect(
+        runA.some((r) => r.includes('gold') || r.includes('giant') || r.includes('cosmic'))
+      ).toBe(true);
     });
   });
 });

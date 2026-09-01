@@ -1,8 +1,4 @@
-import {
-  PLOT_SIZE,
-  PLOT_TOTAL_SIZE,
-  MAX_GRID_SIZE,
-} from '../core/constants';
+import { PLOT_SIZE, PLOT_TOTAL_SIZE, MAX_GRID_SIZE } from '../core/constants';
 import type { PlotId } from '../../state/storeTypes';
 
 // ==========================================
@@ -42,23 +38,15 @@ export function getGridBounds(gridSize: number = MAX_GRID_SIZE): GridBounds {
   };
 }
 
-export function isPlotUnlocked(
-  row: number,
-  col: number,
-  currentGridSize: number
-): boolean {
-  return (
-    row >= 0 && row < currentGridSize && col >= 0 && col < currentGridSize
-  );
+export function isPlotUnlocked(row: number, col: number, currentGridSize: number): boolean {
+  return row >= 0 && row < currentGridSize && col >= 0 && col < currentGridSize;
 }
 
 export function getPlotId(row: number, col: number): PlotId {
   return `plot-${row}-${col}`;
 }
 
-export function parsePlotId(
-  plotId: string
-): { row: number; col: number } | null {
+export function parsePlotId(plotId: string): { row: number; col: number } | null {
   const match = /^plot-(\d+)-(\d+)$/.exec(plotId);
   if (!match) return null;
   return {
@@ -109,10 +97,7 @@ export function worldToGridCoords(
 
   if (row >= 0 && row < gridSize && col >= 0 && col < gridSize) {
     const [plotX, , plotZ] = getPlotPosition(row, col, gridSize);
-    if (
-      Math.abs(x - plotX) <= PLOT_SIZE / 2 &&
-      Math.abs(z - plotZ) <= PLOT_SIZE / 2
-    ) {
+    if (Math.abs(x - plotX) <= PLOT_SIZE / 2 && Math.abs(z - plotZ) <= PLOT_SIZE / 2) {
       return { row, col };
     }
   }

@@ -43,7 +43,7 @@ describe('Player Animation & Kinematic Controller Math', () => {
         expect(normalizeAngle(-2 * Math.PI)).toBeCloseTo(0, 5);
         expect(normalizeAngle(Math.PI / 2)).toBeCloseTo(Math.PI / 2, 5);
         expect(normalizeAngle(-Math.PI / 2)).toBeCloseTo(-Math.PI / 2, 5);
-        expect(normalizeAngle(5 * Math.PI / 2)).toBeCloseTo(Math.PI / 2, 5);
+        expect(normalizeAngle((5 * Math.PI) / 2)).toBeCloseTo(Math.PI / 2, 5);
       });
     });
 

@@ -2,7 +2,10 @@ import { useGameStore } from '../state/gameStore';
 import { useUiStore } from '../state/uiStore';
 import { useSettingsStore } from '../state/settingsStore';
 import { saveService } from '../persistence/saveService';
-import { simulateOfflineProgression, type OfflineSummaryData } from '../persistence/offlineSimulation';
+import {
+  simulateOfflineProgression,
+  type OfflineSummaryData,
+} from '../persistence/offlineSimulation';
 import { applyWeatherHydration } from '../game/weather/weatherSystem';
 import { tillPlot, plantCrop, waterPlot, harvestCrop } from '../game/farming/farmingCommands';
 import { hatchEgg } from '../game/pets/petSystem';
@@ -36,7 +39,10 @@ declare global {
     __setPlayerPosition?: (position: [number, number, number]) => void;
     __incubateEgg?: (eggId: string) => void;
     __hatchEgg?: (eggId: string) => CommandResult<{ pet: PetData }>;
-    __openModal?: (modal: 'shop' | 'inventory' | 'settings' | 'offline_summary', data?: unknown) => void;
+    __openModal?: (
+      modal: 'shop' | 'inventory' | 'settings' | 'offline_summary',
+      data?: unknown
+    ) => void;
     __closeModal?: () => void;
     __saveGame?: () => Promise<void>;
     __loadGame?: () => Promise<SaveEnvelope>;
@@ -76,17 +82,19 @@ export function advanceGameTime(
 /**
  * Explicitly sets active weather and optionally duration in seconds.
  */
-export function setTestWeather(
-  type: WeatherType,
-  durationSeconds: number = 300
-): WeatherState {
+export function setTestWeather(type: WeatherType, durationSeconds: number = 300): WeatherState {
   const store = useGameStore.getState();
   const now = store.lastSavedUtcMs > 0 ? store.lastSavedUtcMs : Date.now();
   const endsAt = now + durationSeconds * 1000;
   store.setWeather(type, now, endsAt);
 
   if (type === 'heavy_rain') {
-    const updatedPlots = applyWeatherHydration(useGameStore.getState().farm.plots, type, endsAt, now);
+    const updatedPlots = applyWeatherHydration(
+      useGameStore.getState().farm.plots,
+      type,
+      endsAt,
+      now
+    );
     store.updatePlots(updatedPlots);
   }
 

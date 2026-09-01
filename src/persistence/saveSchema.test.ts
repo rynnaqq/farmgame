@@ -60,7 +60,10 @@ describe('saveSchema (Zod Persistence Validation)', () => {
 
     const nanPosition = {
       ...defaultSave,
-      player: { ...defaultSave.player, position: [0, NaN, 0] as unknown as [number, number, number] },
+      player: {
+        ...defaultSave.player,
+        position: [0, NaN, 0] as unknown as [number, number, number],
+      },
     };
     expect(safeParseSaveEnvelope(nanPosition).success).toBe(false);
   });
@@ -100,7 +103,9 @@ describe('saveSchema (Zod Persistence Validation)', () => {
       ...defaultSave,
       inventory: {
         ...defaultSave.inventory,
-        produce: [{ cropId: 'watermelon' as unknown as 'carrot', mutation: 'none' as const, quantity: 5 }],
+        produce: [
+          { cropId: 'watermelon' as unknown as 'carrot', mutation: 'none' as const, quantity: 5 },
+        ],
       },
     };
     expect(safeParseSaveEnvelope(invalidProduce).success).toBe(false);
