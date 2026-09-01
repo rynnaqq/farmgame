@@ -11,6 +11,7 @@ import { FollowCamera } from './camera/FollowCamera';
 import { ParticlePool } from './effects/ParticlePool';
 import { PostProcessing } from './effects/PostProcessing';
 import { DiagnosticsPanel } from './effects/DiagnosticsPanel';
+import { PetRenderer } from './pets/PetRenderer';
 import type { InputManager } from './input/InputManager';
 
 export interface GameRuntimeProps {
@@ -75,7 +76,10 @@ export const GameRuntime: React.FC<GameRuntimeProps> = ({
       {/* 10. Auto Quality Manager & Diagnostics Telemetry Collector */}
       <DiagnosticsPanel />
 
-      {/* 11. Dynamic entities & extensions (Pets, etc.) */}
+      {/* 11. Companion Pet & Incubating Egg 3D Renderer */}
+      <PetRenderer />
+
+      {/* 12. Dynamic entities & extensions (Custom entities, etc.) */}
       {children}
     </group>
   );
