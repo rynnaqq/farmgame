@@ -5,6 +5,7 @@ import { GameCanvas } from '../game/GameCanvas';
 import { GameRuntime } from '../game/GameRuntime';
 import { InputManager } from '../game/input/InputManager';
 import { MobileHUD } from '../ui/mobile/MobileHUD';
+import { Toolbelt } from '../ui/Toolbelt';
 import type { PlotId } from '../state/storeTypes';
 
 export interface AppProps {
@@ -18,7 +19,7 @@ export interface AppProps {
 /**
  * Main application entry component for Garden Island 3D.
  * Combines global ErrorBoundary, WebGL validation provider, 3D GameCanvas,
- * GameRuntime scene coordinator, MobileHUD, and the UI overlay root container.
+ * GameRuntime scene coordinator, MobileHUD, Toolbelt, and the UI overlay root container.
  */
 export const App: React.FC<AppProps> = ({
   children,
@@ -68,6 +69,7 @@ export const App: React.FC<AppProps> = ({
             data-testid="ui-overlay-container"
           >
             <MobileHUD inputManager={activeInputManager} onPlotInteract={onPlotClick} />
+            <Toolbelt inputManager={activeInputManager} />
           </div>
         </div>
       </Providers>

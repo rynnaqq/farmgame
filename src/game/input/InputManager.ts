@@ -65,6 +65,11 @@ export class InputManager {
     this.keyboard.onCycleSeed = (direction) => {
       if (this.isModalOpen()) return;
       this.onCycleSeed?.(direction);
+      const crops = ['carrot', 'tomato', 'pumpkin', 'golden_berry', 'starfruit'] as const;
+      const current = useUiStore.getState().selectedSeed;
+      const idx = crops.indexOf(current);
+      const nextIdx = (idx + direction + crops.length) % crops.length;
+      useUiStore.getState().setSelectedSeed(crops[nextIdx]);
     };
 
     this.keyboard.onInteract = () => {
