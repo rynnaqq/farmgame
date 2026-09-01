@@ -21,6 +21,8 @@ import { simulateOfflineProgression } from '../persistence/offlineSimulation';
 import { useGameStore } from '../state/gameStore';
 import { useUiStore } from '../state/uiStore';
 import { AUTOSAVE_INTERVAL_MS } from '../game/core/constants';
+import { executeToolAction } from '../game/farming/farmingCommands';
+import { installTestClock } from '../test/testClock';
 import type { PlotId } from '../state/storeTypes';
 
 
@@ -54,6 +56,7 @@ export const App: React.FC<AppProps> = ({
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      installTestClock();
       activeInputManager.attach(window);
       audioManager.init();
       const detachGestures = audioManager.attachUserGestureListeners(window);
@@ -94,6 +97,36 @@ export const App: React.FC<AppProps> = ({
     }
   }, [activeInputManager]);
 
+  const handlePlotClick = React.useCallback(
+    (plotId: PlotId) => {
+      if (onPlotClick) {
+        onPlotClick(plotId);
+        return;
+      }
+      const uiState = useUiStore.getState();
+      const gameState = useGameStore.getState();
+      const result = executeToolAction(
+        plotId,
+        uiState.selectedTool,
+        uiState.selectedSeed,
+        gameState.player.position,
+        {
+          isGoldenCan: gameState.farm.goldenWateringCanOwned,
+          weather: gameState.weather.current,
+          nowMs: Date.now(),
+        }
+      );
+      if (result.ok) {
+        if (uiState.selectedTool === 'trowel') audioManager.playSfx('till');
+        else if (uiState.selectedTool === 'watering_can') audioManager.playSfx('water');
+        else if (uiState.selectedTool === 'seed_bag') audioManager.playSfx('plant');
+        else if (uiState.selectedTool === 'hand' || uiState.selectedTool === 'scythe') audioManager.playSfx('harvest');
+      } else if (result.message) {
+        uiState.showToast(result.message, 'warning', 2000);
+      }
+    },
+    [onPlotClick]
+  );
 
   return (
     <ErrorBoundary>
@@ -106,7 +139,7 @@ export const App: React.FC<AppProps> = ({
           {/* 3D WebGL Canvas Layer */}
           <GameCanvas>
             <GameRuntime
-              onPlotClick={onPlotClick}
+              onPlotClick={handlePlotClick}
               onPlayerFall={onPlayerFall}
               inputManager={activeInputManager}
             >
@@ -121,7 +154,7 @@ export const App: React.FC<AppProps> = ({
             data-testid="ui-overlay-container"
           >
             <HUD />
-            <MobileHUD inputManager={activeInputManager} onPlotInteract={onPlotClick} />
+            <MobileHUD inputManager={activeInputManager} onPlotInteract={handlePlotClick} />
             <Toolbelt inputManager={activeInputManager} />
             <ShopModal />
             <InventoryPanel />
