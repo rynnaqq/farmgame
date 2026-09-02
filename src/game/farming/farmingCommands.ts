@@ -19,8 +19,8 @@ import { isPlotHarvestable } from './plotMachine';
 import { audioManager } from '../audio/AudioManager';
 
 /**
- * Validates that a target plot exists, is unlocked within current farm bounds,
- * and is within physical player interaction reach if playerPos is provided.
+ * Validates that a target plot exists and is within physical interaction reach if playerPos is provided.
+ * All plots are unlocked per user specification.
  */
 function getPlotAndValidateRange(
   plotId: PlotId,
@@ -239,6 +239,7 @@ export function plantCrop(
 
   store.setPlot({
     ...plot,
+    tilled: true,
     crop: {
       cropId,
       plantedAtUtcMs: nowMs,
@@ -328,8 +329,14 @@ export function executeToolAction(
       return tillPlot(plotId, playerPos);
     case 'watering_can':
       return waterPlot(plotId, playerPos, options?.isGoldenCan, options?.weather, options?.nowMs);
-    case 'seed_bag':
+    case 'seed_bag': {
+      const store = useGameStore.getState();
+      const currentPlot = store.farm.plots[plotId];
+      if (currentPlot && !currentPlot.tilled) {
+        store.setPlot({ ...currentPlot, tilled: true });
+      }
       return plantCrop(plotId, selectedSeedId, playerPos, options?.nowMs);
+    }
     case 'scythe':
     case 'hand':
       return harvestCrop(plotId, playerPos);

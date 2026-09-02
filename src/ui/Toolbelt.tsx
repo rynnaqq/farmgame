@@ -235,7 +235,7 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
         role="toolbar"
         aria-label="Farming Tools"
       >
-        {/* 1. Trowel */}
+        {/* 1. Trowel (Hidden visually per user specification) */}
         <button
           type="button"
           data-testid="tool-trowel"
@@ -243,28 +243,24 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
           aria-pressed={isTrowelActive}
           disabled={!isInteractive}
           onClick={() => handleSelectTool('trowel')}
+          style={{ display: 'none' }}
           className={`min-w-[44px] min-h-[44px] w-14 h-15 md:w-16 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border transition-all duration-150 relative cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
             isTrowelActive
               ? 'border-2 border-emerald-400 ring-2 ring-emerald-400/40 bg-emerald-950/80 scale-105 shadow-md shadow-emerald-500/20 z-10'
               : 'border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 scale-100 opacity-80 hover:opacity-100'
           } ${!isInteractive ? 'cursor-not-allowed opacity-40' : ''}`}
         >
-          {/* Active selection arrow marker (Growden.io style) */}
           {isTrowelActive && (
             <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-white text-[11px] leading-none animate-bounce select-none pointer-events-none drop-shadow">
               ▼
             </span>
           )}
-
-          {/* Key shortcut badge */}
           <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
             1
           </span>
-
           <div className="flex-1 flex items-center justify-center pointer-events-none mt-1">
             <ToolIcon tool="trowel" isActive={isTrowelActive} />
           </div>
-
           <span className="text-[10px] md:text-[11px] font-bold text-white leading-tight pointer-events-none">
             Trowel
           </span>

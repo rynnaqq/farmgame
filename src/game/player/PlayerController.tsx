@@ -13,6 +13,7 @@ import { useUiStore } from '../../state/uiStore';
 import { useNetStore } from '../multiplayer/netStore';
 import { getRoomConnection } from '../multiplayer/RoomConnection';
 import type { InputManager } from '../input/InputManager';
+import { audioManager } from '../audio/AudioManager';
 import { PlayerModel } from './PlayerModel';
 import {
   smoothVelocity,
@@ -178,10 +179,14 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
         useGameStore.getState().setPlayerPosition([spawnX, spawnY, spawnZ]);
         onFall?.();
       } else {
-        // Command horizontal velocity; physics integrates and resolves
-        // collisions against fixed geometry. Zeroing Y leaves gravity in charge
-        // of vertical motion (walking on the island floor, falling off edges).
-        rb.setLinvel({ x: smoothed.x, y: rb.linvel().y, z: smoothed.z }, true);
+        // Command horizontal velocity and apply jump impulses if requested while grounded
+        const shouldJump = inputManager?.consumeJump() ?? false;
+        let vy = rb.linvel().y;
+        if (shouldJump && pos.y < 0.45 && Math.abs(vy) < 0.6) {
+          vy = 5.8;
+          audioManager.playSfx('ui_click');
+        }
+        rb.setLinvel({ x: smoothed.x, y: vy, z: smoothed.z }, true);
 
         quaternionRef.current.setFromAxisAngle(upAxisRef.current, yawRef.current);
         rb.setRotation(quaternionRef.current, true);

@@ -88,6 +88,8 @@ export const App: React.FC<AppProps> = ({
           if (!isMounted) return;
 
           const { updatedEnvelope, summary } = simulateOfflineProgression(envelope, Date.now());
+          // Ensure all farm land is unlocked (8x8) immediately per user overhaul
+          updatedEnvelope.farm.gridSize = 8;
           useGameStore.getState().loadSaveEnvelope(updatedEnvelope);
           await saveService.saveImmediate(updatedEnvelope);
 
@@ -129,7 +131,7 @@ export const App: React.FC<AppProps> = ({
         plotId,
         uiState.selectedTool,
         uiState.selectedSeed,
-        gameState.player.position,
+        undefined, // User requested removal of "move closer to the plot" constraint
         {
           isGoldenCan: gameState.farm.goldenWateringCanOwned,
           weather: gameState.weather.current,
@@ -145,7 +147,7 @@ export const App: React.FC<AppProps> = ({
         else if (uiState.selectedTool === 'seed_bag') audioManager.playSfx('plant');
         else if (uiState.selectedTool === 'hand' || uiState.selectedTool === 'scythe')
           audioManager.playSfx('harvest');
-      } else if (result.message) {
+      } else if (result.message && !result.message.toLowerCase().includes('closer')) {
         uiState.showToast(result.message, 'warning', 2000);
       }
     },

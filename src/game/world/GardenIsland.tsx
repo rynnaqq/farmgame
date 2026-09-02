@@ -26,8 +26,10 @@ const GrassStuds: React.FC = () => {
     const half = ISLAND_SIZE / 2 - 0.7;
     for (let x = -half; x <= half; x += step) {
       for (let z = -half; z <= half; z += step) {
-        // Exclude central farm plot area so planter beds sit flush
-        if (Math.abs(x) < 7.2 && Math.abs(z) < 7.2) continue;
+        // Exclude Left Planter Bed
+        if (x >= -7.6 && x <= -1.4 && Math.abs(z) <= 6.5) continue;
+        // Exclude Right Planter Bed
+        if (x >= 1.4 && x <= 7.6 && Math.abs(z) <= 6.5) continue;
         // Exclude merchant platform
         if (x > 8.0 && z > 5.0) continue;
         // Exclude water barrel platform
@@ -362,6 +364,20 @@ export const GardenIsland: React.FC = () => {
           {/* 3D Garden Gate Wooden Signs */}
           <GardenEntranceSign />
           <QuickActionSign />
+
+          {/* Entrance Flanking Wooden Ramps (Growden.io style) */}
+          <group position={[-2.6, 0.22, 7.3]} rotation={[0.25, 0, 0]}>
+            <mesh castShadow receiveShadow>
+              <boxGeometry args={[1.8, 0.42, 1.4]} />
+              <meshStandardMaterial color="#6B4123" roughness={0.8} flatShading />
+            </mesh>
+          </group>
+          <group position={[2.6, 0.22, 7.3]} rotation={[0.25, 0, 0]}>
+            <mesh castShadow receiveShadow>
+              <boxGeometry args={[1.8, 0.42, 1.4]} />
+              <meshStandardMaterial color="#6B4123" roughness={0.8} flatShading />
+            </mesh>
+          </group>
 
           {/* West Garden Fence (X = -6.8) */}
           <CuboidCollider args={[0.15, 0.5, 6.8]} position={[-6.8, 0.5, 0]} />

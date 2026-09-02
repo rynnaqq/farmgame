@@ -31,6 +31,7 @@ export class InputManager {
   private isJoystickRunning = false;
 
   private cameraYawRad: number = (CAMERA_DEFAULT_YAW_DEG * Math.PI) / 180;
+  private jumpRequested = false;
   private movementState: ProcessedMovementState = {
     moveVector: { x: 0, z: 0 },
     rawVector: { x: 0, z: 0 },
@@ -98,6 +99,10 @@ export class InputManager {
       if (this.isModalOpen()) return;
       this.onCameraZoom?.(deltaDistance);
     };
+
+    this.keyboard.onJump = () => {
+      this.triggerJump();
+    };
   }
 
   public attach(target: (Window & typeof globalThis) | HTMLElement = window): void {
@@ -137,12 +142,26 @@ export class InputManager {
     this.isJoystickActive = false;
     this.joystickRunHoldMs = 0;
     this.isJoystickRunning = false;
+    this.jumpRequested = false;
     this.movementState = {
       moveVector: { x: 0, z: 0 },
       rawVector: { x: 0, z: 0 },
       magnitude: 0,
       isRunning: false,
     };
+  }
+
+  public triggerJump(): void {
+    if (this.isModalOpen()) return;
+    this.jumpRequested = true;
+  }
+
+  public consumeJump(): boolean {
+    if (this.jumpRequested) {
+      this.jumpRequested = false;
+      return true;
+    }
+    return false;
   }
 
   public setCameraYaw(yawRad: number): void {

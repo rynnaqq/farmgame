@@ -16,6 +16,7 @@ export class KeyboardInput {
   public onCycleSeed?: CycleSeedCallback;
   public onInteract?: InteractCallback;
   public onEscape?: EscapeCallback;
+  public onJump?: () => void;
 
   // Keybindings mapping
   private boundKeyDown = (e: KeyboardEvent) => this.handleKeyDown(e);
@@ -153,6 +154,11 @@ export class KeyboardInput {
     // Escape
     if (code === 'Escape' || key === 'Escape') {
       this.onEscape?.();
+    }
+
+    // Space: Jump
+    if (code === 'Space' || key === ' ') {
+      this.onJump?.();
     }
   }
 

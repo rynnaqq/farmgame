@@ -5,6 +5,7 @@ import { findNearestTargetPlot, isMerchantInRange } from './targetPlotFinder';
 import { useSettingsStore } from '../../state/settingsStore';
 import { useGameStore } from '../../state/gameStore';
 import { useUiStore } from '../../state/uiStore';
+import { playerTransform } from '../../game/player/playerTransformStore';
 import type { InputManager } from '../../game/input/InputManager';
 import type { PlotId, ToolType } from '../../state/storeTypes';
 
@@ -82,14 +83,24 @@ export const MobileHUD: React.FC<MobileHUDProps> = ({
     return isTouchEnvironment;
   }, [inputMode, isTouchEnvironment, forceTouch]);
 
-  // Calculate nearest target plot in player forward cone & reach
-  const playerYaw = inputManager ? inputManager.getCameraYaw() : 0;
+  // Track actual character facing yaw (eliminating raycast/selection misalignment)
+  const [characterYaw, setCharacterYaw] = useState<number>(() => playerTransform.yaw);
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (Math.abs(playerTransform.yaw - characterYaw) > 0.02) {
+        setCharacterYaw(playerTransform.yaw);
+      }
+    }, 50);
+    return () => clearInterval(timer);
+  }, [characterYaw]);
+
+  // Calculate nearest target plot in player forward cone & reach using character yaw
   const targetPlotResult = useMemo(() => {
-    return findNearestTargetPlot(playerPosition, playerYaw, farmPlots, gridSize, selectedTool, {
+    return findNearestTargetPlot(playerPosition, characterYaw, farmPlots, gridSize, selectedTool, {
       filterByTool: false,
     });
-  }, [playerPosition, playerYaw, farmPlots, gridSize, selectedTool]);
+  }, [playerPosition, characterYaw, farmPlots, gridSize, selectedTool]);
 
   // Check merchant proximity
   const nearMerchant = useMemo(() => {
@@ -113,8 +124,6 @@ export const MobileHUD: React.FC<MobileHUDProps> = ({
 
     if (targetPlotResult) {
       onPlotInteract?.(targetPlotResult.plot.id, selectedTool);
-    } else {
-      useUiStore.getState().showToast('Move closer to a plot', 'info', 2000);
     }
   }, [nearMerchant, targetPlotResult, selectedTool, onPlotInteract]);
 
@@ -142,8 +151,9 @@ export const MobileHUD: React.FC<MobileHUDProps> = ({
           <VirtualJoystick inputManager={inputManager} disabled={isModalOpen} />
         </div>
 
-        {/* Lower-right: Contextual Action Button */}
-        <div className="pointer-events-auto">
+        {/* Lower-right: Action & Jump Buttons (Growden.io style) */}
+        <div className="pointer-events-auto flex flex-col items-center gap-3">
+          {/* 1. Contextual Action Button */}
           <MobileActionButton
             selectedTool={selectedTool}
             hasTarget={targetPlotResult !== null}
@@ -151,6 +161,34 @@ export const MobileHUD: React.FC<MobileHUDProps> = ({
             onAction={handleActionButton}
             disabled={isModalOpen}
           />
+
+          {/* 2. Jump Button (Circular with Up Arrow ↑) */}
+          <button
+            type="button"
+            data-testid="mobile-jump-button"
+            aria-label="Jump"
+            disabled={isModalOpen}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              inputManager?.triggerJump();
+            }}
+            className={`w-16 h-16 rounded-full bg-slate-900/90 hover:bg-slate-800/90 active:scale-90 border-2 border-white/40 text-white shadow-2xl flex items-center justify-center cursor-pointer transition-transform duration-100 ${
+              isModalOpen ? 'opacity-40 cursor-not-allowed' : ''
+            }`}
+          >
+            <svg
+              className="w-8 h-8 text-white stroke-[2.5]"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="19" x2="12" y2="5" />
+              <polyline points="5 12 12 5 19 12" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>

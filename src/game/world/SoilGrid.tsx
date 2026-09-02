@@ -8,9 +8,7 @@ import { useSettingsStore } from '../../state/settingsStore';
 import { PlotMesh } from './PlotMesh';
 import {
   getPlotPosition,
-  getGridBounds,
   getPlotId,
-  getLockedPlotSlots,
   type LockedPlotSlot,
 } from './gridCoordinates';
 import {
@@ -257,44 +255,112 @@ export const SoilGrid: React.FC<SoilGridProps> = ({ onPlotClick }) => {
     return calculatePlotExpansionScale(animTime, waveState.startTime, ring);
   };
 
-  // Active plot list
+  // Active plot list spanning Left Bed and Right Bed (Growden.io style)
   const activePlots = useMemo(() => {
     const list = [];
-    for (let r = 0; r < gridSize; r++) {
-      for (let c = 0; c < gridSize; c++) {
+    const totalCols = MAX_GRID_SIZE;
+    const totalRows = MAX_GRID_SIZE;
+    const halfCols = Math.floor(totalCols / 2);
+
+    for (let r = 0; r < totalRows; r++) {
+      for (let c = 0; c < totalCols; c++) {
         const id = getPlotId(r, c);
         const plotData = plots[id] || {
           id,
           row: r,
           col: c,
-          tilled: false,
+          tilled: true,
           crop: null,
           hydratedUntilUtcMs: 0,
         };
+
+        const [baseX, y, baseZ] = getPlotPosition(r, c, MAX_GRID_SIZE);
+        const bedShiftX = c < halfCols ? -1.8 : 1.8;
         list.push({
           plot: plotData,
-          position: getPlotPosition(r, c, MAX_GRID_SIZE),
+          position: [baseX + bedShiftX, y, baseZ] as [number, number, number],
         });
       }
     }
     return list;
-  }, [plots, gridSize]);
+  }, [plots]);
 
-  // Locked plot slots
-  const lockedSlots = useMemo(() => {
-    return getLockedPlotSlots(gridSize, MAX_GRID_SIZE);
-  }, [gridSize]);
-
-  // Farm boundary dimensions for ground bed
-  const maxGridBounds = useMemo(() => getGridBounds(MAX_GRID_SIZE), []);
+  // Locked plot slots: All farm plots unlocked immediately per user specification
+  const lockedSlots: LockedPlotSlot[] = useMemo(() => [], []);
 
   return (
     <group name="SoilGrid">
-      {/* Subtle garden plot area foundation recess */}
-      <mesh receiveShadow position={[0, -0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[maxGridBounds.width + 0.6, maxGridBounds.depth + 0.6]} />
-        <meshStandardMaterial color="#3F6E22" roughness={0.9} metalness={0.0} flatShading />
-      </mesh>
+      {/* 1. Left Raised Planter Bed Frame (Thick rustic wood border + dividers) */}
+      <group position={[-4.5, 0.08, 0]}>
+        {/* Underbed foundation */}
+        <mesh receiveShadow position={[0, -0.02, 0]}>
+          <boxGeometry args={[5.8, 0.12, 12.8]} />
+          <meshStandardMaterial color="#3D210F" roughness={0.9} flatShading />
+        </mesh>
+        {/* North rim */}
+        <mesh position={[0, 0.06, 6.3]} castShadow receiveShadow>
+          <boxGeometry args={[5.8, 0.22, 0.24]} />
+          <meshStandardMaterial color="#4A2E16" roughness={0.8} flatShading />
+        </mesh>
+        {/* South rim */}
+        <mesh position={[0, 0.06, -6.3]} castShadow receiveShadow>
+          <boxGeometry args={[5.8, 0.22, 0.24]} />
+          <meshStandardMaterial color="#4A2E16" roughness={0.8} flatShading />
+        </mesh>
+        {/* West rim */}
+        <mesh position={[-2.8, 0.06, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.24, 0.22, 12.8]} />
+          <meshStandardMaterial color="#4A2E16" roughness={0.8} flatShading />
+        </mesh>
+        {/* East rim (flanking central path) */}
+        <mesh position={[2.8, 0.06, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.24, 0.22, 12.8]} />
+          <meshStandardMaterial color="#4A2E16" roughness={0.8} flatShading />
+        </mesh>
+        {/* Divider crossbeams dividing planter into 4 contiguous sections */}
+        {[-3.15, 0, 3.15].map((bz, idx) => (
+          <mesh key={idx} position={[0, 0.05, bz]} castShadow receiveShadow>
+            <boxGeometry args={[5.4, 0.18, 0.18]} />
+            <meshStandardMaterial color="#553218" roughness={0.85} flatShading />
+          </mesh>
+        ))}
+      </group>
+
+      {/* 2. Right Raised Planter Bed Frame (Thick rustic wood border + dividers) */}
+      <group position={[4.5, 0.08, 0]}>
+        {/* Underbed foundation */}
+        <mesh receiveShadow position={[0, -0.02, 0]}>
+          <boxGeometry args={[5.8, 0.12, 12.8]} />
+          <meshStandardMaterial color="#3D210F" roughness={0.9} flatShading />
+        </mesh>
+        {/* North rim */}
+        <mesh position={[0, 0.06, 6.3]} castShadow receiveShadow>
+          <boxGeometry args={[5.8, 0.22, 0.24]} />
+          <meshStandardMaterial color="#4A2E16" roughness={0.8} flatShading />
+        </mesh>
+        {/* South rim */}
+        <mesh position={[0, 0.06, -6.3]} castShadow receiveShadow>
+          <boxGeometry args={[5.8, 0.22, 0.24]} />
+          <meshStandardMaterial color="#4A2E16" roughness={0.8} flatShading />
+        </mesh>
+        {/* West rim (flanking central path) */}
+        <mesh position={[-2.8, 0.06, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.24, 0.22, 12.8]} />
+          <meshStandardMaterial color="#4A2E16" roughness={0.8} flatShading />
+        </mesh>
+        {/* East rim */}
+        <mesh position={[2.8, 0.06, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.24, 0.22, 12.8]} />
+          <meshStandardMaterial color="#4A2E16" roughness={0.8} flatShading />
+        </mesh>
+        {/* Divider crossbeams dividing planter into 4 contiguous sections */}
+        {[-3.15, 0, 3.15].map((bz, idx) => (
+          <mesh key={idx} position={[0, 0.05, bz]} castShadow receiveShadow>
+            <boxGeometry args={[5.4, 0.18, 0.18]} />
+            <meshStandardMaterial color="#553218" roughness={0.85} flatShading />
+          </mesh>
+        ))}
+      </group>
 
       {/* Active Plot Meshes */}
       {activePlots.map(({ plot, position }) => (
@@ -309,7 +375,7 @@ export const SoilGrid: React.FC<SoilGridProps> = ({ onPlotClick }) => {
         />
       ))}
 
-      {/* GPU-Instanced Locked Plot Markers (4 draw calls total) */}
+      {/* GPU-Instanced Locked Plot Markers (Empty, no locks!) */}
       <LockedPlotsInstanced slots={lockedSlots} />
     </group>
   );
