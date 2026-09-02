@@ -53,8 +53,15 @@ export interface IdleBobState {
   idleBobY: number;
   idleSwayZ: number;
   headTiltZ: number;
+  /** Softer secondary motion layers for a natural, non-robotic idle. */
+  torsoPitch: number;
+  headYaw: number;
+  armSwayZ: number;
+  breatheScale: number;
 }
 
+// ==========================================
+// 3. Procedural Limb & Idle Animations
 // ==========================================
 // 1. Angle & Shortest-Path Interpolation Math
 // ==========================================
@@ -256,8 +263,24 @@ export function calculateLimbSwings(
   };
 }
 
+// Secondary idle motion tuning: layered, out-of-phase frequencies so the
+// character never looks like a metronome.
+const IDLE_BREATH_FREQUENCY = 1.1; // rad/s chest breathing (~0.18 Hz)
+const IDLE_BREATH_AMPLITUDE = 0.02; // radians torso pitch
+const IDLE_GLANCE_FREQUENCY = 0.35; // rad/s slow occasional look-around
+const IDLE_GLANCE_AMPLITUDE = 0.28; // radians head yaw (left/right peek)
+const IDLE_GLANCE_WOBBLE = 0.04; // small yaw noise so peeks are not square-wave
+const IDLE_ARM_SWAY_FREQUENCY = 0.9; // rad/s relaxed arm drift
+const IDLE_ARM_SWAY_AMPLITUDE = 0.05; // radians arm roll
+const IDLE_SCALE_AMPLITUDE = 0.008; // subtle chest scale on breath
+
 /**
  * Calculates gentle breathing bob and idle sway when stationary.
+ *
+ * Layered secondary motion — chest breathing, torso pitch, occasional
+ * look-around glances, relaxed arm drift, and a subtle breath scale — runs on
+ * out-of-phase frequencies so the idle never reads as a stiff two-sine loop.
+ * All layers fade out with `speedBlend` (1 = moving, 0 = fully idle).
  */
 export function calculateIdleBob(timeSec: number, speedBlend: number = 0): IdleBobState {
   const blend = Math.max(0, 1.0 - Math.min(speedBlend, 1.0));
@@ -266,10 +289,33 @@ export function calculateIdleBob(timeSec: number, speedBlend: number = 0): IdleB
   const idleSwayZ = Math.sin(timeSec * IDLE_SWAY_FREQUENCY) * IDLE_SWAY_AMPLITUDE * blend;
   const headTiltZ = Math.sin(timeSec * (IDLE_SWAY_FREQUENCY * 0.5)) * 0.015 * blend;
 
+  // Chest breathing: torso leans almost imperceptibly with each breath.
+  const torsoPitch = Math.sin(timeSec * IDLE_BREATH_FREQUENCY) * IDLE_BREATH_AMPLITUDE * blend;
+
+  // Occasional glance: a slow sinusoid quantized softly with a wobble so the
+  // head mostly holds a direction, then eases to a new one (no snapping).
+  const glanceRaw = Math.sin(timeSec * IDLE_GLANCE_FREQUENCY);
+  const glanceHeld = Math.sign(glanceRaw) * Math.pow(Math.abs(glanceRaw), 0.6);
+  const headYaw =
+    (glanceHeld + Math.sin(timeSec * 6.1) * IDLE_GLANCE_WOBBLE * Math.abs(glanceHeld)) *
+    IDLE_GLANCE_AMPLITUDE *
+    blend;
+
+  // Relaxed arm drift, asymmetric per side (left/right phase-shifted).
+  const armSwayZ =
+    Math.sin(timeSec * IDLE_ARM_SWAY_FREQUENCY) * IDLE_ARM_SWAY_AMPLITUDE * blend;
+
+  // Subtle chest expansion synced to breathing.
+  const breatheScale = Math.sin(timeSec * IDLE_BREATH_FREQUENCY) * IDLE_SCALE_AMPLITUDE * blend;
+
   return {
     idleBobY,
     idleSwayZ,
     headTiltZ,
+    torsoPitch,
+    headYaw,
+    armSwayZ,
+    breatheScale,
   };
 }
 

@@ -137,15 +137,27 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
     // scales with (1 - blend); sum is continuous at every speed.
     if (leftLegRef.current) leftLegRef.current.rotation.x = swings.leftLegPitch;
     if (rightLegRef.current) rightLegRef.current.rotation.x = swings.rightLegPitch;
-    if (leftArmRef.current) leftArmRef.current.rotation.x = swings.leftArmPitch;
-    if (rightArmRef.current) rightArmRef.current.rotation.x = swings.rightArmPitch;
+    if (leftArmRef.current) {
+      leftArmRef.current.rotation.x = swings.leftArmPitch;
+      leftArmRef.current.rotation.z = 0.08 + idle.armSwayZ;
+    }
+    if (rightArmRef.current) {
+      rightArmRef.current.rotation.x = swings.rightArmPitch;
+      rightArmRef.current.rotation.z = -0.08 - idle.armSwayZ;
+    }
     if (rootModelRef.current) {
       rootModelRef.current.position.y = swings.stepBounce + idle.idleBobY;
       rootModelRef.current.rotation.z = swings.bodyRoll + idle.idleSwayZ;
+      rootModelRef.current.rotation.x = idle.torsoPitch;
     }
-    if (headRef.current) headRef.current.rotation.z = idle.headTiltZ;
+    if (headRef.current) {
+      headRef.current.rotation.z = idle.headTiltZ;
+      headRef.current.rotation.y = idle.headYaw;
+    }
 
-    // 5. Rapier RigidBody translation and store synchronization
+    // 5. Rapier RigidBody: dynamic body, moved by velocity so fixed colliders
+    // (fences, walls, props) actually block the player. Gravity handles Y;
+    // rotations are locked so the visual yaw stays authoritative.
     const rb = rigidBodyRef.current;
     if (rb) {
       const pos = rb.translation();
@@ -157,6 +169,7 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
         const spawnZ = initialPosition[2];
 
         rb.setTranslation({ x: spawnX, y: spawnY, z: spawnZ }, true);
+        rb.setLinvel({ x: 0, y: 0, z: 0 }, true);
         velocityRef.current = { x: 0, z: 0 };
         playerTransform.x = spawnX;
         playerTransform.y = spawnY;
@@ -165,16 +178,17 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
         useGameStore.getState().setPlayerPosition([spawnX, spawnY, spawnZ]);
         onFall?.();
       } else {
-        const dx = smoothed.x * dt;
-        const dz = smoothed.z * dt;
-        const nextX = pos.x + dx;
-        const nextZ = pos.z + dz;
-        const nextY = pos.y;
-
-        rb.setNextKinematicTranslation({ x: nextX, y: nextY, z: nextZ });
+        // Command horizontal velocity; physics integrates and resolves
+        // collisions against fixed geometry. Zeroing Y leaves gravity in charge
+        // of vertical motion (walking on the island floor, falling off edges).
+        rb.setLinvel({ x: smoothed.x, y: rb.linvel().y, z: smoothed.z }, true);
 
         quaternionRef.current.setFromAxisAngle(upAxisRef.current, yawRef.current);
-        rb.setNextKinematicRotation(quaternionRef.current);
+        rb.setRotation(quaternionRef.current, true);
+
+        const nextX = pos.x;
+        const nextY = pos.y;
+        const nextZ = pos.z;
 
         // Render-frequency channel: the camera and any per-frame consumer read
         // this mutable object directly — no zustand notification, no re-render.
@@ -220,12 +234,16 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
     <RigidBody
       ref={rigidBodyRef}
       position={initialPosition}
-      type="kinematicPosition"
+      type="dynamic"
       colliders={false}
       name="PlayerCharacter"
-      enabledRotations={[false, false, false]}
+      linearDamping={0.0}
+      friction={0.0}
+      restitution={0.0}
+      lockRotations
+      ccd
     >
-      <CapsuleCollider args={[0.35, 0.3]} position={[0, 0.65, 0]} />
+      <CapsuleCollider args={[0.35, 0.3]} position={[0, 0.65, 0]} mass={1} />
       <group position={[0, 0.475, 0]} visible={!isFirstPerson}>
         <PlayerModel
           rootRef={rootModelRef}
