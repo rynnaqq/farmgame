@@ -15,14 +15,27 @@ alter table public.farm_operations
 -- Shared helpers
 -- ---------------------------------------------------------------------------
 
--- Uniform double in [0,1) from crypto-strong bytes (server-side mutation rolls).
+-- Uniform double in [0,1) from crypto-random UUID bits (server-side rolls).
+-- gen_random_uuid(), decode(), and get_byte() are core pg_catalog functions,
+-- so they resolve even with the empty search_path (pgcrypto's
+-- gen_random_bytes does not and was removed for that reason).
 create or replace function public.rand_uniform()
 returns double precision
 language sql
 security definer
 set search_path = ''
 as $$
-  select (('x' || substring(gen_random_bytes(4)::text from 1 for 8))::bit(32)::bigint)::double precision / 4294967296.0;
+  with b as (
+    select decode(gen_random_uuid()::text, 'hex') as bytes
+  )
+  select (
+    (get_byte(bytes, 0)::double precision * 16777216
+     + get_byte(bytes, 1)::double precision * 65536
+     + get_byte(bytes, 2)::double precision * 256
+     + get_byte(bytes, 3)::double precision)
+    / 4294967296.0
+  )
+  from b;
 $$;
 
 -- Mutation multipliers: normal 1, gold 5, giant 3, rainbow 15 (PRD §7.10).
