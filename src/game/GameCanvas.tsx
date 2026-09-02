@@ -43,8 +43,17 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
   const shadowsEnabled = effectiveQuality !== 'low';
 
+  // Prevent the browser from hijacking canvas touches for scrolling/zooming
+  // when the player is idle: without touch-action none, an idle-hold can be
+  // consumed by the browser as a pan/zoom gesture and the camera swipe appears
+  // stuck until the next full gesture.
+  const canvasStyle = useMemo<React.CSSProperties>(
+    () => ({ touchAction: 'none' }),
+    []
+  );
+
   return (
-    <div className={className} tabIndex={0}>
+    <div className={className} tabIndex={0} style={canvasStyle}>
       <Canvas
         shadows={shadowsEnabled ? 'soft' : false}
         dpr={dprRange}

@@ -3,7 +3,25 @@ import type { CameraOrbitCallback, CameraZoomCallback } from './inputTypes';
 interface PointerPosition {
   clientX: number;
   clientY: number;
+  /** Timestamp of the last accepted/observed move (equals downAt initially). */
+  lastMoveAt: number;
+  /** Timestamp of the pointerdown that created this entry. */
+  downAt: number;
+  /** True once this pointer has produced at least one pointermove event. */
+  hasMoved: boolean;
 }
+
+/**
+ * A tracked pointer with no movement for this long is treated as stale and is
+ * evicted when the next pointer lands.
+ */
+const STALE_POINTER_TIMEOUT_MS = 2500;
+/**
+ * A human pinch places the second finger within ~300ms of the first. A
+ * "second finger" arriving later than this, while the first finger has never
+ * moved, is a leaked pointer (its up/cancel event was lost) — not a pinch.
+ */
+const PINCH_PLAUSIBILITY_WINDOW_MS = 400;
 
 export class TouchInput {
   private activePointers = new Map<number, PointerPosition>();
@@ -114,6 +132,25 @@ export class TouchInput {
       return;
     }
 
+    // Drop stale pointers: a tracked pointer that has not moved for a while,
+    // or that never moved at all while a new finger lands outside the human
+    // pinch window, is almost certainly a leaked gesture — its
+    // pointerup/pointercancel never reached us (canvas re-render, OS dropped
+    // the event, capture stolen, finger lifted off the listener element).
+    // Without eviction, the stale pointer turns every fresh single-finger
+    // swipe into a dead two-finger pinch and the camera appears stuck.
+    // Genuine pinches survive: both fingers land within the plausibility
+    // window and the anchor finger keeps producing move events.
+    const now = Date.now();
+    for (const [id, pos] of this.activePointers) {
+      if (id === e.pointerId) continue;
+      const idleFor = now - pos.lastMoveAt;
+      const downToDown = now - pos.downAt;
+      if (idleFor > STALE_POINTER_TIMEOUT_MS || (!pos.hasMoved && downToDown > PINCH_PLAUSIBILITY_WINDOW_MS)) {
+        this.activePointers.delete(id);
+      }
+    }
+
     // Try to acquire pointer capture if available on element
     if (e.target && 'setPointerCapture' in (e.target as HTMLElement)) {
       try {
@@ -126,6 +163,9 @@ export class TouchInput {
     this.activePointers.set(e.pointerId, {
       clientX: e.clientX,
       clientY: e.clientY,
+      lastMoveAt: now,
+      downAt: now,
+      hasMoved: false,
     });
 
     if (this.activePointers.size === 2) {
@@ -142,15 +182,29 @@ export class TouchInput {
     const deltaX = e.clientX - prevPos.clientX;
     const deltaY = e.clientY - prevPos.clientY;
 
+    // Guard against sudden huge coordinate leaps (e.g. touch digitizer glitch
+    // or finger reconnection). The stored position MUST still be resynced to
+    // the reported coordinates: otherwise every subsequent move recomputes the
+    // same huge delta from the stale landing point and is rejected forever,
+    // leaving the camera swipe permanently stuck.
+    if (Math.abs(deltaX) > 150 || Math.abs(deltaY) > 150) {
+      this.activePointers.set(e.pointerId, {
+        clientX: e.clientX,
+        clientY: e.clientY,
+        lastMoveAt: Date.now(),
+        downAt: prevPos.downAt,
+        hasMoved: true,
+      });
+      return;
+    }
+
     this.activePointers.set(e.pointerId, {
       clientX: e.clientX,
       clientY: e.clientY,
+      lastMoveAt: Date.now(),
+      downAt: prevPos.downAt,
+      hasMoved: true,
     });
-
-    // Guard against sudden huge coordinate leaps (e.g. touch reconnection)
-    if (Math.abs(deltaX) > 150 || Math.abs(deltaY) > 150) {
-      return;
-    }
 
     if (this.activePointers.size === 1) {
       // 1-finger drag -> Orbit camera (both horizontal yaw and vertical pitch)
