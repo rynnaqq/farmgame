@@ -320,6 +320,57 @@ export const HUD: React.FC<HUDProps> = ({ className = '' }) => {
       </div>
 
       {/* ========================================== */}
+      {/* Center Region: Arcade Quick Navigation Bar */}
+      {/* (SEEDS [Blue] | GARDEN [Green] | SELL [Red])*/}
+      {/* ========================================== */}
+      <div
+        data-testid="hud-arcade-nav"
+        className="pointer-events-auto flex items-center gap-1.5 sm:gap-2.5 mx-auto"
+      >
+        <button
+          type="button"
+          data-testid="hud-nav-seeds"
+          aria-label="Open Seed Shop"
+          onClick={() => {
+            audioManager.playSfx('ui_click');
+            useUiStore.getState().openModal('shop', { initialTab: 'seeds' });
+          }}
+          className="px-3 sm:px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-lg border-2 border-blue-400 cursor-pointer transition-transform duration-100 flex items-center gap-1.5"
+        >
+          <span>🌱</span>
+          <span>SEEDS</span>
+        </button>
+
+        <button
+          type="button"
+          data-testid="hud-nav-garden"
+          aria-label="Close Modals / Focus Garden"
+          onClick={() => {
+            audioManager.playSfx('ui_click');
+            useUiStore.getState().closeModal();
+          }}
+          className="px-3 sm:px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-lg border-2 border-emerald-400 cursor-pointer transition-transform duration-100 flex items-center gap-1.5"
+        >
+          <span>🏡</span>
+          <span>GARDEN</span>
+        </button>
+
+        <button
+          type="button"
+          data-testid="hud-nav-sell"
+          aria-label="Open Sell Market"
+          onClick={() => {
+            audioManager.playSfx('ui_click');
+            useUiStore.getState().openModal('shop', { initialTab: 'sell' });
+          }}
+          className="px-3 sm:px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-black text-xs sm:text-sm tracking-wider uppercase shadow-lg border-2 border-rose-400 cursor-pointer transition-transform duration-100 flex items-center gap-1.5"
+        >
+          <span>💰</span>
+          <span>SELL</span>
+        </button>
+      </div>
+
+      {/* ========================================== */}
       {/* Right Region: Inventory & Settings Buttons */}
       {/* ========================================== */}
       <div className="flex items-center gap-1.5 sm:gap-2 pointer-events-none">

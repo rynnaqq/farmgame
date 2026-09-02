@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useGameStore } from '../state/gameStore';
 import { useUiStore } from '../state/uiStore';
 import { CROPS } from '../game/core/constants';
@@ -167,6 +167,28 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
 
   const goldenWateringCanOwned = useGameStore((state) => state.farm.goldenWateringCanOwned);
   const inventorySeeds = useGameStore((state) => state.inventory.seeds);
+  const produce = useGameStore((state) => state.inventory.produce);
+
+  const carrotCount = useMemo(
+    () => produce.filter((p) => p.cropId === 'carrot').reduce((s, p) => s + p.quantity, 0),
+    [produce]
+  );
+  const tomatoCount = useMemo(
+    () => produce.filter((p) => p.cropId === 'tomato').reduce((s, p) => s + p.quantity, 0),
+    [produce]
+  );
+  const pumpkinCount = useMemo(
+    () => produce.filter((p) => p.cropId === 'pumpkin').reduce((s, p) => s + p.quantity, 0),
+    [produce]
+  );
+  const goldenBerryCount = useMemo(
+    () => produce.filter((p) => p.cropId === 'golden_berry').reduce((s, p) => s + p.quantity, 0),
+    [produce]
+  );
+  const starfruitCount = useMemo(
+    () => produce.filter((p) => p.cropId === 'starfruit').reduce((s, p) => s + p.quantity, 0),
+    [produce]
+  );
 
   const isModalOpen = activeModal !== null;
   const isInteractive = !disabled && !isModalOpen;
@@ -227,6 +249,13 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
               : 'border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 scale-100 opacity-80 hover:opacity-100'
           } ${!isInteractive ? 'cursor-not-allowed opacity-40' : ''}`}
         >
+          {/* Active selection arrow marker (Growden.io style) */}
+          {isTrowelActive && (
+            <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-white text-[11px] leading-none animate-bounce select-none pointer-events-none drop-shadow">
+              ▼
+            </span>
+          )}
+
           {/* Key shortcut badge */}
           <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
             1
@@ -260,6 +289,13 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
                 : 'border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 scale-100 opacity-80 hover:opacity-100'
           } ${!isInteractive ? 'cursor-not-allowed opacity-40' : ''}`}
         >
+          {/* Active selection arrow marker (Growden.io style) */}
+          {isWateringActive && (
+            <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-white text-[11px] leading-none animate-bounce select-none pointer-events-none drop-shadow">
+              ▼
+            </span>
+          )}
+
           {/* Key shortcut badge */}
           <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
             2
@@ -296,6 +332,13 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
               : 'border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 scale-100 opacity-80 hover:opacity-100'
           } ${!isInteractive ? 'cursor-not-allowed opacity-40' : ''}`}
         >
+          {/* Active selection arrow marker (Growden.io style) */}
+          {isSeedBagActive && (
+            <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-white text-[11px] leading-none animate-bounce select-none pointer-events-none drop-shadow">
+              ▼
+            </span>
+          )}
+
           {/* Key shortcut badge */}
           <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
             3
@@ -332,6 +375,13 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
               : 'border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 scale-100 opacity-80 hover:opacity-100'
           } ${!isInteractive ? 'cursor-not-allowed opacity-40' : ''}`}
         >
+          {/* Active selection arrow marker (Growden.io style) */}
+          {isHandActive && (
+            <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-white text-[11px] leading-none animate-bounce select-none pointer-events-none drop-shadow">
+              ▼
+            </span>
+          )}
+
           {/* Key shortcut badge */}
           <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
             4
@@ -343,6 +393,157 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
 
           <span className="text-[10px] md:text-[11px] font-bold text-white leading-tight pointer-events-none">
             Harvest
+          </span>
+        </button>
+
+        {/* 5. Carrot Quickslot */}
+        <button
+          type="button"
+          data-testid="tool-slot-5"
+          aria-label="Carrot Produce (5)"
+          disabled={!isInteractive}
+          onClick={() => {
+            audioManager.playSfx('ui_click');
+            useUiStore.getState().openModal('inventory');
+          }}
+          className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden sm:flex"
+        >
+          <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
+            5
+          </span>
+          {carrotCount > 0 && (
+            <span className="absolute top-1 right-1 px-1 py-0.2 rounded-full text-[9px] font-bold bg-amber-900/90 text-amber-200 border border-amber-500/30 leading-tight pointer-events-none">
+              {carrotCount}
+            </span>
+          )}
+          <span className="text-xl mt-1">🥕</span>
+          <span className="text-[10px] font-bold text-slate-300 leading-tight truncate max-w-[44px]">
+            Carrot
+          </span>
+        </button>
+
+        {/* 6. Tomato Quickslot */}
+        <button
+          type="button"
+          data-testid="tool-slot-6"
+          aria-label="Tomato Produce (6)"
+          disabled={!isInteractive}
+          onClick={() => {
+            audioManager.playSfx('ui_click');
+            useUiStore.getState().openModal('inventory');
+          }}
+          className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden sm:flex"
+        >
+          <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
+            6
+          </span>
+          {tomatoCount > 0 && (
+            <span className="absolute top-1 right-1 px-1 py-0.2 rounded-full text-[9px] font-bold bg-rose-900/90 text-rose-200 border border-rose-500/30 leading-tight pointer-events-none">
+              {tomatoCount}
+            </span>
+          )}
+          <span className="text-xl mt-1">🍅</span>
+          <span className="text-[10px] font-bold text-slate-300 leading-tight truncate max-w-[44px]">
+            Tomato
+          </span>
+        </button>
+
+        {/* 7. Pumpkin Quickslot */}
+        <button
+          type="button"
+          data-testid="tool-slot-7"
+          aria-label="Pumpkin Produce (7)"
+          disabled={!isInteractive}
+          onClick={() => {
+            audioManager.playSfx('ui_click');
+            useUiStore.getState().openModal('inventory');
+          }}
+          className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden md:flex"
+        >
+          <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
+            7
+          </span>
+          {pumpkinCount > 0 && (
+            <span className="absolute top-1 right-1 px-1 py-0.2 rounded-full text-[9px] font-bold bg-orange-900/90 text-orange-200 border border-orange-500/30 leading-tight pointer-events-none">
+              {pumpkinCount}
+            </span>
+          )}
+          <span className="text-xl mt-1">🎃</span>
+          <span className="text-[10px] font-bold text-slate-300 leading-tight truncate max-w-[44px]">
+            Pumpkin
+          </span>
+        </button>
+
+        {/* 8. Golden Berry Quickslot */}
+        <button
+          type="button"
+          data-testid="tool-slot-8"
+          aria-label="Golden Berry (8)"
+          disabled={!isInteractive}
+          onClick={() => {
+            audioManager.playSfx('ui_click');
+            useUiStore.getState().openModal('inventory');
+          }}
+          className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden md:flex"
+        >
+          <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
+            8
+          </span>
+          {goldenBerryCount > 0 && (
+            <span className="absolute top-1 right-1 px-1 py-0.2 rounded-full text-[9px] font-bold bg-amber-900/90 text-amber-200 border border-amber-500/30 leading-tight pointer-events-none">
+              {goldenBerryCount}
+            </span>
+          )}
+          <span className="text-xl mt-1">🫐</span>
+          <span className="text-[10px] font-bold text-slate-300 leading-tight truncate max-w-[44px]">
+            Berry
+          </span>
+        </button>
+
+        {/* 9. Starfruit Quickslot */}
+        <button
+          type="button"
+          data-testid="tool-slot-9"
+          aria-label="Starfruit (9)"
+          disabled={!isInteractive}
+          onClick={() => {
+            audioManager.playSfx('ui_click');
+            useUiStore.getState().openModal('inventory');
+          }}
+          className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden lg:flex"
+        >
+          <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
+            9
+          </span>
+          {starfruitCount > 0 && (
+            <span className="absolute top-1 right-1 px-1 py-0.2 rounded-full text-[9px] font-bold bg-yellow-900/90 text-yellow-200 border border-yellow-500/30 leading-tight pointer-events-none">
+              {starfruitCount}
+            </span>
+          )}
+          <span className="text-xl mt-1">⭐</span>
+          <span className="text-[10px] font-bold text-slate-300 leading-tight truncate max-w-[44px]">
+            Starfruit
+          </span>
+        </button>
+
+        {/* 0. Backpack Quickslot */}
+        <button
+          type="button"
+          data-testid="tool-slot-0"
+          aria-label="Backpack (0)"
+          disabled={!isInteractive}
+          onClick={() => {
+            audioManager.playSfx('ui_click');
+            useUiStore.getState().openModal('inventory');
+          }}
+          className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden lg:flex"
+        >
+          <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
+            0
+          </span>
+          <span className="text-xl mt-1">🎒</span>
+          <span className="text-[10px] font-bold text-slate-300 leading-tight truncate max-w-[44px]">
+            Bag
           </span>
         </button>
       </div>

@@ -13,14 +13,14 @@ export interface LightingTheme {
 
 export const WEATHER_LIGHTING: Record<WeatherType, LightingTheme> = {
   sunny: {
-    dirLightColor: '#FFF8E7',
-    dirLightIntensity: 1.6,
+    dirLightColor: '#FFFBF0',
+    dirLightIntensity: 1.85,
     dirLightPosition: [12, 18, 10],
-    skyColor: '#87CEEB',
-    groundColor: '#4A7C2C',
-    hemiIntensity: 0.7,
-    ambientColor: '#FFE8D6',
-    ambientIntensity: 0.3,
+    skyColor: '#5BC7F5',
+    groundColor: '#52D12B',
+    hemiIntensity: 0.8,
+    ambientColor: '#E6F4FF',
+    ambientIntensity: 0.38,
   },
   heavy_rain: {
     dirLightColor: '#8BA3B8',

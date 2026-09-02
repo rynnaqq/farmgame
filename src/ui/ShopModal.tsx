@@ -85,12 +85,14 @@ export const ShopModal: React.FC<ShopModalProps> = ({
   const gridSize = useGameStore((state) => state.farm.gridSize);
   const goldenCanOwned = useGameStore((state) => state.farm.goldenWateringCanOwned);
 
+  const modalData = useUiStore((state) => state.modalData) as { initialTab?: ShopTabId } | null;
+
   // Sync initial tab when modal opens
   useEffect(() => {
     if (activeModal === 'shop') {
-      setActiveTab(initialTab);
+      setActiveTab(modalData?.initialTab || initialTab);
     }
-  }, [activeModal, initialTab]);
+  }, [activeModal, initialTab, modalData]);
 
   const handleClose = useCallback(() => {
     audioManager.playSfx('ui_click');

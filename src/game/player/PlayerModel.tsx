@@ -1,5 +1,7 @@
 import React from 'react';
 import type * as THREE from 'three';
+import { useUiStore } from '../../state/uiStore';
+import { useGameStore } from '../../state/gameStore';
 
 export interface PlayerModelProps {
   rootRef?: React.RefObject<THREE.Group | null>;
@@ -45,6 +47,9 @@ export const PlayerModel: React.FC<PlayerModelProps> = ({
   idleSwayZ = 0,
   headTiltZ = 0,
 }) => {
+  const selectedTool = useUiStore((state) => state.selectedTool);
+  const goldenWateringCanOwned = useGameStore((state) => state.farm.goldenWateringCanOwned);
+
   const totalOffsetY = idleBobY + stepBounce;
   const totalRollZ = idleSwayZ + bodyRoll;
 
@@ -210,6 +215,65 @@ export const PlayerModel: React.FC<PlayerModelProps> = ({
           <boxGeometry args={[0.085, 0.14, 0.085]} />
           <meshStandardMaterial color="#E2E8F0" roughness={0.65} flatShading />
         </mesh>
+
+        {/* Held Tool in Hand (Growden.io style) */}
+        {selectedTool === 'trowel' && (
+          <group position={[0, -0.28, 0.06]} rotation={[-0.3, 0, 0]}>
+            <mesh position={[0, -0.05, 0]} castShadow>
+              <cylinderGeometry args={[0.015, 0.015, 0.35, 6]} />
+              <meshStandardMaterial color="#78350F" roughness={0.8} flatShading />
+            </mesh>
+            <mesh position={[0, -0.24, 0]} castShadow>
+              <boxGeometry args={[0.09, 0.12, 0.015]} />
+              <meshStandardMaterial color="#94A3B8" roughness={0.4} metalness={0.8} flatShading />
+            </mesh>
+          </group>
+        )}
+
+        {selectedTool === 'watering_can' && (
+          <group position={[0, -0.26, 0.06]} rotation={[-0.2, 0, 0]}>
+            <mesh castShadow>
+              <cylinderGeometry args={[0.065, 0.08, 0.15, 8]} />
+              <meshStandardMaterial
+                color={goldenWateringCanOwned ? '#F59E0B' : '#2563EB'}
+                roughness={0.4}
+                metalness={goldenWateringCanOwned ? 0.7 : 0.4}
+                flatShading
+              />
+            </mesh>
+            <mesh position={[0, 0.06, 0.06]} rotation={[0.4, 0, 0]} castShadow>
+              <cylinderGeometry args={[0.02, 0.03, 0.1, 6]} />
+              <meshStandardMaterial
+                color={goldenWateringCanOwned ? '#F59E0B' : '#2563EB'}
+                roughness={0.4}
+                metalness={goldenWateringCanOwned ? 0.7 : 0.4}
+                flatShading
+              />
+            </mesh>
+          </group>
+        )}
+
+        {selectedTool === 'seed_bag' && (
+          <group position={[0, -0.26, 0.06]} rotation={[-0.2, 0, 0]}>
+            <mesh castShadow>
+              <cylinderGeometry args={[0.05, 0.07, 0.14, 6]} />
+              <meshStandardMaterial color="#D97706" roughness={0.85} flatShading />
+            </mesh>
+          </group>
+        )}
+
+        {(selectedTool === 'scythe' || selectedTool === 'hand') && (
+          <group position={[0, -0.26, 0.06]} rotation={[-0.3, 0, 0]}>
+            <mesh position={[0, -0.1, 0]} castShadow>
+              <cylinderGeometry args={[0.015, 0.015, 0.4, 6]} />
+              <meshStandardMaterial color="#78350F" roughness={0.8} flatShading />
+            </mesh>
+            <mesh position={[0.08, -0.26, 0]} rotation={[0, 0, -0.5]} castShadow>
+              <boxGeometry args={[0.16, 0.03, 0.015]} />
+              <meshStandardMaterial color="#CBD5E1" roughness={0.3} metalness={0.85} flatShading />
+            </mesh>
+          </group>
+        )}
       </group>
 
       {/* ========================================== */}

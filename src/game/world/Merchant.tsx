@@ -2,11 +2,12 @@ import type React from 'react';
 import { useRef, useEffect, useCallback, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
-import { RigidBody, CylinderCollider } from '@react-three/rapier';
+import { RigidBody, CylinderCollider, CuboidCollider } from '@react-three/rapier';
 import type * as THREE from 'three';
 import { useGameStore } from '../../state/gameStore';
 import { useUiStore } from '../../state/uiStore';
 import { MERCHANT_INTERACTION_RANGE, MERCHANT_POSITION } from '../core/constants';
+import { StripedStall } from './StripedStall';
 
 export interface MerchantProps {
   position?: [number, number, number];
@@ -75,9 +76,129 @@ export const Merchant: React.FC<MerchantProps> = ({ position = MERCHANT_POSITION
 
   return (
     <group position={position} name="MerchantNPC">
+      {/* 0. Adjacent Festival Marketplace Stalls (Seeds, Eggs, Gear) */}
+      <StripedStall
+        position={[-3.4, 0, 0]}
+        primaryColor="#3B82F6"
+        signTitle="SEEDS"
+        npcName="Seed Vendor"
+        interactionLabel="Buy Seeds"
+        tab="seeds"
+        displayType="seeds"
+      />
+      <StripedStall
+        position={[-6.8, 0, 0]}
+        primaryColor="#F59E0B"
+        signTitle="PET EGGS"
+        npcName="Pet Handler"
+        interactionLabel="Adopt Pets"
+        tab="eggs"
+        displayType="eggs"
+      />
+      <StripedStall
+        position={[3.4, 0, 0]}
+        primaryColor="#10B981"
+        signTitle="GEAR"
+        npcName="Toolsmith"
+        interactionLabel="Upgrades"
+        tab="upgrades"
+        displayType="tools"
+      />
+
       {/* Physics Collider around NPC */}
       <RigidBody type="fixed" colliders={false} name="MerchantRigidBody">
+        <CuboidCollider args={[1.2, 0.45, 0.4]} position={[0, 0.45, 0]} />
         <CylinderCollider args={[0.75, 0.45]} position={[0, 0.75, 0.35]} />
+
+        {/* Wooden Stall Platform Floor */}
+        <mesh position={[0, 0.04, 0]} receiveShadow>
+          <boxGeometry args={[2.8, 0.08, 2.2]} />
+          <meshStandardMaterial color="#683E1C" roughness={0.85} flatShading />
+        </mesh>
+
+        {/* Counter */}
+        <mesh position={[0, 0.45, 0.35]} castShadow receiveShadow>
+          <boxGeometry args={[2.2, 0.85, 0.6]} />
+          <meshStandardMaterial color="#7D4F26" roughness={0.8} flatShading />
+        </mesh>
+
+        {/* Counter Top Plaque */}
+        <mesh position={[0, 0.89, 0.35]} castShadow receiveShadow>
+          <boxGeometry args={[2.3, 0.06, 0.7]} />
+          <meshStandardMaterial color="#945E2D" roughness={0.75} flatShading />
+        </mesh>
+
+        {/* 4 Corner Support Posts */}
+        {[
+          [-1.0, 1.25, -0.65],
+          [1.0, 1.25, -0.65],
+          [-1.0, 1.25, 0.65],
+          [1.0, 1.25, 0.65],
+        ].map(([px, py, pz], idx) => (
+          <mesh key={idx} position={[px, py, pz]} castShadow>
+            <cylinderGeometry args={[0.045, 0.05, 2.4, 6]} />
+            <meshStandardMaterial color="#4A2E16" roughness={0.88} flatShading />
+          </mesh>
+        ))}
+
+        {/* Red & White Striped Fabric Canopy */}
+        <group position={[0, 2.35, 0]} rotation={[0.09, 0, 0]}>
+          {[-0.875, -0.525, -0.175, 0.175, 0.525, 0.875].map((sx, idx) => (
+            <mesh key={idx} position={[sx, 0, 0]} castShadow>
+              <boxGeometry args={[0.34, 0.06, 1.7]} />
+              <meshStandardMaterial
+                color={idx % 2 === 0 ? '#EF4444' : '#FFFFFF'}
+                roughness={0.7}
+                flatShading
+              />
+            </mesh>
+          ))}
+          {/* Front Scalloped Valance */}
+          {[-0.875, -0.525, -0.175, 0.175, 0.525, 0.875].map((sx, idx) => (
+            <mesh key={`val-${idx}`} position={[sx, -0.09, 0.84]} castShadow>
+              <boxGeometry args={[0.34, 0.15, 0.05]} />
+              <meshStandardMaterial
+                color={idx % 2 === 0 ? '#EF4444' : '#FFFFFF'}
+                roughness={0.7}
+                flatShading
+              />
+            </mesh>
+          ))}
+        </group>
+
+        {/* Overhead 3D Signboard "SELL" */}
+        <group position={[0, 2.75, 0.6]}>
+          <mesh castShadow receiveShadow>
+            <boxGeometry args={[1.7, 0.44, 0.07]} />
+            <meshStandardMaterial color="#502E14" roughness={0.85} flatShading />
+          </mesh>
+          <mesh position={[0, 0, 0.04]}>
+            <boxGeometry args={[1.5, 0.32, 0.03]} />
+            <meshStandardMaterial color="#EF4444" roughness={0.6} flatShading />
+          </mesh>
+          <mesh position={[0, 0, 0.06]}>
+            <boxGeometry args={[1.1, 0.16, 0.02]} />
+            <meshStandardMaterial color="#FFFFFF" roughness={0.4} flatShading />
+          </mesh>
+        </group>
+
+        {/* Produce Crates on Counter */}
+        <mesh position={[-0.45, 0.96, 0.35]} castShadow>
+          <boxGeometry args={[0.45, 0.16, 0.4]} />
+          <meshStandardMaterial color="#A16207" roughness={0.8} flatShading />
+        </mesh>
+        <mesh position={[-0.45, 1.06, 0.35]}>
+          <sphereGeometry args={[0.1, 6, 6]} />
+          <meshStandardMaterial color="#EA580C" roughness={0.6} flatShading />
+        </mesh>
+        <mesh position={[0.45, 0.96, 0.35]} castShadow>
+          <boxGeometry args={[0.45, 0.16, 0.4]} />
+          <meshStandardMaterial color="#A16207" roughness={0.8} flatShading />
+        </mesh>
+        <mesh position={[0.45, 1.06, 0.35]}>
+          <sphereGeometry args={[0.1, 6, 6]} />
+          <meshStandardMaterial color="#DC2626" roughness={0.6} flatShading />
+        </mesh>
       </RigidBody>
 
       {/* Interactive Mesh Group */}

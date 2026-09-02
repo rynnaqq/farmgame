@@ -102,19 +102,19 @@ export interface WeatherVisualPreset {
 
 export const WEATHER_VISUAL_PRESETS: Record<WeatherType, WeatherVisualPreset> = {
   sunny: {
-    skyColor: '#87CEEB',
-    groundColor: '#4A7C2C',
-    dirLightColor: '#FFF8E7',
+    skyColor: '#5BC7F5',
+    groundColor: '#52D12B',
+    dirLightColor: '#FFFBF0',
     dirLightIntensity: 1.6,
     dirLightPosition: [12, 18, 10],
-    hemiIntensity: 0.7,
-    ambientColor: '#FFE8D6',
-    ambientIntensity: 0.3,
-    fogColor: '#87CEEB',
+    hemiIntensity: 0.8,
+    ambientColor: '#E6F4FF',
+    ambientIntensity: 0.38,
+    fogColor: '#6DD4FB',
     fogNear: 25,
     fogFar: 60,
     particleType: 'none',
-    bloomIntensity: 0.1,
+    bloomIntensity: 0.12,
   },
   heavy_rain: {
     skyColor: '#5A6B7C',

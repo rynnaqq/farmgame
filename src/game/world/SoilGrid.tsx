@@ -35,13 +35,13 @@ export const LockedPlotMesh: React.FC<LockedPlotMeshProps> = ({ position }) => {
       {/* Stone border tile */}
       <mesh receiveShadow position={[0, 0, 0]}>
         <boxGeometry args={[PLOT_SIZE, 0.08, PLOT_SIZE]} />
-        <meshStandardMaterial color="#525B62" roughness={0.9} metalness={0.05} flatShading />
+        <meshStandardMaterial color="#64748B" roughness={0.85} metalness={0.05} flatShading />
       </mesh>
 
       {/* Inset grass/moss patch */}
       <mesh receiveShadow position={[0, 0.042, 0]}>
         <boxGeometry args={[PLOT_SIZE * 0.78, 0.02, PLOT_SIZE * 0.78]} />
-        <meshStandardMaterial color="#48782E" roughness={0.85} metalness={0.0} flatShading />
+        <meshStandardMaterial color="#50D028" roughness={0.8} metalness={0.0} flatShading />
       </mesh>
 
       {/* Procedural Low-Poly Padlock Icon */}
@@ -49,12 +49,12 @@ export const LockedPlotMesh: React.FC<LockedPlotMeshProps> = ({ position }) => {
         {/* Lock Body */}
         <mesh castShadow receiveShadow position={[0, 0, 0]}>
           <boxGeometry args={[0.22, 0.16, 0.1]} />
-          <meshStandardMaterial color="#967B48" roughness={0.4} metalness={0.6} flatShading />
+          <meshStandardMaterial color="#EAB308" roughness={0.35} metalness={0.7} flatShading />
         </mesh>
         {/* Lock Shackle */}
         <mesh castShadow position={[0, 0.11, 0]}>
           <torusGeometry args={[0.07, 0.02, 4, 8, Math.PI]} />
-          <meshStandardMaterial color="#6B7280" roughness={0.3} metalness={0.8} flatShading />
+          <meshStandardMaterial color="#CBD5E1" roughness={0.25} metalness={0.85} flatShading />
         </mesh>
       </group>
     </group>
@@ -147,7 +147,7 @@ export const LockedPlotsInstanced: React.FC<LockedPlotsInstancedProps> = ({ slot
         count={slots.length}
         receiveShadow
       >
-        <meshStandardMaterial color="#525B62" roughness={0.9} metalness={0.05} flatShading />
+        <meshStandardMaterial color="#64748B" roughness={0.85} metalness={0.05} flatShading />
       </instancedMesh>
 
       {/* 2. Inset Grass/Moss Patches */}
@@ -158,7 +158,7 @@ export const LockedPlotsInstanced: React.FC<LockedPlotsInstancedProps> = ({ slot
         count={slots.length}
         receiveShadow
       >
-        <meshStandardMaterial color="#48782E" roughness={0.85} metalness={0.0} flatShading />
+        <meshStandardMaterial color="#50D028" roughness={0.8} metalness={0.0} flatShading />
       </instancedMesh>
 
       {/* 3. Lock Bodies */}
@@ -170,7 +170,7 @@ export const LockedPlotsInstanced: React.FC<LockedPlotsInstancedProps> = ({ slot
         castShadow
         receiveShadow
       >
-        <meshStandardMaterial color="#967B48" roughness={0.4} metalness={0.6} flatShading />
+        <meshStandardMaterial color="#EAB308" roughness={0.35} metalness={0.7} flatShading />
       </instancedMesh>
 
       {/* 4. Lock Shackles */}
@@ -181,7 +181,7 @@ export const LockedPlotsInstanced: React.FC<LockedPlotsInstancedProps> = ({ slot
         count={slots.length}
         castShadow
       >
-        <meshStandardMaterial color="#6B7280" roughness={0.3} metalness={0.8} flatShading />
+        <meshStandardMaterial color="#CBD5E1" roughness={0.25} metalness={0.85} flatShading />
       </instancedMesh>
     </group>
   );

@@ -43,12 +43,12 @@ export const PlotMesh: React.FC<PlotMeshProps> = ({
     return plot.tilled && plot.hydratedUntilUtcMs > Date.now();
   }, [plot.tilled, plot.hydratedUntilUtcMs]);
 
-  // Determine soil visual properties based on state
+  // Determine soil visual properties based on state (Growden.io palette)
   const soilMaterialProps = useMemo(() => {
     if (!plot.tilled) {
-      // Untilled, warm sandy-clay earth (matching Growden/Roblox farm look)
+      // Untilled, warm golden-clay sandy earth (Growden.io look)
       return {
-        color: '#C2965B',
+        color: '#D8A568',
         roughness: 0.92,
         metalness: 0.0,
       };
@@ -57,15 +57,15 @@ export const PlotMesh: React.FC<PlotMeshProps> = ({
     if (isHydrated) {
       // Hydrated, dark moist soil with slight reflection
       return {
-        color: '#2A160B',
-        roughness: 0.35,
-        metalness: 0.12,
+        color: '#281509',
+        roughness: 0.32,
+        metalness: 0.15,
       };
     }
 
-    // Tilled, dry furrowed soil
+    // Tilled, rich furrowed dark loam
     return {
-      color: '#653E20',
+      color: '#663C1D',
       roughness: 0.85,
       metalness: 0.05,
     };
@@ -98,7 +98,7 @@ export const PlotMesh: React.FC<PlotMeshProps> = ({
       <group position={[0, 0, 0]}>
         {/* Underbed base foundation */}
         <mesh receiveShadow geometry={SHARED_SOIL_BASE_GEO} position={[0, 0, 0]}>
-          <meshStandardMaterial color="#4A2E16" roughness={0.88} metalness={0.05} flatShading />
+          <meshStandardMaterial color="#553218" roughness={0.88} metalness={0.05} flatShading />
         </mesh>
 
         {/* North and South Raised Wooden Edges */}
@@ -108,7 +108,7 @@ export const PlotMesh: React.FC<PlotMeshProps> = ({
           castShadow
           receiveShadow
         >
-          <meshStandardMaterial color="#5C381E" roughness={0.82} metalness={0.05} flatShading />
+          <meshStandardMaterial color="#754823" roughness={0.8} metalness={0.05} flatShading />
         </mesh>
         <mesh
           position={[0, 0.045, -(PLOT_SIZE - 0.09) / 2]}
@@ -116,7 +116,7 @@ export const PlotMesh: React.FC<PlotMeshProps> = ({
           castShadow
           receiveShadow
         >
-          <meshStandardMaterial color="#5C381E" roughness={0.82} metalness={0.05} flatShading />
+          <meshStandardMaterial color="#754823" roughness={0.8} metalness={0.05} flatShading />
         </mesh>
 
         {/* East and West Raised Wooden Edges */}
@@ -126,7 +126,7 @@ export const PlotMesh: React.FC<PlotMeshProps> = ({
           castShadow
           receiveShadow
         >
-          <meshStandardMaterial color="#5C381E" roughness={0.82} metalness={0.05} flatShading />
+          <meshStandardMaterial color="#754823" roughness={0.8} metalness={0.05} flatShading />
         </mesh>
         <mesh
           position={[-(PLOT_SIZE - 0.09) / 2, 0.045, 0]}
@@ -134,7 +134,7 @@ export const PlotMesh: React.FC<PlotMeshProps> = ({
           castShadow
           receiveShadow
         >
-          <meshStandardMaterial color="#5C381E" roughness={0.82} metalness={0.05} flatShading />
+          <meshStandardMaterial color="#754823" roughness={0.8} metalness={0.05} flatShading />
         </mesh>
       </group>
 
@@ -167,7 +167,7 @@ export const PlotMesh: React.FC<PlotMeshProps> = ({
               receiveShadow
             >
               <meshStandardMaterial
-                color={isHydrated ? '#221107' : '#4E2F18'}
+                color={isHydrated ? '#1C0D05' : '#522E15'}
                 roughness={soilMaterialProps.roughness}
                 metalness={soilMaterialProps.metalness}
                 flatShading
@@ -186,11 +186,11 @@ export const PlotMesh: React.FC<PlotMeshProps> = ({
           receiveShadow
         >
           <meshStandardMaterial
-            color="#3D2817"
-            roughness={0.15}
-            metalness={0.4}
+            color="#241307"
+            roughness={0.12}
+            metalness={0.45}
             transparent
-            opacity={0.35}
+            opacity={0.45}
           />
         </mesh>
       )}
