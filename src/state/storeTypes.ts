@@ -155,7 +155,7 @@ export interface SettingsState {
 }
 
 export type ModalType =
-  'shop' | 'settings' | 'offline_summary' | 'tutorial' | 'reset_confirm' | 'inventory';
+  'shop' | 'settings' | 'offline_summary' | 'tutorial' | 'reset_confirm' | 'inventory' | 'leaderboard';
 
 export type ToastType = 'info' | 'success' | 'warning' | 'error';
 

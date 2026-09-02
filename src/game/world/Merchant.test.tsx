@@ -113,8 +113,8 @@ describe('Merchant NPC & Interaction Tests', () => {
       expect(onOpenShopMock).toHaveBeenCalledTimes(1);
     });
 
-    it('correctly uses MERCHANT_INTERACTION_RANGE constant (2.5 units)', () => {
-      expect(MERCHANT_INTERACTION_RANGE).toBe(2.5);
+    it('correctly uses MERCHANT_INTERACTION_RANGE constant (3.0 units per PRD §7.11)', () => {
+      expect(MERCHANT_INTERACTION_RANGE).toBe(3.0);
     });
   });
 });

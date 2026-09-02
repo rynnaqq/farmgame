@@ -203,15 +203,15 @@ describe('targetPlotFinder Unit Tests', () => {
   });
 
   describe('4. Merchant Proximity (isMerchantInRange)', () => {
-    it('returns true when player is within 2.5 units of merchant stall', () => {
+    it('returns true when player is within 3.0 units of merchant stall (PRD §7.11)', () => {
       expect(isMerchantInRange([MERCHANT_POSITION[0], 0.5, MERCHANT_POSITION[2]])).toBe(true);
       expect(isMerchantInRange([MERCHANT_POSITION[0] + 1.5, 0.5, MERCHANT_POSITION[2]])).toBe(true);
       expect(isMerchantInRange([MERCHANT_POSITION[0], 0.5, MERCHANT_POSITION[2] + 2.4])).toBe(true);
     });
 
-    it('returns false when player is beyond 2.5 units of merchant stall', () => {
+    it('returns false when player is beyond 3.0 units of merchant stall', () => {
       expect(isMerchantInRange([0, 0.5, 0])).toBe(false);
-      expect(isMerchantInRange([MERCHANT_POSITION[0] + 3.0, 0.5, MERCHANT_POSITION[2]])).toBe(false);
+      expect(isMerchantInRange([MERCHANT_POSITION[0] + 3.5, 0.5, MERCHANT_POSITION[2]])).toBe(false);
     });
   });
 });

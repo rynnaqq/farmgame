@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { RigidBody, CuboidCollider } from '@react-three/rapier';
-import { ISLAND_FALL_Y_THRESHOLD, PLAYER_SPAWN_POSITION } from '../core/constants';
+import { ISLAND_FALL_Y_THRESHOLD, ISLAND_SIZE, PLAYER_SPAWN_POSITION } from '../core/constants';
 import { useGameStore } from '../../state/gameStore';
 
 export interface BoundariesProps {
@@ -9,8 +9,9 @@ export interface BoundariesProps {
 
 /**
  * Invisible Rapier boundary colliders:
- * - 4 perimeter walls around the 28x28 island edge to prevent walking off cliffs.
+ * - 4 perimeter walls around the island edge to prevent walking off cliffs.
  * - Y = -5 fall safety / killzone trigger to respawn the player if they ever fall below.
+ * Collision geometry stays simpler than visual geometry (PRD §7.3).
  */
 export const Boundaries: React.FC<BoundariesProps> = ({ onPlayerFall }) => {
   const setPlayerPosition = useGameStore((state) => state.setPlayerPosition);
@@ -25,18 +26,23 @@ export const Boundaries: React.FC<BoundariesProps> = ({ onPlayerFall }) => {
     onPlayerFall?.();
   }, [setPlayerPosition, onPlayerFall]);
 
+  const half = ISLAND_SIZE / 2;
+  const wallInset = 0.2;
+  const wallXZ = half + wallInset;
+  const wallSpan = half + 1;
+
   return (
     <group name="WorldBoundaries">
       {/* 4 Invisible Perimeter Walls */}
       <RigidBody type="fixed" colliders={false} name="PerimeterWalls">
-        {/* North Wall (Z = -14.2) */}
-        <CuboidCollider args={[15, 4.0, 0.4]} position={[0, 3.5, -14.2]} />
-        {/* South Wall (Z = 14.2) */}
-        <CuboidCollider args={[15, 4.0, 0.4]} position={[0, 3.5, 14.2]} />
-        {/* East Wall (X = 14.2) */}
-        <CuboidCollider args={[0.4, 4.0, 15]} position={[14.2, 3.5, 0]} />
-        {/* West Wall (X = -14.2) */}
-        <CuboidCollider args={[0.4, 4.0, 15]} position={[-14.2, 3.5, 0]} />
+        {/* North Wall (Z = -half) */}
+        <CuboidCollider args={[wallSpan, 4.0, 0.4]} position={[0, 3.5, -wallXZ]} />
+        {/* South Wall (Z = +half) */}
+        <CuboidCollider args={[wallSpan, 4.0, 0.4]} position={[0, 3.5, wallXZ]} />
+        {/* East Wall (X = +half) */}
+        <CuboidCollider args={[0.4, 4.0, wallSpan]} position={[wallXZ, 3.5, 0]} />
+        {/* West Wall (X = -half) */}
+        <CuboidCollider args={[0.4, 4.0, wallSpan]} position={[-wallXZ, 3.5, 0]} />
       </RigidBody>
 
       {/* Safety / Respawn Sensor at Y = -5 */}
@@ -47,7 +53,7 @@ export const Boundaries: React.FC<BoundariesProps> = ({ onPlayerFall }) => {
         name="FallKillzone"
         onIntersectionEnter={handleKillzoneIntersection}
       >
-        <CuboidCollider args={[40, 0.5, 40]} position={[0, ISLAND_FALL_Y_THRESHOLD, 0]} sensor />
+        <CuboidCollider args={[half + 8, 0.5, half + 8]} position={[0, ISLAND_FALL_Y_THRESHOLD, 0]} sensor />
       </RigidBody>
     </group>
   );

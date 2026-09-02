@@ -16,6 +16,7 @@ import { DiagnosticsOverlay } from '../game/effects/DiagnosticsPanel';
 import { isDiagnosticsEnabled } from '../game/core/autoQualityManager';
 import { audioManager } from '../game/audio/AudioManager';
 import { OfflineSummary } from '../ui/OfflineSummary';
+import { LeaderboardModal } from '../features/leaderboard/LeaderboardModal';
 import { saveService } from '../persistence/saveService';
 import { simulateOfflineProgression } from '../persistence/offlineSimulation';
 import { useGameStore } from '../state/gameStore';
@@ -183,6 +184,7 @@ export const App: React.FC<AppProps> = ({
                 <ShopModal />
                 <InventoryPanel />
                 <SettingsModal />
+                <LeaderboardModal />
                 <Tutorial />
                 <OfflineSummary />
                 <ToastRegion />

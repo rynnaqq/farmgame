@@ -187,6 +187,11 @@ export const HUD: React.FC<HUDProps> = ({ className = '' }) => {
   const netQuality = useNetStore((state) => state.quality);
   const authUsername = useAuthStore((state) => state.session?.username ?? null);
 
+  const handleOpenLeaderboard = useCallback(() => {
+    audioManager.playSfx('ui_click');
+    useUiStore.getState().openModal('leaderboard');
+  }, []);
+
   return (
     <header
       data-testid="hud-container"
@@ -344,6 +349,25 @@ export const HUD: React.FC<HUDProps> = ({ className = '' }) => {
               {totalProduceCount}
             </span>
           )}
+        </button>
+
+        {/* Leaderboard Button (opens accessible Top 10 mirror) */}
+        <button
+          type="button"
+          data-testid="hud-leaderboard-button"
+          aria-label="Open Leaderboard"
+          aria-pressed={activeModal === 'leaderboard'}
+          onClick={handleOpenLeaderboard}
+          className={`pointer-events-auto min-w-[38px] min-h-[38px] sm:min-w-[42px] sm:min-h-[42px] px-2.5 sm:px-3 py-1.5 rounded-xl flex items-center justify-center gap-1.5 border shadow-lg transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-amber-400 cursor-pointer ${
+            activeModal === 'leaderboard'
+              ? 'bg-amber-950/90 border-amber-400/60 text-amber-200 ring-2 ring-amber-400/30'
+              : 'bg-slate-900/90 hover:bg-slate-800/90 border-white/15 text-slate-200 hover:text-white'
+          }`}
+        >
+          <span className="text-base sm:text-lg" role="img" aria-hidden="true">
+            🏆
+          </span>
+          <span className="text-xs font-bold hidden lg:inline">Top 10</span>
         </button>
 
         {/* Fullscreen Toggle Button */}

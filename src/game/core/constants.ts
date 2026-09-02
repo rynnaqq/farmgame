@@ -11,13 +11,26 @@ export const FIXED_TIMESTEP_MS = 1000 / 60; // ~16.6666 ms
 export const MAX_SUB_STEPS = 5;
 
 // ==========================================
-// 2. World & Island Dimensions
+// 2. World & Island Dimensions (Project Verdant: 64x64 m island, PRD §7.3)
 // ==========================================
-export const ISLAND_SIZE = 28; // 28x28 playable grass top
-export const ISLAND_WIDTH = 28;
-export const ISLAND_DEPTH = 28;
+export const ISLAND_SIZE = 64; // 64x64 playable grass top
+export const ISLAND_WIDTH = 64;
+export const ISLAND_DEPTH = 64;
 export const ISLAND_FALL_Y_THRESHOLD = -5;
 export const PLAYER_SPAWN_POSITION = [0, 0, 0] as const;
+
+// Central spawn plaza (0,0,0); Market and monument opposite each other (PRD §7.3)
+export const MARKET_POSITION = [0, 0, -25] as const;
+export const MONUMENT_POSITION = [0, 0, 25] as const;
+export const MARKET_INTERACTION_RANGE = 3.0; // 3-meter interaction radius
+
+// Four persistent-player plot slots (PRD §7.3)
+export const PLOT_SLOT_POSITIONS = [
+  [-18, 0, -11],
+  [18, 0, -11],
+  [-18, 0, 11],
+  [18, 0, 11],
+] as const;
 
 // ==========================================
 // 3. Grid & Plot Layout
@@ -64,8 +77,8 @@ export const FIRST_PERSON_DISTANCE_THRESHOLD = 0.8;
 export const FARMING_REACH = 3.0; // Desktop click / general reach in world units
 export const MOBILE_ACTION_REACH = 2.8; // Mobile context button distance
 export const MOBILE_ACTION_CONE_DEG = 70; // 70-degree forward cone
-export const MERCHANT_INTERACTION_RANGE = 2.5; // Merchant opening range
-export const MERCHANT_POSITION = [10.8, 0, 7.5] as const;
+export const MERCHANT_INTERACTION_RANGE = MARKET_INTERACTION_RANGE; // Market 3m radius (PRD §7.11)
+export const MERCHANT_POSITION = MARKET_POSITION;
 
 // ==========================================
 // 7. Mobile Virtual Joystick

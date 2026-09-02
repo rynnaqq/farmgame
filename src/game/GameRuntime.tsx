@@ -6,6 +6,7 @@ import { SoilGrid } from './world/SoilGrid';
 import { Boundaries } from './world/Boundaries';
 import { Decorations } from './world/Decorations';
 import { Merchant } from './world/Merchant';
+import { LeaderboardMonument } from './world/LeaderboardMonument';
 import { Player } from './player/Player';
 import { FollowCamera } from './camera/FollowCamera';
 import { ParticlePool } from './effects/ParticlePool';
@@ -59,8 +60,11 @@ export const GameRuntime: React.FC<GameRuntimeProps> = ({
       {/* 5. Low-Poly Environmental Props */}
       <Decorations />
 
-      {/* 5.1 Procedural Merchant NPC & Stall Interaction */}
+      {/* 5.1 Procedural Merchant NPC & Stall Interaction (Market, PRD §7.3) */}
       <Merchant />
+
+      {/* 5.2 Global Top 10 Leaderboard Monument (PRD §7.12) */}
+      <LeaderboardMonument />
 
       {/* 6. Procedural Player Character */}
       <Player inputManager={inputManager} onFall={onPlayerFall} />
