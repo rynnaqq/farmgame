@@ -25,6 +25,7 @@ import { executeToolAction } from '../game/farming/farmingCommands';
 import { installTestClock } from '../test/testClock';
 import { AuthModal } from '../features/auth/AuthModal';
 import { useAuthStore } from '../features/auth/authStore';
+import { useRoomSession } from '../game/multiplayer/useRoomSession';
 import type { PlotId } from '../state/storeTypes';
 
 export interface AppProps {
@@ -58,6 +59,8 @@ export const App: React.FC<AppProps> = ({
   const authStatus = useAuthStore((state) => state.status);
   const initializeAuth = useAuthStore((state) => state.initialize);
   const isAuthenticated = authStatus === 'authenticated';
+
+  useRoomSession();
 
   useEffect(() => {
     void initializeAuth();

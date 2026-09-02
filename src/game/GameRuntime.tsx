@@ -12,6 +12,7 @@ import { ParticlePool } from './effects/ParticlePool';
 import { PostProcessing } from './effects/PostProcessing';
 import { DiagnosticsPanel } from './effects/DiagnosticsPanel';
 import { PetRenderer } from './pets/PetRenderer';
+import { RemotePlayerRenderer } from './multiplayer/RemotePlayerRenderer';
 import type { InputManager } from './input/InputManager';
 
 export interface GameRuntimeProps {
@@ -79,7 +80,10 @@ export const GameRuntime: React.FC<GameRuntimeProps> = ({
       {/* 11. Companion Pet & Incubating Egg 3D Renderer */}
       <PetRenderer />
 
-      {/* 12. Dynamic entities & extensions (Custom entities, etc.) */}
+      {/* 12. Remote Player Avatars (multiplayer presence) */}
+      <RemotePlayerRenderer />
+
+      {/* 13. Dynamic entities & extensions (Custom entities, etc.) */}
       {children}
     </group>
   );

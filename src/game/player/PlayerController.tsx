@@ -10,6 +10,8 @@ import {
 } from '../core/constants';
 import { useGameStore } from '../../state/gameStore';
 import { useUiStore } from '../../state/uiStore';
+import { useNetStore } from '../multiplayer/netStore';
+import { getRoomConnection } from '../multiplayer/RoomConnection';
 import type { InputManager } from '../input/InputManager';
 import { PlayerModel } from './PlayerModel';
 import {
@@ -161,6 +163,18 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
           useGameStore.getState().addDistance(deltaDist);
         }
         useGameStore.getState().setPlayerPosition([nextX, nextY, nextZ]);
+
+        // Multiplayer: publish local transform; RoomConnection batches at 20 Hz.
+        if (useNetStore.getState().roomId) {
+          getRoomConnection().publishLocalTransform({
+            x: nextX,
+            y: nextY,
+            z: nextZ,
+            yaw: yawRef.current,
+            speed: smoothed.speed,
+            anim: smoothed.speed < 0.05 ? 0 : isRunning ? 2 : 1,
+          });
+        }
       }
     }
   });

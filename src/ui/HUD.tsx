@@ -4,6 +4,8 @@ import { useUiStore } from '../state/uiStore';
 import { WEATHER_CONFIGS, type WeatherType, type PetType } from '../game/core/constants';
 import { selectCoins, selectEquippedPet, selectTotalProduceCount } from '../state/selectors';
 import { audioManager } from '../game/audio/AudioManager';
+import { useNetStore } from '../game/multiplayer/netStore';
+import { useAuthStore } from '../features/auth/authStore';
 
 export interface HUDProps {
   className?: string;
@@ -182,6 +184,9 @@ export const HUD: React.FC<HUDProps> = ({ className = '' }) => {
     }
   }, [activeModal]);
 
+  const netQuality = useNetStore((state) => state.quality);
+  const authUsername = useAuthStore((state) => state.session?.username ?? null);
+
   return (
     <header
       data-testid="hud-container"
@@ -196,6 +201,25 @@ export const HUD: React.FC<HUDProps> = ({ className = '' }) => {
       {/* Left Region: Coins & Weather Widget        */}
       {/* ========================================== */}
       <div className="flex items-center gap-1.5 sm:gap-2.5 flex-wrap pointer-events-none">
+        {/* Connection-quality indicator: only when degraded (PRD §14.2) */}
+        {netQuality !== 'connected' && (
+          <div
+            data-testid="hud-connection-indicator"
+            role="status"
+            className="px-2.5 py-1 rounded-xl bg-red-950/90 border border-red-400/50 text-red-200 font-bold text-[10px] sm:text-xs shadow-lg"
+          >
+            {netQuality === 'degraded' ? '⚠ Reconnecting…' : '⚠ Offline'}
+          </div>
+        )}
+        {authUsername && (
+          <div
+            data-testid="hud-username-badge"
+            className="px-2.5 py-1 rounded-xl bg-slate-900/90 border border-emerald-400/30 text-emerald-200 font-bold text-[10px] sm:text-xs shadow-lg"
+          >
+            👤 {authUsername}
+          </div>
+        )}
+
         {/* 1. Coin Counter & Animated Delta */}
         <div
           data-testid="hud-coin-counter"
