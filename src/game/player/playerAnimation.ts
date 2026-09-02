@@ -18,7 +18,16 @@ export const RUN_ARM_SWING_MAX = 0.72; // ~41.2 degrees max arm rotation
 
 export const DEFAULT_ACCELERATION = 20.0; // units/s²
 export const DEFAULT_DECELERATION = 25.0; // units/s²
-export const DEFAULT_ROTATION_SPEED = 14.0; // rad/s
+export const DEFAULT_ROTATION_SPEED = 14.0; // rad/s (legacy linear mode)
+
+/**
+ * Exponential smoothing factor per second for yaw rotation. Chosen so a 90°
+ * turn settles in ~0.2s with no frame-rate dependence and no final-frame snap
+ * (the classic cause of "jerky" character turning).
+ */
+export const DEFAULT_ROTATION_DAMPING = 18.0;
+/** Exponential smoothing for the walk/run stride-blend and limb amplitudes. */
+export const DEFAULT_STRIDE_BLEND_DAMPING = 10.0;
 
 export interface Vector2D {
   x: number;
@@ -76,6 +85,33 @@ export function lerpAngle(currentRad: number, targetRad: number, alpha: number):
   const clampedAlpha = Math.min(Math.max(alpha, 0), 1);
   const diff = shortestAngleDifference(currentRad, targetRad);
   return normalizeAngle(currentRad + diff * clampedAlpha);
+}
+
+/**
+ * Frame-rate independent exponential damping for angles (shortest arc).
+ * Unlike the legacy linear lerpAngle, the turn rate decelerates as the target
+ * is approached, which removes the last-frame snap that made rotation look
+ * jerky at fluctuating frame rates.
+ */
+export function dampAngle(
+  currentRad: number,
+  targetRad: number,
+  damping: number = DEFAULT_ROTATION_DAMPING,
+  deltaSec: number = 0
+): number {
+  if (deltaSec <= 0) return currentRad;
+  const factor = 1 - Math.exp(-damping * deltaSec);
+  const diff = shortestAngleDifference(currentRad, targetRad);
+  return normalizeAngle(currentRad + diff * factor);
+}
+
+/**
+ * Frame-rate independent exponential damping for scalars (stride blends).
+ */
+export function dampScalar(current: number, target: number, damping: number, deltaSec: number): number {
+  if (deltaSec <= 0) return current;
+  const factor = 1 - Math.exp(-damping * deltaSec);
+  return current + (target - current) * factor;
 }
 
 /**
@@ -152,12 +188,19 @@ export function smoothVelocity(
 // ==========================================
 
 /**
- * Calculates sinusoidal opposing limb rotations, step bounce, and body roll for locomotion.
+ * Calculates sinusoidal opposing limb rotations, step bounce, and body roll
+ * for locomotion.
+ *
+ * All amplitudes are driven by the actual movement speed so the pose blends
+ * continuously through walk and run (no discrete mode snapping):
+ * - `strideBlend` (0..1) fades swings in/out with acceleration.
+ * - The walk->run amplitude range interpolates by speed via `runRatio`.
  */
 export function calculateLimbSwings(
   speed: number,
-  isRunning: boolean,
-  phase: number
+  _isRunning: boolean,
+  phase: number,
+  strideBlend: number = 1.0
 ): LimbSwingState {
   if (speed <= 0.001) {
     return {
@@ -170,24 +213,38 @@ export function calculateLimbSwings(
     };
   }
 
-  const maxLeg = isRunning ? RUN_LEG_SWING_MAX : WALK_LEG_SWING_MAX;
-  const maxArm = isRunning ? RUN_ARM_SWING_MAX : WALK_ARM_SWING_MAX;
-  const baseSpeed = isRunning ? PLAYER_RUN_SPEED : PLAYER_WALK_SPEED;
+  // Amplitudes blend CONTINUOUSLY across the walk->run speed range instead of
+  // snapping between two discrete poses when the run flag flips. Below walk
+  // speed the walk pose is used; at/above run speed the run pose is used;
+  // between them the amplitudes interpolate, so sprinting no longer pops.
+  const runRatio = Math.max(
+    0,
+    Math.min(1, (speed - PLAYER_WALK_SPEED) / (PLAYER_RUN_SPEED - PLAYER_WALK_SPEED))
+  );
+  const maxLeg = WALK_LEG_SWING_MAX + (RUN_LEG_SWING_MAX - WALK_LEG_SWING_MAX) * runRatio;
+  const maxArm = WALK_ARM_SWING_MAX + (RUN_ARM_SWING_MAX - WALK_ARM_SWING_MAX) * runRatio;
+  const bounceAmp = 0.03 + (0.045 - 0.03) * runRatio;
+  const rollAmp = 0.02 + (0.035 - 0.02) * runRatio;
+  const baseSpeed = PLAYER_WALK_SPEED + (PLAYER_RUN_SPEED - PLAYER_WALK_SPEED) * runRatio;
+
   const speedRatio = Math.min(speed / baseSpeed, 1.0);
+  // Continuous blend: fades swings in/out with the smoothed speed so limbs
+  // never snap between idle and walk poses.
+  const blend = Math.max(0, Math.min(1, strideBlend)) * speedRatio;
 
   const sinPhase = Math.sin(phase);
 
   // Legs swing with opposite phase
-  const leftLegPitch = sinPhase * maxLeg * speedRatio;
-  const rightLegPitch = -sinPhase * maxLeg * speedRatio;
+  const leftLegPitch = sinPhase * maxLeg * blend;
+  const rightLegPitch = -sinPhase * maxLeg * blend;
 
   // Arms counterbalance legs (left arm swings with right leg)
-  const leftArmPitch = -sinPhase * maxArm * speedRatio;
-  const rightArmPitch = sinPhase * maxArm * speedRatio;
+  const leftArmPitch = -sinPhase * maxArm * blend;
+  const rightArmPitch = sinPhase * maxArm * blend;
 
   // Vertical step bounce and lateral body roll
-  const stepBounce = Math.abs(sinPhase) * (isRunning ? 0.045 : 0.03) * speedRatio;
-  const bodyRoll = Math.sin(phase) * (isRunning ? 0.035 : 0.02) * speedRatio;
+  const stepBounce = Math.abs(sinPhase) * bounceAmp * blend;
+  const bodyRoll = Math.sin(phase) * rollAmp * blend;
 
   return {
     leftLegPitch,

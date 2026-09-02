@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore } from '../../state/gameStore';
 import { selectEquippedPet, selectIncubatingEgg } from '../../state/selectors';
+import { playerTransform } from '../player/playerTransformStore';
 import { PetModel } from './PetModel';
 import { EggRenderer } from './EggRenderer';
 import {
@@ -94,7 +95,13 @@ export const PetRenderer: React.FC<PetRendererProps> = ({ forcePetType, forcePla
 
     const nowMs = Date.now();
     const store = useGameStore.getState();
-    const playerPos: [number, number, number] = forcePlayerPos ?? store.player.position;
+    // Read the render-frequency mutable transform (60 fps, throttled store copy
+    // would make the pet trail 100ms behind the player and look jerky).
+    const playerPos: [number, number, number] = forcePlayerPos ?? [
+      playerTransform.x,
+      playerTransform.y,
+      playerTransform.z,
+    ];
 
     // ========================================================
     // 1. EQUIPPED PET SIMULATION & STEERING

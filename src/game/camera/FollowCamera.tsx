@@ -14,8 +14,8 @@ import {
   FIRST_PERSON_DISTANCE_THRESHOLD,
 } from '../core/constants';
 import { useSettingsStore } from '../../state/settingsStore';
-import { useGameStore } from '../../state/gameStore';
 import { useUiStore } from '../../state/uiStore';
+import { playerTransform } from '../player/playerTransformStore';
 import type { InputManager } from '../input/InputManager';
 import {
   degToRad,
@@ -265,7 +265,9 @@ export const FollowCamera: React.FC<FollowCameraProps> = ({
 
     const { reducedMotion } = useSettingsStore.getState();
 
-    // Determine current player base position
+    // Determine current player base position — read from the render-frequency
+    // mutable transform channel (60 fps, no re-renders). The zustand copy is
+    // throttled to ~10 Hz and must not drive the camera.
     let basePos: PositionInput = [0, 0, 0];
     if (targetPosition) {
       basePos = targetPosition;
@@ -277,7 +279,7 @@ export const FollowCamera: React.FC<FollowCameraProps> = ({
         basePos = { x: obj.position.x, y: obj.position.y, z: obj.position.z };
       }
     } else {
-      basePos = useGameStore.getState().player.position;
+      basePos = playerTransform;
     }
 
     // First person state detection and look target calculation
