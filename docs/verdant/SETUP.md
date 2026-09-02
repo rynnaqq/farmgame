@@ -22,10 +22,17 @@ The Supabase CLI cannot run on this device (Termux), so apply the SQL files thro
 | 1 | `supabase/migrations/0001_schema.sql` | Tables, constraints, indexes, world_state singleton |
 | 2 | `supabase/migrations/0002_account_trigger.sql` | `handle_new_user()` atomic account provisioning |
 | 3 | `supabase/migrations/0003_rpc_farm.sql` | Farm RPCs (till/water/plant/harvest), idempotency, mutation rolls |
-| 4 | `supabase/migrations/0004_rpc_shop_rooms.sql` | Shop/economy RPCs, matchmaking, weather scheduler, leaderboard view |
+| 4a | `supabase/migrations/0004a_rpc_shop.sql` | Shop/economy RPCs (buy seeds, sell produce, upgrade tool) |
+| 4b | `supabase/migrations/0004b_rpc_rooms.sql` | Matchmaking, leases, room snapshot RPCs |
+| 4c | `supabase/migrations/0004c_rpc_weather_leaderboard.sql` | Weather epoch scheduler + leaderboard view |
 | 5 | `supabase/migrations/0005_rls_grants.sql` | RLS policies + minimal grants |
 | 6 | `supabase/migrations/0006_realtime_authorization.sql` | Private Realtime channel policies on `realtime.messages` |
 | 7 | `supabase/seed.sql` | Crop/tool catalogs and blocked usernames |
+
+> **Pasting on mobile?** 0004 was split into three files (a/b/c) because the
+> Dashboard SQL Editor can silently truncate very large pastes. If you ever hit
+> `unterminated dollar-quoted string`, the paste was cut — re-run the file in
+> smaller chunks.
 
 Each file is idempotent where practical (`create or replace`, `if not exists`) except `0001`, which expects a fresh schema — on a brand-new project that is fine.
 
