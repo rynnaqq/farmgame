@@ -224,9 +224,15 @@ as $$
 $$;
 
 -- ---------------------------------------------------------------------------
--- farm_till
+-- Shared driver for single-state tile transitions (till / water).
+-- Locks the plot row, enforces idempotency, validates the tool level and tile
+-- states, applies the transition, bumps versions, and records the result.
 -- ---------------------------------------------------------------------------
-create or replace function public.farm_till(
+create or replace function public.apply_simple_tile_action(
+  p_kind text,
+  p_tool_id text,
+  p_required_state smallint,
+  p_next_state smallint,
   p_tile_indices integer[],
   p_idempotency_key uuid
 )
@@ -249,29 +255,28 @@ begin
   if not found then raise exception 'AUTH_INVALID'; end if;
 
   -- Idempotency check after the row lock: retries serialize here.
-  v_digest := md5('till|' || array_to_string(p_tile_indices, ','));
-  v_stored := public.idempotent_farm_result(v_owner, p_idempotency_key, 'till', v_digest);
+  v_digest := md5(p_kind || '|' || array_to_string(p_tile_indices, ','));
+  v_stored := public.idempotent_farm_result(v_owner, p_idempotency_key, p_kind, v_digest);
   if v_stored is not null then return v_stored; end if;
 
   select level into v_level from public.player_tools
-    where owner_id = v_owner and tool_id = 'trowel';
+    where owner_id = v_owner and tool_id = p_tool_id;
   if v_level is null then raise exception 'AUTH_INVALID'; end if;
   perform public.validate_tool_area(v_level, p_tile_indices);
 
-  -- Lock tiles and require every target to be Untilled (PRD §7.6).
   perform 1 from public.plot_tiles
     where plot_id = v_plot.id and tile_index = any(p_tile_indices)
     order by tile_index for update;
 
   if exists (
     select 1 from public.plot_tiles
-    where plot_id = v_plot.id and tile_index = any(p_tile_indices) and state <> 0
+    where plot_id = v_plot.id and tile_index = any(p_tile_indices) and state <> p_required_state
   ) then
     raise exception 'INVALID_TILE_STATE';
   end if;
 
   update public.plot_tiles
-    set state = 1, version = version + 1
+    set state = p_next_state, version = version + 1
     where plot_id = v_plot.id and tile_index = any(p_tile_indices);
 
   update public.plots
@@ -279,10 +284,10 @@ begin
     where id = v_plot.id
     returning version into v_plot.version;
 
-  perform public.record_farm_result(v_owner, v_plot.id, 'till', p_idempotency_key, v_digest,
+  perform public.record_farm_result(v_owner, v_plot.id, p_kind, p_idempotency_key, v_digest,
     jsonb_build_object(
       'ok', true,
-      'kind', 'till',
+      'kind', p_kind,
       'plotVersion', v_plot.version,
       'tiles', coalesce((
         select jsonb_agg(public.tile_patch_row(t) order by t.tile_index)
@@ -297,7 +302,28 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------------
+-- farm_till
+-- Trowel: Untilled (0) -> Tilled (1) (PRD §7.6).
+-- ---------------------------------------------------------------------------
+create or replace function public.farm_till(
+  p_tile_indices integer[],
+  p_idempotency_key uuid
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  return public.apply_simple_tile_action(
+    'till', 'trowel', 0, 1, p_tile_indices, p_idempotency_key
+  );
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
 -- farm_water
+-- Watering Can: Tilled (1) -> Watered (2) (PRD §7.6).
 -- ---------------------------------------------------------------------------
 create or replace function public.farm_water(
   p_tile_indices integer[],
@@ -308,62 +334,10 @@ language plpgsql
 security definer
 set search_path = ''
 as $$
-declare
-  v_owner uuid := auth.uid();
-  v_plot record;
-  v_stored jsonb;
-  v_digest text;
-  v_level smallint;
 begin
-  if v_owner is null then raise exception 'AUTH_INVALID'; end if;
-  perform public.validate_tile_batch(p_tile_indices);
-
-  select * into v_plot from public.plots where owner_id = v_owner for update;
-  if not found then raise exception 'AUTH_INVALID'; end if;
-
-  v_digest := md5('water|' || array_to_string(p_tile_indices, ','));
-  v_stored := public.idempotent_farm_result(v_owner, p_idempotency_key, 'water', v_digest);
-  if v_stored is not null then return v_stored; end if;
-
-  select level into v_level from public.player_tools
-    where owner_id = v_owner and tool_id = 'watering_can';
-  if v_level is null then raise exception 'AUTH_INVALID'; end if;
-  perform public.validate_tool_area(v_level, p_tile_indices);
-
-  perform 1 from public.plot_tiles
-    where plot_id = v_plot.id and tile_index = any(p_tile_indices)
-    order by tile_index for update;
-
-  if exists (
-    select 1 from public.plot_tiles
-    where plot_id = v_plot.id and tile_index = any(p_tile_indices) and state <> 1
-  ) then
-    raise exception 'INVALID_TILE_STATE';
-  end if;
-
-  update public.plot_tiles
-    set state = 2, version = version + 1
-    where plot_id = v_plot.id and tile_index = any(p_tile_indices);
-
-  update public.plots
-    set version = version + 1, updated_at = now()
-    where id = v_plot.id
-    returning version into v_plot.version;
-
-  perform public.record_farm_result(v_owner, v_plot.id, 'water', p_idempotency_key, v_digest,
-    jsonb_build_object(
-      'ok', true,
-      'kind', 'water',
-      'plotVersion', v_plot.version,
-      'tiles', coalesce((
-        select jsonb_agg(public.tile_patch_row(t) order by t.tile_index)
-        from public.plot_tiles t
-        where t.plot_id = v_plot.id and t.tile_index = any(p_tile_indices)
-      ), '[]'::jsonb)
-    ));
-
-  return (select result from public.farm_operations
-    where owner_id = v_owner and idempotency_key = p_idempotency_key);
+  return public.apply_simple_tile_action(
+    'water', 'watering_can', 1, 2, p_tile_indices, p_idempotency_key
+  );
 end;
 $$;
 

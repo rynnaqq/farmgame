@@ -1,8 +1,8 @@
-import type React from 'react'
-import { useEffect, useRef } from 'react'
-import { useUiStore } from '../../state/uiStore'
-import { useLeaderboardStore } from './leaderboardStore'
-import { getLeaderboardService } from './leaderboardService'
+import type React from 'react';
+import { useEffect, useRef } from 'react';
+import { useUiStore } from '../../state/uiStore';
+import { useLeaderboardStore } from './leaderboardStore';
+import { getLeaderboardService } from './leaderboardService';
 
 /**
  * Accessible HTML mirror of the 3D leaderboard monument (PRD §7.12, §14.3).
@@ -10,25 +10,27 @@ import { getLeaderboardService } from './leaderboardService'
  * successful data visible with a freshness label.
  */
 export const LeaderboardModal: React.FC = () => {
-  const activeModal = useUiStore((state) => state.activeModal)
-  const closeModal = useUiStore((state) => state.closeModal)
-  const rows = useLeaderboardStore((state) => state.rows)
-  const isStale = useLeaderboardStore((state) => state.isStale)
-  const lastFetchedAt = useLeaderboardStore((state) => state.lastFetchedAt)
+  const activeModal = useUiStore((state) => state.activeModal);
+  const closeModal = useUiStore((state) => state.closeModal);
+  const rows = useLeaderboardStore((state) => state.rows);
+  const isStale = useLeaderboardStore((state) => state.isStale);
+  const lastFetchedAt = useLeaderboardStore((state) => state.lastFetchedAt);
 
-  const dialogRef = useRef<HTMLDivElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null);
 
-  const isOpen = activeModal === 'leaderboard'
+  const isOpen = activeModal === 'leaderboard';
 
   useEffect(() => {
-    if (!isOpen) return
-    void getLeaderboardService().fetchTop10()
-    dialogRef.current?.focus()
-  }, [isOpen])
+    if (!isOpen) return;
+    void getLeaderboardService().fetchTop10();
+    dialogRef.current?.focus();
+  }, [isOpen]);
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
-  const freshnessSeconds = lastFetchedAt ? Math.max(0, Math.floor((Date.now() - lastFetchedAt) / 1000)) : null
+  const freshnessSeconds = lastFetchedAt
+    ? Math.max(0, Math.floor((Date.now() - lastFetchedAt) / 1000))
+    : null;
 
   return (
     <div
@@ -48,13 +50,15 @@ export const LeaderboardModal: React.FC = () => {
           🏆 Top 10 Farmers
         </h2>
         {isStale ? (
-          <p className="text-xs text-red-300 text-center mt-1" role="status" data-testid="leaderboard-stale">
+          <p
+            className="text-xs text-red-300 text-center mt-1"
+            role="status"
+            data-testid="leaderboard-stale"
+          >
             Connection issue — showing last successful results
           </p>
         ) : freshnessSeconds !== null ? (
-          <p className="text-xs text-stone-400 text-center mt-1">
-            Updated {freshnessSeconds}s ago
-          </p>
+          <p className="text-xs text-stone-400 text-center mt-1">Updated {freshnessSeconds}s ago</p>
         ) : null}
 
         {rows.length === 0 ? (
@@ -66,9 +70,15 @@ export const LeaderboardModal: React.FC = () => {
             <caption className="sr-only">Global top 10 farmers by coin balance</caption>
             <thead>
               <tr className="text-amber-200/80 text-left">
-                <th scope="col" className="py-1 pr-2">Rank</th>
-                <th scope="col" className="py-1">Farmer</th>
-                <th scope="col" className="py-1 text-right">Coins</th>
+                <th scope="col" className="py-1 pr-2">
+                  Rank
+                </th>
+                <th scope="col" className="py-1">
+                  Farmer
+                </th>
+                <th scope="col" className="py-1 text-right">
+                  Coins
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -96,5 +106,5 @@ export const LeaderboardModal: React.FC = () => {
         </button>
       </div>
     </div>
-  )
-}
+  );
+};

@@ -339,24 +339,41 @@ begin
   for update;
 
   if found then
-    update public.room_members
-      set lease_expires_at = now() + interval '30 seconds', reclaim_until = null
-      where room_id = v_reclaim.room_id and user_id = v_owner
-      returning room_id, slot into v_member.room_id, v_member.slot;
-    update public.game_rooms
-      set last_activity_at = now(), status = 'open'
-      where id = v_reclaim.room_id and status = 'closed';
-    return jsonb_build_object(
-      'ok', true,
-      'roomId', v_member.room_id,
-      'slot', v_member.slot,
-      'reconnected', true
-    );
+    -- Reclaim only while the room still has capacity for us.
+    if (
+      select count(*) from public.room_members m
+      where m.room_id = v_reclaim.room_id
+        and m.user_id <> v_owner
+        and (m.lease_expires_at > now() or (m.reclaim_until is not null and m.reclaim_until > now()))
+    ) < 4 then
+      update public.room_members
+        set lease_expires_at = now() + interval '30 seconds', reclaim_until = null
+        where room_id = v_reclaim.room_id and user_id = v_owner
+        returning room_id, slot into v_member.room_id, v_member.slot;
+      update public.game_rooms
+        set last_activity_at = now(), status = 'open'
+        where id = v_reclaim.room_id
+          and status = 'closed'
+          and not exists (
+            select 1 from public.room_members m
+            where m.room_id = v_reclaim.room_id and m.lease_expires_at > now()
+          );
+      return jsonb_build_object(
+        'ok', true,
+        'roomId', v_member.room_id,
+        'slot', v_member.slot,
+        'reconnected', true
+      );
+    else
+      delete from public.room_members
+        where room_id = v_reclaim.room_id and user_id = v_owner;
+    end if;
   end if;
 
-  -- Release any other live lease before joining a fresh room.
+  -- Release any stale membership row before joining a fresh room
+  -- (the unique index on user_id permits at most one row either way).
   delete from public.room_members
-    where user_id = v_owner and lease_expires_at > now();
+    where user_id = v_owner;
 
   -- Pick the oldest healthy open room with a free slot, row-locked.
   select * into v_room

@@ -27,6 +27,8 @@ import { installTestClock } from '../test/testClock';
 import { AuthModal } from '../features/auth/AuthModal';
 import { useAuthStore } from '../features/auth/authStore';
 import { useRoomSession } from '../game/multiplayer/useRoomSession';
+import { useNetStore } from '../game/multiplayer/netStore';
+import { getRoomConnection } from '../game/multiplayer/RoomConnection';
 import type { PlotId } from '../state/storeTypes';
 
 export interface AppProps {
@@ -78,11 +80,9 @@ export const App: React.FC<AppProps> = ({
 
       let isMounted = true;
       if (isAuthenticated) {
-        // Server-authoritative mode (Project Verdant): skip local save/offline sim;
-        // persistent progression lives in Supabase.
-        saveService.startAutosave(AUTOSAVE_INTERVAL_MS, () =>
-          useGameStore.getState().toSaveEnvelope()
-        );
+        // Server-authoritative mode (Project Verdant): persistent progression
+        // lives in Supabase RPCs. Do not touch the local save slot at all, so a
+        // logout returns the player to their intact local save.
       } else {
         saveService.load().then(async ({ envelope }) => {
           if (!isMounted) return;
@@ -137,6 +137,9 @@ export const App: React.FC<AppProps> = ({
         }
       );
       if (result.ok) {
+        if (useNetStore.getState().roomId) {
+          getRoomConnection().playToolAnimation();
+        }
         if (uiState.selectedTool === 'trowel') audioManager.playSfx('till');
         else if (uiState.selectedTool === 'watering_can') audioManager.playSfx('water');
         else if (uiState.selectedTool === 'seed_bag') audioManager.playSfx('plant');

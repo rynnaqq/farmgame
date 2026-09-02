@@ -134,9 +134,10 @@ create table public.room_members (
 );
 
 create unique index room_members_slot_uniq on public.room_members (room_id, slot);
--- One user holds at most one live lease: unique index on user_id among live leases.
-create unique index room_members_user_live_uniq on public.room_members (user_id)
-  where lease_expires_at > now();
+-- One row per user, always: rows are deleted on leave/expire/rejoin, so a plain
+-- unique index enforces "at most one live lease per user" without a non-immutable
+-- partial predicate (Postgres rejects `where lease_expires_at > now()`).
+create unique index room_members_user_uniq on public.room_members (user_id);
 
 create index room_members_live_leases_idx on public.room_members (lease_expires_at);
 

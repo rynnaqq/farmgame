@@ -1,9 +1,6 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
-import { getSupabaseClient } from '../../lib/supabase/client'
-import {
-  useLeaderboardStore,
-  type LeaderboardRow,
-} from './leaderboardStore'
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '../../lib/supabase/client';
+import { useLeaderboardStore, type LeaderboardRow } from './leaderboardStore';
 
 /**
  * Leaderboard service (PRD §7.12):
@@ -13,23 +10,43 @@ import {
  */
 
 export class LeaderboardService {
-  private backoffMs = 1000
+  /**
+   * Start the 60 s poller while visible. Failed refreshes keep the last data
+   * and retry with exponential backoff (PRD §7.12).
+   */
+  startPolling(): () => void {
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = async () => {
+      if (stopped) return;
+      const rows = await this.fetchTop10();
+      const delay = rows === null ? this.nextRetryDelayMs : 60_000;
+      timer = setTimeout(() => void tick(), delay);
+    };
+    void tick();
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+  }
+
+  private backoffMs = 1000;
 
   constructor(private readonly supabase: SupabaseClient = getSupabaseClient()) {}
 
   async fetchTop10(): Promise<LeaderboardRow[] | null> {
-    const store = useLeaderboardStore.getState()
-    if (store.isFetching) return null
-    store.setFetching(true)
+    const store = useLeaderboardStore.getState();
+    if (store.isFetching) return null;
+    store.setFetching(true);
     try {
       const { data, error } = await this.supabase
         .from('top_10_leaderboard')
-        .select('rank, profile_id, username_display, balance, balance_updated_at')
+        .select('rank, profile_id, username_display, balance, balance_updated_at');
 
       if (error || !data) {
-        useLeaderboardStore.getState().markStale()
-        this.backoffMs = Math.min(this.backoffMs * 2, 30_000)
-        return null
+        useLeaderboardStore.getState().markStale();
+        this.backoffMs = Math.min(this.backoffMs * 2, 30_000);
+        return null;
       }
 
       const rows: LeaderboardRow[] = data.map((row: Record<string, unknown>) => ({
@@ -38,27 +55,27 @@ export class LeaderboardService {
         usernameDisplay: row.username_display as string,
         balance: row.balance as number,
         balanceUpdatedAt: row.balance_updated_at as string,
-      }))
+      }));
 
-      this.backoffMs = 1000
-      useLeaderboardStore.getState().setRows(rows, Date.now())
-      return rows
+      this.backoffMs = 1000;
+      useLeaderboardStore.getState().setRows(rows, Date.now());
+      return rows;
     } catch {
-      useLeaderboardStore.getState().markStale()
-      return null
+      useLeaderboardStore.getState().markStale();
+      return null;
     } finally {
-      useLeaderboardStore.getState().setFetching(false)
+      useLeaderboardStore.getState().setFetching(false);
     }
   }
 
   get nextRetryDelayMs(): number {
-    return this.backoffMs
+    return this.backoffMs;
   }
 }
 
-let defaultService: LeaderboardService | null = null
+let defaultService: LeaderboardService | null = null;
 
 export function getLeaderboardService(): LeaderboardService {
-  if (!defaultService) defaultService = new LeaderboardService()
-  return defaultService
+  if (!defaultService) defaultService = new LeaderboardService();
+  return defaultService;
 }

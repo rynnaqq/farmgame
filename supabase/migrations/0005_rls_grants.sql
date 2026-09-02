@@ -219,6 +219,7 @@ revoke all on function public.record_farm_result(uuid, uuid, text, uuid, text, j
 revoke all on function public.validate_tile_batch(integer[]) from public, anon, authenticated;
 revoke all on function public.validate_tool_area(smallint, integer[]) from public, anon, authenticated;
 revoke all on function public.tile_patch_row(public.plot_tiles) from public, anon, authenticated;
+revoke all on function public.apply_simple_tile_action(text, text, smallint, smallint, integer[], uuid) from public, anon, authenticated;
 revoke all on function public.mark_expired_leases() from public, anon, authenticated;
 revoke all on function public.advance_weather_epoch() from public, anon, authenticated;
 revoke all on function public.handle_new_user() from public, anon, authenticated;

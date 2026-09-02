@@ -1,13 +1,13 @@
-import type React from 'react'
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { useAuthStore } from './authStore'
+import type React from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useAuthStore } from './authStore';
 import {
   validateUsername,
   validatePassword,
   usernameErrorMessage,
   passwordErrorMessage,
-} from './username'
-import { audioManager } from '../../game/audio/AudioManager'
+} from './username';
+import { audioManager } from '../../game/audio/AudioManager';
 
 /**
  * Auth modal (PRD §7.1 AUTH-01..AUTH-12).
@@ -16,79 +16,79 @@ import { audioManager } from '../../game/audio/AudioManager'
  */
 
 export const AuthModal: React.FC = () => {
-  const mode = useAuthStore((state) => state.mode)
-  const status = useAuthStore((state) => state.status)
-  const error = useAuthStore((state) => state.error)
-  const isSubmitting = useAuthStore((state) => state.isSubmitting)
-  const setMode = useAuthStore((state) => state.setMode)
-  const setSubmitting = useAuthStore((state) => state.setSubmitting)
-  const submitRegister = useAuthStore((state) => state.submitRegister)
-  const submitLogin = useAuthStore((state) => state.submitLogin)
+  const mode = useAuthStore((state) => state.mode);
+  const status = useAuthStore((state) => state.status);
+  const error = useAuthStore((state) => state.error);
+  const isSubmitting = useAuthStore((state) => state.isSubmitting);
+  const setMode = useAuthStore((state) => state.setMode);
+  const setSubmitting = useAuthStore((state) => state.setSubmitting);
+  const submitRegister = useAuthStore((state) => state.submitRegister);
+  const submitLogin = useAuthStore((state) => state.submitLogin);
 
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [passwordVisible, setPasswordVisible] = useState(false)
-  const [capsLockOn, setCapsLockOn] = useState(false)
-  const [localErrors, setLocalErrors] = useState<{ username?: string; password?: string }>({})
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [capsLockOn, setCapsLockOn] = useState(false);
+  const [localErrors, setLocalErrors] = useState<{ username?: string; password?: string }>({});
 
-  const dialogRef = useRef<HTMLDivElement>(null)
-  const usernameRef = useRef<HTMLInputElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const usernameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (status !== 'checking') usernameRef.current?.focus()
-  }, [status])
+    if (status !== 'checking') usernameRef.current?.focus();
+  }, [status]);
 
   const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
     if (typeof event.getModifierState === 'function') {
-      setCapsLockOn(event.getModifierState('CapsLock'))
+      setCapsLockOn(event.getModifierState('CapsLock'));
     }
-  }, [])
+  }, []);
 
   const handleSubmit = useCallback(
     async (event: React.FormEvent) => {
-      event.preventDefault()
-      if (isSubmitting) return
+      event.preventDefault();
+      if (isSubmitting) return;
 
-      const nextLocal: { username?: string; password?: string } = {}
-      const usernameCheck = validateUsername(username)
-      if (!usernameCheck.valid) nextLocal.username = usernameErrorMessage(usernameCheck.reason)
-      const passwordCheck = validatePassword(password)
-      if (!passwordCheck.valid) nextLocal.password = passwordErrorMessage(passwordCheck.reason)
-      setLocalErrors(nextLocal)
-      if (nextLocal.username || nextLocal.password) return
+      const nextLocal: { username?: string; password?: string } = {};
+      const usernameCheck = validateUsername(username);
+      if (!usernameCheck.valid) nextLocal.username = usernameErrorMessage(usernameCheck.reason);
+      const passwordCheck = validatePassword(password);
+      if (!passwordCheck.valid) nextLocal.password = passwordErrorMessage(passwordCheck.reason);
+      setLocalErrors(nextLocal);
+      if (nextLocal.username || nextLocal.password) return;
 
-      setSubmitting(true)
-      audioManager.playSfx('ui_click')
+      setSubmitting(true);
+      audioManager.playSfx('ui_click');
       const succeeded =
         mode === 'register'
           ? await submitRegister(username, password)
-          : await submitLogin(username, password)
+          : await submitLogin(username, password);
       if (!succeeded) {
-        setSubmitting(false)
+        setSubmitting(false);
       }
     },
     [isSubmitting, mode, password, setSubmitting, submitLogin, submitRegister, username]
-  )
+  );
 
   const handleModeSwitch = useCallback(
     (nextMode: 'login' | 'register') => {
-      setMode(nextMode)
-      setLocalErrors({})
-      setUsername('')
-      setPassword('')
+      setMode(nextMode);
+      setLocalErrors({});
+      setUsername('');
+      setPassword('');
     },
     [setMode]
-  )
+  );
 
   const inputBase =
-    'w-full rounded-lg border bg-white/95 text-stone-900 placeholder-stone-400 px-3 py-2.5 text-base focus:outline-none focus:ring-2'
+    'w-full rounded-lg border bg-white/95 text-stone-900 placeholder-stone-400 px-3 py-2.5 text-base focus:outline-none focus:ring-2';
 
   const renderFieldError = (message?: string) =>
     message ? (
       <p className="text-xs text-red-600 mt-1" role="alert">
         {message}
       </p>
-    ) : null
+    ) : null;
 
   return (
     <div
@@ -167,7 +167,10 @@ export const AuthModal: React.FC = () => {
           />
           {renderFieldError(localErrors.username)}
 
-          <label htmlFor="auth-password" className="block text-sm font-bold text-emerald-900 mt-3 mb-1">
+          <label
+            htmlFor="auth-password"
+            className="block text-sm font-bold text-emerald-900 mt-3 mb-1"
+          >
             Password
           </label>
           <div className="relative">
@@ -200,7 +203,10 @@ export const AuthModal: React.FC = () => {
             </button>
           </div>
           {capsLockOn ? (
-            <p className="text-xs text-amber-600 mt-1 font-bold" data-testid="auth-capslock-warning">
+            <p
+              className="text-xs text-amber-600 mt-1 font-bold"
+              data-testid="auth-capslock-warning"
+            >
               ⚠ Caps Lock is on
             </p>
           ) : null}
@@ -233,14 +239,10 @@ export const AuthModal: React.FC = () => {
             className="w-full mt-4 py-2.5 rounded-lg font-bold text-base bg-emerald-600 text-white shadow hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             data-testid="auth-submit"
           >
-            {isSubmitting
-              ? 'Please wait…'
-              : mode === 'register'
-                ? 'Create account'
-                : 'Log in'}
+            {isSubmitting ? 'Please wait…' : mode === 'register' ? 'Create account' : 'Log in'}
           </button>
         </form>
       </div>
     </div>
-  )
-}
+  );
+};

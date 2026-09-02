@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { MONUMENT_POSITION } from '../core/constants'
-import { useLeaderboardStore, LEADERBOARD_REFRESH_MS } from '../../features/leaderboard/leaderboardStore'
+import { useLeaderboardStore } from '../../features/leaderboard/leaderboardStore'
 import { getLeaderboardService } from '../../features/leaderboard/leaderboardService'
 
 /**
@@ -87,12 +87,18 @@ export const LeaderboardMonument: React.FC = () => {
 
   useEffect(() => {
     void service.fetchTop10()
-    const timer = setInterval(() => {
-      if (typeof document === 'undefined' || document.visibilityState === 'visible') {
+    // 60 s poll while visible; the service retries with backoff on failure.
+    const stopPolling = service.startPolling()
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
         void service.fetchTop10()
       }
-    }, LEADERBOARD_REFRESH_MS)
-    return () => clearInterval(timer)
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      stopPolling()
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
   }, [service])
 
   useEffect(() => {
