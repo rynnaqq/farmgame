@@ -98,55 +98,6 @@ function scheduleCleanup(
 }
 
 /**
- * Till SFX: Soft earthy thud and scrape.
- */
-export function synthesizeTill(
-  ctx: AudioContext,
-  dest: AudioNode,
-  pitchMultiplier: number = 1.0
-): void {
-  const now = ctx.currentTime;
-  const duration = 0.16;
-
-  // 1. Earthy Thud Tone (low pitch drop)
-  const osc = ctx.createOscillator();
-  const oscGain = ctx.createGain();
-  osc.type = 'triangle';
-  const startFreq = 120 * pitchMultiplier;
-  const endFreq = 38 * pitchMultiplier;
-  osc.frequency.setValueAtTime(startFreq, now);
-  osc.frequency.exponentialRampToValueAtTime(Math.max(10, endFreq), now + duration);
-
-  oscGain.gain.setValueAtTime(0.7, now);
-  oscGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
-  osc.connect(oscGain);
-  oscGain.connect(dest);
-  osc.start(now);
-  osc.stop(now + duration);
-
-  // 2. Soil Scrape Noise
-  const noiseSource = ctx.createBufferSource();
-  noiseSource.buffer = getCachedNoiseBuffer(ctx, 'pink');
-  const noiseFilter = ctx.createBiquadFilter();
-  noiseFilter.type = 'bandpass';
-  noiseFilter.frequency.setValueAtTime(280 * pitchMultiplier, now);
-  noiseFilter.Q.setValueAtTime(1.8, now);
-
-  const noiseGain = ctx.createGain();
-  noiseGain.gain.setValueAtTime(0.5, now);
-  noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-
-  noiseSource.connect(noiseFilter);
-  noiseFilter.connect(noiseGain);
-  noiseGain.connect(dest);
-  noiseSource.start(now);
-  noiseSource.stop(now + 0.12);
-
-  scheduleCleanup(ctx, [osc, oscGain, noiseSource, noiseFilter, noiseGain], duration);
-}
-
-/**
  * Water SFX: Liquid splash / trickle with bubbling sine waves.
  */
 export function synthesizeWater(

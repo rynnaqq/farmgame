@@ -176,8 +176,8 @@ describe('Task 14: SeedPicker Component', () => {
       expect(useUiStore.getState().selectedSeed).toBe('carrot');
     });
 
-    it('does not cycle seed on Q/E when another tool is active (e.g. trowel)', () => {
-      useUiStore.getState().setSelectedTool('trowel');
+    it('does not cycle seed on Q/E when another tool is active (e.g. watering_can)', () => {
+      useUiStore.getState().setSelectedTool('watering_can');
       render(<SeedPicker />);
 
       expect(useUiStore.getState().selectedSeed).toBe('carrot');
@@ -254,13 +254,13 @@ describe('Task 14: SeedPicker Component', () => {
       expect(onClose).toHaveBeenCalledTimes(1);
     });
 
-    it('defaults to switching to trowel tool when close button is clicked without custom onClose', () => {
+    it('defaults to switching to watering_can tool when close button is clicked without custom onClose', () => {
       useUiStore.getState().setSelectedTool('seed_bag');
       render(<SeedPicker />);
 
       const closeBtn = screen.getByTestId('seed-picker-close-button');
       fireEvent.click(closeBtn);
-      expect(useUiStore.getState().selectedTool).toBe('trowel');
+      expect(useUiStore.getState().selectedTool).toBe('watering_can');
     });
   });
 });

@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AudioManager, createAudioManager, type SfxType } from './AudioManager';
 import {
   createNoiseBuffer,
-  synthesizeTill,
   synthesizeWater,
   synthesizePlant,
   synthesizeHarvest,
@@ -163,14 +162,6 @@ describe('Web Audio Engine & Synthesizer', () => {
       expect(data.length).toBeGreaterThan(0);
     });
 
-    it('synthesizeTill creates low frequency oscillator and bandpass noise burst', () => {
-      const dest = mockCtx.createGain();
-      synthesizeTill(mockCtx as unknown as AudioContext, dest as unknown as AudioNode);
-      expect(mockCtx.createOscillator).toHaveBeenCalled();
-      expect(mockCtx.createBiquadFilter).toHaveBeenCalled();
-      expect(mockCtx.createBufferSource).toHaveBeenCalled();
-    });
-
     it('synthesizeWater generates bubbling chirps and filtered noise', () => {
       const dest = mockCtx.createGain();
       synthesizeWater(mockCtx as unknown as AudioContext, dest as unknown as AudioNode);
@@ -282,7 +273,7 @@ describe('Web Audio Engine & Synthesizer', () => {
 
       // Calling methods should not crash
       expect(() => fallbackManager.init()).not.toThrow();
-      expect(() => fallbackManager.playSfx('till')).not.toThrow();
+      expect(() => fallbackManager.playSfx('water')).not.toThrow();
       expect(() => fallbackManager.setWeatherAmbience('sunny')).not.toThrow();
       expect(() =>
         fallbackManager.syncSettings({
@@ -438,7 +429,6 @@ describe('Web Audio Engine & Synthesizer', () => {
     it('plays all SFX types without error', () => {
       manager.init();
       const sfxList: SfxType[] = [
-        'till',
         'water',
         'plant',
         'harvest',

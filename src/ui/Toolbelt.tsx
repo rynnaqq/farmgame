@@ -27,24 +27,6 @@ function ToolIcon({
   isActive: boolean;
 }) {
   switch (tool) {
-    case 'trowel':
-      return (
-        <svg
-          className={`w-6 h-6 md:w-7 md:h-7 transition-transform ${
-            isActive ? 'scale-110 text-amber-200' : 'text-amber-100/70'
-          }`}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M14 2l6 6-9 9H5v-6l9-9z" fill="currentColor" fillOpacity="0.15" />
-          <path d="M3 21l3-3" strokeWidth="2.5" />
-        </svg>
-      );
-
     case 'watering_can':
       if (isGolden) {
         return (
@@ -149,11 +131,12 @@ function ToolIcon({
 
 /**
  * Bottom Toolbelt Component for Garden Island 3D
- * - 4 Tools in fixed order: 1. Trowel, 2. Watering Can, 3. Seed Bag, 4. Hand/Scythe.
+ * - 3 Tools in fixed order: 1. Watering Can, 2. Seed Bag, 3. Hand/Scythe.
  * - Dynamic Golden Watering Can upgrade styling & icon.
  * - Seed Bag displays active seed indicator and count badge.
  * - SeedPicker popup floats directly above when Seed Bag is selected.
- * - Accessible >= 44x44px touch targets with keyboard shortcuts (1-4).
+ * - Produce quickslots mapped to keys 4-8 (Carrot, Tomato, Pumpkin, Berry, Starfruit).
+ * - Accessible >= 44x44px touch targets with keyboard shortcuts (1-3).
  * - Safe-area inset aware layout.
  */
 export const Toolbelt: React.FC<ToolbeltProps> = ({
@@ -169,26 +152,16 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
   const inventorySeeds = useGameStore((state) => state.inventory.seeds);
   const produce = useGameStore((state) => state.inventory.produce);
 
-  const carrotCount = useMemo(
-    () => produce.filter((p) => p.cropId === 'carrot').reduce((s, p) => s + p.quantity, 0),
+  const produceCount = useCallback(
+    (cropId: keyof typeof CROPS) =>
+      produce.filter((p) => p.cropId === cropId).reduce((s, p) => s + p.quantity, 0),
     [produce]
   );
-  const tomatoCount = useMemo(
-    () => produce.filter((p) => p.cropId === 'tomato').reduce((s, p) => s + p.quantity, 0),
-    [produce]
-  );
-  const pumpkinCount = useMemo(
-    () => produce.filter((p) => p.cropId === 'pumpkin').reduce((s, p) => s + p.quantity, 0),
-    [produce]
-  );
-  const goldenBerryCount = useMemo(
-    () => produce.filter((p) => p.cropId === 'golden_berry').reduce((s, p) => s + p.quantity, 0),
-    [produce]
-  );
-  const starfruitCount = useMemo(
-    () => produce.filter((p) => p.cropId === 'starfruit').reduce((s, p) => s + p.quantity, 0),
-    [produce]
-  );
+  const carrotCount = useMemo(() => produceCount('carrot'), [produceCount]);
+  const tomatoCount = useMemo(() => produceCount('tomato'), [produceCount]);
+  const pumpkinCount = useMemo(() => produceCount('pumpkin'), [produceCount]);
+  const goldenBerryCount = useMemo(() => produceCount('golden_berry'), [produceCount]);
+  const starfruitCount = useMemo(() => produceCount('starfruit'), [produceCount]);
 
   const isModalOpen = activeModal !== null;
   const isInteractive = !disabled && !isModalOpen;
@@ -205,10 +178,14 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
     [isInteractive]
   );
 
-  const isTrowelActive = selectedTool === 'trowel';
   const isWateringActive = selectedTool === 'watering_can';
   const isSeedBagActive = selectedTool === 'seed_bag';
   const isHandActive = selectedTool === 'hand' || selectedTool === 'scythe';
+
+  const openInventory = useCallback(() => {
+    audioManager.playSfx('ui_click');
+    useUiStore.getState().openModal('inventory');
+  }, []);
 
   return (
     <div
@@ -222,56 +199,25 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
       {/* Floating SeedPicker Popup above Toolbelt */}
       {isSeedBagActive && (
         <div className="mb-2 pointer-events-auto transition-all duration-200">
-          <SeedPicker
-            disabled={!isInteractive}
-            onClose={() => handleSelectTool('trowel')}
-          />
+          <SeedPicker disabled={!isInteractive} onClose={() => handleSelectTool('watering_can')} />
         </div>
       )}
 
       {/* Main Toolbelt Bar */}
       <div
+        data-testid="toolbelt-bar"
         className="pointer-events-auto bg-slate-900/90 backdrop-blur-md border border-white/15 rounded-2xl p-1.5 shadow-2xl flex items-center gap-1.5 md:gap-2.5 max-w-[calc(100vw-1.5rem)] overflow-x-auto no-scrollbar"
         role="toolbar"
         aria-label="Farming Tools"
       >
-        {/* 1. Trowel (Hidden visually per user specification) */}
-        <button
-          type="button"
-          data-testid="tool-trowel"
-          aria-label="Trowel (1)"
-          aria-pressed={isTrowelActive}
-          disabled={!isInteractive}
-          onClick={() => handleSelectTool('trowel')}
-          style={{ display: 'none' }}
-          className={`min-w-[44px] min-h-[44px] w-14 h-15 md:w-16 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border transition-all duration-150 relative cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
-            isTrowelActive
-              ? 'border-2 border-emerald-400 ring-2 ring-emerald-400/40 bg-emerald-950/80 scale-105 shadow-md shadow-emerald-500/20 z-10'
-              : 'border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 scale-100 opacity-80 hover:opacity-100'
-          } ${!isInteractive ? 'cursor-not-allowed opacity-40' : ''}`}
-        >
-          {isTrowelActive && (
-            <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-white text-[11px] leading-none animate-bounce select-none pointer-events-none drop-shadow">
-              ▼
-            </span>
-          )}
-          <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
-            1
-          </span>
-          <div className="flex-1 flex items-center justify-center pointer-events-none mt-1">
-            <ToolIcon tool="trowel" isActive={isTrowelActive} />
-          </div>
-          <span className="text-[10px] md:text-[11px] font-bold text-white leading-tight pointer-events-none">
-            Trowel
-          </span>
-        </button>
-
-        {/* 2. Watering Can */}
+        {/* 1. Watering Can */}
         <button
           type="button"
           data-testid="tool-watering_can"
+          data-tool="watering_can"
+          data-hotkey="1"
           data-golden={goldenWateringCanOwned ? 'true' : 'false'}
-          aria-label={goldenWateringCanOwned ? 'Golden Watering Can (2)' : 'Watering Can (2)'}
+          aria-label={goldenWateringCanOwned ? 'Watering Can (1)' : 'Watering Can (1)'}
           aria-pressed={isWateringActive}
           disabled={!isInteractive}
           onClick={() => handleSelectTool('watering_can')}
@@ -285,18 +231,14 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
                 : 'border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 scale-100 opacity-80 hover:opacity-100'
           } ${!isInteractive ? 'cursor-not-allowed opacity-40' : ''}`}
         >
-          {/* Active selection arrow marker (Growden.io style) */}
           {isWateringActive && (
             <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-white text-[11px] leading-none animate-bounce select-none pointer-events-none drop-shadow">
               ▼
             </span>
           )}
-
-          {/* Key shortcut badge */}
           <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
-            2
+            1
           </span>
-
           <div className="flex-1 flex items-center justify-center pointer-events-none mt-1">
             <ToolIcon
               tool="watering_can"
@@ -304,21 +246,22 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
               isActive={isWateringActive}
             />
           </div>
-
           <span
             className={`text-[10px] md:text-[11px] font-bold leading-tight pointer-events-none ${
               goldenWateringCanOwned ? 'text-amber-300' : 'text-white'
             }`}
           >
-            {goldenWateringCanOwned ? 'Golden Can' : 'Water Can'}
+            {goldenWateringCanOwned ? 'Golden Can' : 'Water'}
           </span>
         </button>
 
-        {/* 3. Seed Bag */}
+        {/* 2. Seed Bag */}
         <button
           type="button"
           data-testid="tool-seed_bag"
-          aria-label={`Seed Bag (3) - ${currentSeedDef.name} (${currentSeedCount})`}
+          data-tool="seed_bag"
+          data-hotkey="2"
+          aria-label={`Seeds (2) - ${currentSeedDef.name} (${currentSeedCount})`}
           aria-pressed={isSeedBagActive}
           disabled={!isInteractive}
           onClick={() => handleSelectTool('seed_bag')}
@@ -328,40 +271,35 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
               : 'border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 scale-100 opacity-80 hover:opacity-100'
           } ${!isInteractive ? 'cursor-not-allowed opacity-40' : ''}`}
         >
-          {/* Active selection arrow marker (Growden.io style) */}
           {isSeedBagActive && (
             <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-white text-[11px] leading-none animate-bounce select-none pointer-events-none drop-shadow">
               ▼
             </span>
           )}
-
-          {/* Key shortcut badge */}
           <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
-            3
+            2
           </span>
-
-          {/* Active seed inventory count chip */}
           <span
             data-testid="seed-badge-count"
             className="absolute top-1 right-1 px-1 py-0.2 rounded-full text-[9px] font-bold bg-emerald-900/90 text-emerald-200 border border-emerald-500/30 leading-tight pointer-events-none"
           >
             {currentSeedCount}
           </span>
-
           <div className="flex-1 flex items-center justify-center pointer-events-none mt-1">
             <ToolIcon tool="seed_bag" isActive={isSeedBagActive} />
           </div>
-
           <span className="text-[10px] md:text-[11px] font-bold text-white leading-tight pointer-events-none truncate max-w-[52px]">
             {isSeedBagActive ? currentSeedDef.name : 'Seeds'}
           </span>
         </button>
 
-        {/* 4. Hand / Scythe */}
+        {/* 3. Hand / Scythe (Harvest) */}
         <button
           type="button"
           data-testid="tool-hand"
-          aria-label="Hand / Scythe (4)"
+          data-tool="hand"
+          data-hotkey="3"
+          aria-label="Harvest (3)"
           aria-pressed={isHandActive}
           disabled={!isInteractive}
           onClick={() => handleSelectTool('hand')}
@@ -371,41 +309,33 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
               : 'border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 scale-100 opacity-80 hover:opacity-100'
           } ${!isInteractive ? 'cursor-not-allowed opacity-40' : ''}`}
         >
-          {/* Active selection arrow marker (Growden.io style) */}
           {isHandActive && (
             <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-white text-[11px] leading-none animate-bounce select-none pointer-events-none drop-shadow">
               ▼
             </span>
           )}
-
-          {/* Key shortcut badge */}
           <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
-            4
+            3
           </span>
-
           <div className="flex-1 flex items-center justify-center pointer-events-none mt-1">
             <ToolIcon tool="hand" isActive={isHandActive} />
           </div>
-
           <span className="text-[10px] md:text-[11px] font-bold text-white leading-tight pointer-events-none">
             Harvest
           </span>
         </button>
 
-        {/* 5. Carrot Quickslot */}
+        {/* 4. Carrot Quickslot */}
         <button
           type="button"
-          data-testid="tool-slot-5"
-          aria-label="Carrot Produce (5)"
+          data-testid="tool-slot-4"
+          aria-label="Carrot Produce (4)"
           disabled={!isInteractive}
-          onClick={() => {
-            audioManager.playSfx('ui_click');
-            useUiStore.getState().openModal('inventory');
-          }}
+          onClick={openInventory}
           className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden sm:flex"
         >
           <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
-            5
+            4
           </span>
           {carrotCount > 0 && (
             <span className="absolute top-1 right-1 px-1 py-0.2 rounded-full text-[9px] font-bold bg-amber-900/90 text-amber-200 border border-amber-500/30 leading-tight pointer-events-none">
@@ -418,20 +348,17 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
           </span>
         </button>
 
-        {/* 6. Tomato Quickslot */}
+        {/* 5. Tomato Quickslot */}
         <button
           type="button"
-          data-testid="tool-slot-6"
-          aria-label="Tomato Produce (6)"
+          data-testid="tool-slot-5"
+          aria-label="Tomato Produce (5)"
           disabled={!isInteractive}
-          onClick={() => {
-            audioManager.playSfx('ui_click');
-            useUiStore.getState().openModal('inventory');
-          }}
+          onClick={openInventory}
           className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden sm:flex"
         >
           <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
-            6
+            5
           </span>
           {tomatoCount > 0 && (
             <span className="absolute top-1 right-1 px-1 py-0.2 rounded-full text-[9px] font-bold bg-rose-900/90 text-rose-200 border border-rose-500/30 leading-tight pointer-events-none">
@@ -444,20 +371,17 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
           </span>
         </button>
 
-        {/* 7. Pumpkin Quickslot */}
+        {/* 6. Pumpkin Quickslot */}
         <button
           type="button"
-          data-testid="tool-slot-7"
-          aria-label="Pumpkin Produce (7)"
+          data-testid="tool-slot-6"
+          aria-label="Pumpkin Produce (6)"
           disabled={!isInteractive}
-          onClick={() => {
-            audioManager.playSfx('ui_click');
-            useUiStore.getState().openModal('inventory');
-          }}
+          onClick={openInventory}
           className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden md:flex"
         >
           <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
-            7
+            6
           </span>
           {pumpkinCount > 0 && (
             <span className="absolute top-1 right-1 px-1 py-0.2 rounded-full text-[9px] font-bold bg-orange-900/90 text-orange-200 border border-orange-500/30 leading-tight pointer-events-none">
@@ -470,20 +394,17 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
           </span>
         </button>
 
-        {/* 8. Golden Berry Quickslot */}
+        {/* 7. Golden Berry Quickslot */}
         <button
           type="button"
-          data-testid="tool-slot-8"
-          aria-label="Golden Berry (8)"
+          data-testid="tool-slot-7"
+          aria-label="Golden Berry (7)"
           disabled={!isInteractive}
-          onClick={() => {
-            audioManager.playSfx('ui_click');
-            useUiStore.getState().openModal('inventory');
-          }}
+          onClick={openInventory}
           className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden md:flex"
         >
           <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
-            8
+            7
           </span>
           {goldenBerryCount > 0 && (
             <span className="absolute top-1 right-1 px-1 py-0.2 rounded-full text-[9px] font-bold bg-amber-900/90 text-amber-200 border border-amber-500/30 leading-tight pointer-events-none">
@@ -496,20 +417,17 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
           </span>
         </button>
 
-        {/* 9. Starfruit Quickslot */}
+        {/* 8. Starfruit Quickslot */}
         <button
           type="button"
-          data-testid="tool-slot-9"
-          aria-label="Starfruit (9)"
+          data-testid="tool-slot-8"
+          aria-label="Starfruit (8)"
           disabled={!isInteractive}
-          onClick={() => {
-            audioManager.playSfx('ui_click');
-            useUiStore.getState().openModal('inventory');
-          }}
+          onClick={openInventory}
           className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden lg:flex"
         >
           <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
-            9
+            8
           </span>
           {starfruitCount > 0 && (
             <span className="absolute top-1 right-1 px-1 py-0.2 rounded-full text-[9px] font-bold bg-yellow-900/90 text-yellow-200 border border-yellow-500/30 leading-tight pointer-events-none">
@@ -519,27 +437,6 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
           <span className="text-xl mt-1">⭐</span>
           <span className="text-[10px] font-bold text-slate-300 leading-tight truncate max-w-[44px]">
             Starfruit
-          </span>
-        </button>
-
-        {/* 0. Backpack Quickslot */}
-        <button
-          type="button"
-          data-testid="tool-slot-0"
-          aria-label="Backpack (0)"
-          disabled={!isInteractive}
-          onClick={() => {
-            audioManager.playSfx('ui_click');
-            useUiStore.getState().openModal('inventory');
-          }}
-          className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden lg:flex"
-        >
-          <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
-            0
-          </span>
-          <span className="text-xl mt-1">🎒</span>
-          <span className="text-[10px] font-bold text-slate-300 leading-tight truncate max-w-[44px]">
-            Bag
           </span>
         </button>
       </div>

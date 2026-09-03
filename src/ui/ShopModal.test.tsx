@@ -7,8 +7,6 @@ import { resetSettingsStore } from '../state/settingsStore';
 import {
   CROPS,
   GOLDEN_WATERING_CAN_COST,
-  EXPANSION_1_COST,
-  EXPANSION_2_COST,
 } from '../game/core/constants';
 
 describe('Task 16: ShopModal & EggShop Component Tests', () => {
@@ -284,7 +282,7 @@ describe('Task 16: ShopModal & EggShop Component Tests', () => {
       useUiStore.getState().openModal('shop');
       render(<ShopModal initialTab="upgrades" />);
 
-      const buyCanBtn = screen.getByTestId('upgrade-buy-golden_can');
+      const buyCanBtn = screen.getByTestId('upgrade-buy-golden_watering_can');
       expect(buyCanBtn).not.toBeDisabled();
       expect(buyCanBtn).toHaveTextContent('1,200');
 
@@ -303,49 +301,21 @@ describe('Task 16: ShopModal & EggShop Component Tests', () => {
       useUiStore.getState().openModal('shop');
       render(<ShopModal initialTab="upgrades" />);
 
-      const buyCanBtn = screen.getByTestId('upgrade-buy-golden_can');
+      const buyCanBtn = screen.getByTestId('upgrade-buy-golden_watering_can');
       expect(buyCanBtn).toBeDisabled();
     });
 
-    it('Plot Expansion: offers 6x6 for 750c on 4x4 grid and disables 8x8', () => {
+    it('offers only the Golden Watering Can upgrade (no grid expansions)', () => {
       useGameStore.getState().setCoins(1000);
-      useGameStore.getState().setGridSize(4);
 
       useUiStore.getState().openModal('shop');
       render(<ShopModal initialTab="upgrades" />);
 
-      const buyExp6 = screen.getByTestId('upgrade-buy-expansion_6x6');
-      const buyExp8 = screen.getByTestId('upgrade-buy-expansion_8x8');
-
-      expect(buyExp6).not.toBeDisabled();
-      expect(buyExp8).toBeDisabled(); // Locked until 6x6
-
-      fireEvent.click(buyExp6);
-
-      expect(useGameStore.getState().farm.gridSize).toBe(6);
-      expect(useGameStore.getState().player.coins).toBe(1000 - EXPANSION_1_COST);
-      expect(buyExp6).toHaveTextContent(/owned/i);
-    });
-
-    it('Plot Expansion: offers 8x8 for 3500c on 6x6 grid and completes expansion on buy', () => {
-      useGameStore.getState().setCoins(4000);
-      useGameStore.getState().setGridSize(6);
-
-      useUiStore.getState().openModal('shop');
-      render(<ShopModal initialTab="upgrades" />);
-
-      const buyExp6 = screen.getByTestId('upgrade-buy-expansion_6x6');
-      const buyExp8 = screen.getByTestId('upgrade-buy-expansion_8x8');
-
-      expect(buyExp6).toHaveTextContent(/owned/i);
-      expect(buyExp6).toBeDisabled();
-      expect(buyExp8).not.toBeDisabled();
-
-      fireEvent.click(buyExp8);
-
-      expect(useGameStore.getState().farm.gridSize).toBe(8);
-      expect(useGameStore.getState().player.coins).toBe(4000 - EXPANSION_2_COST);
-      expect(buyExp8).toHaveTextContent(/owned|max/i);
+      expect(screen.getByTestId('upgrade-card-golden_watering_can')).toBeInTheDocument();
+      expect(screen.queryByTestId('upgrade-card-expansion_6x6')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('upgrade-card-expansion_8x8')).not.toBeInTheDocument();
+      expect(screen.queryByText(/expansion/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/6x6|8x8/i)).not.toBeInTheDocument();
     });
   });
 

@@ -6,7 +6,6 @@ import {
   sellProduce,
   sellAllProduce,
   buyGoldenWateringCan,
-  buyGridExpansion,
   buyUpgrade,
   buyEgg,
 } from './economyCommands';
@@ -20,8 +19,6 @@ import { getSeedCatalog, getUpgradeCatalog, getEggCatalog } from './shopCatalog'
 import {
   CROPS,
   GOLDEN_WATERING_CAN_COST,
-  EXPANSION_1_COST,
-  EXPANSION_2_COST,
   MAX_PET_INVENTORY,
   type CropId,
 } from '../core/constants';
@@ -265,106 +262,37 @@ describe('Task 15: Economy Definitions, Catalog & Commands', () => {
       expect(useGameStore.getState().player.coins).toBe(5000);
     });
 
-    it('supports buyUpgrade("golden_can") alias', () => {
+    it('supports buyUpgrade("golden_watering_can")', () => {
       useGameStore.getState().setCoins(2000);
 
-      const result = buyUpgrade('golden_can');
+      const result = buyUpgrade('golden_watering_can');
       expect(result.ok).toBe(true);
       expect(useGameStore.getState().farm.goldenWateringCanOwned).toBe(true);
       expect(useGameStore.getState().player.coins).toBe(2000 - GOLDEN_WATERING_CAN_COST);
     });
   });
 
-  describe('5. Upgrades - Grid Expansion', () => {
-    it('expands 4x4 grid to 6x6 for 750 coins and updates plot definitions', () => {
-      useGameStore.getState().setCoins(1000);
-      useGameStore.getState().setGridSize(4);
-
-      const result = buyGridExpansion();
-
-      expect(result.ok).toBe(true);
-      if (result.ok) {
-        expect(result.value.newGridSize).toBe(6);
-        expect(result.value.cost).toBe(EXPANSION_1_COST);
-      }
-
-      expect(useGameStore.getState().farm.gridSize).toBe(6);
-      expect(useGameStore.getState().player.coins).toBe(1000 - EXPANSION_1_COST);
-      expect(Object.keys(useGameStore.getState().farm.plots).length).toBe(36);
-    });
-
-    it('expands 6x6 grid to 8x8 for 3500 coins and updates plot definitions', () => {
-      useGameStore.getState().setCoins(4000);
-      useGameStore.getState().setGridSize(6);
-
-      const result = buyGridExpansion();
-
-      expect(result.ok).toBe(true);
-      if (result.ok) {
-        expect(result.value.newGridSize).toBe(8);
-        expect(result.value.cost).toBe(EXPANSION_2_COST);
-      }
-
-      expect(useGameStore.getState().farm.gridSize).toBe(8);
-      expect(useGameStore.getState().player.coins).toBe(4000 - EXPANSION_2_COST);
-      expect(Object.keys(useGameStore.getState().farm.plots).length).toBe(64);
-    });
-
-    it('rejects grid expansion when already at maximum 8x8 grid size', () => {
+  describe('5. Upgrades - Grid Expansion Removed', () => {
+    it('rejects removed grid expansion upgrade ids as unknown', () => {
       useGameStore.getState().setCoins(10000);
-      useGameStore.getState().setGridSize(8);
 
-      const result = buyGridExpansion();
+      const result = buyUpgrade('grid_expansion' as never);
 
-      expect(result.ok).toBe(false);
-      if (!result.ok) {
-        expect(result.reason).toBe('already_owned');
-      }
-      expect(useGameStore.getState().player.coins).toBe(10000);
-    });
-
-    it('rejects grid expansion when insufficient funds', () => {
-      useGameStore.getState().setCoins(500); // Needs 750 for 6x6
-      useGameStore.getState().setGridSize(4);
-
-      const result = buyGridExpansion();
-
-      expect(result.ok).toBe(false);
-      if (!result.ok) {
-        expect(result.reason).toBe('insufficient_coins');
-      }
-      expect(useGameStore.getState().farm.gridSize).toBe(4);
-    });
-
-    it('supports buyUpgrade("grid_expansion"), "expansion_6x6", and "expansion_8x8"', () => {
-      useGameStore.getState().setCoins(5000);
-      useGameStore.getState().setGridSize(4);
-
-      // Expansion 6x6
-      const res1 = buyUpgrade('expansion_6x6');
-      expect(res1.ok).toBe(true);
-      expect(useGameStore.getState().farm.gridSize).toBe(6);
-
-      // Expansion 8x8
-      const res2 = buyUpgrade('expansion_8x8');
-      expect(res2.ok).toBe(true);
-      expect(useGameStore.getState().farm.gridSize).toBe(8);
-
-      // Generic grid expansion when already maxed
-      const res3 = buyUpgrade('grid_expansion');
-      expect(res3.ok).toBe(false);
-    });
-
-    it('rejects buying expansion_8x8 when still on 4x4 grid', () => {
-      useGameStore.getState().setCoins(5000);
-      useGameStore.getState().setGridSize(4);
-
-      const result = buyUpgrade('expansion_8x8');
       expect(result.ok).toBe(false);
       if (!result.ok) {
         expect(result.reason).toBe('unknown');
       }
-      expect(useGameStore.getState().farm.gridSize).toBe(4);
+      expect(useGameStore.getState().player.coins).toBe(10000);
+      expect(useGameStore.getState().farm.gridSize).toBe(8);
+      expect(Object.keys(useGameStore.getState().farm.plots).length).toBe(64);
+    });
+
+    it('no longer exports buyGridExpansion or expansion catalog entries', async () => {
+      const module = await import('./economyCommands');
+      expect((module as Record<string, unknown>).buyGridExpansion).toBeUndefined();
+
+      const { UPGRADE_CONFIGS } = await import('./economyDefinitions');
+      expect(Object.keys(UPGRADE_CONFIGS)).toEqual(['golden_watering_can']);
     });
   });
 
@@ -530,30 +458,17 @@ describe('Task 15: Economy Definitions, Catalog & Commands', () => {
     });
 
     it('getUpgradeCatalog reflects availability and owned status', () => {
-      // On 4x4 without golden can
-      const catalog1 = getUpgradeCatalog(4, false);
-      const goldenCanItem = catalog1.find((u) => u.id === 'golden_can');
-      const exp6Item = catalog1.find((u) => u.id === 'expansion_6x6');
-      const exp8Item = catalog1.find((u) => u.id === 'expansion_8x8');
-
+      const catalog1 = getUpgradeCatalog(8, false);
+      expect(catalog1).toHaveLength(1);
+      const goldenCanItem = catalog1.find((u) => u.id === 'golden_watering_can');
       expect(goldenCanItem?.isOwned).toBe(false);
-      expect(exp6Item?.isAvailable).toBe(true);
-      expect(exp8Item?.isAvailable).toBe(false); // Locked until 6x6
+      expect(goldenCanItem?.isAvailable).toBe(true);
+      expect(catalog1.find((u) => u.id.includes('expansion'))).toBeUndefined();
 
-      // On 6x6 with golden can
-      const catalog2 = getUpgradeCatalog(6, true);
-      const goldenCan2 = catalog2.find((u) => u.id === 'golden_can');
-      const exp6_2 = catalog2.find((u) => u.id === 'expansion_6x6');
-      const exp8_2 = catalog2.find((u) => u.id === 'expansion_8x8');
-
+      const catalog2 = getUpgradeCatalog(8, true);
+      const goldenCan2 = catalog2.find((u) => u.id === 'golden_watering_can');
       expect(goldenCan2?.isOwned).toBe(true);
-      expect(exp6_2?.isOwned).toBe(true);
-      expect(exp8_2?.isAvailable).toBe(true);
-
-      // On 8x8
-      const catalog3 = getUpgradeCatalog(8, true);
-      const exp8_3 = catalog3.find((u) => u.id === 'expansion_8x8');
-      expect(exp8_3?.isOwned).toBe(true);
+      expect(goldenCan2?.isAvailable).toBe(false);
     });
 
     it('getEggCatalog returns Common and Rare egg items with costs and perk notes', () => {
@@ -593,9 +508,8 @@ describe('Task 15: Economy Definitions, Catalog & Commands', () => {
     });
 
     it('UPGRADE_CONFIGS contains valid configuration constants', () => {
-      expect(UPGRADE_CONFIGS.golden_can.cost).toBe(GOLDEN_WATERING_CAN_COST);
-      expect(UPGRADE_CONFIGS.expansion_6x6.cost).toBe(EXPANSION_1_COST);
-      expect(UPGRADE_CONFIGS.expansion_8x8.cost).toBe(EXPANSION_2_COST);
+      expect(UPGRADE_CONFIGS.golden_watering_can.cost).toBe(GOLDEN_WATERING_CAN_COST);
+      expect(Object.keys(UPGRADE_CONFIGS)).toEqual(['golden_watering_can']);
       expect(MAX_PET_INVENTORY).toBe(12);
     });
   });

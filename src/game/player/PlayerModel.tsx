@@ -217,19 +217,6 @@ export const PlayerModel: React.FC<PlayerModelProps> = ({
         </mesh>
 
         {/* Held Tool in Hand (Growden.io style) */}
-        {selectedTool === 'trowel' && (
-          <group position={[0, -0.28, 0.06]} rotation={[-0.3, 0, 0]}>
-            <mesh position={[0, -0.05, 0]} castShadow>
-              <cylinderGeometry args={[0.015, 0.015, 0.35, 6]} />
-              <meshStandardMaterial color="#78350F" roughness={0.8} flatShading />
-            </mesh>
-            <mesh position={[0, -0.24, 0]} castShadow>
-              <boxGeometry args={[0.09, 0.12, 0.015]} />
-              <meshStandardMaterial color="#94A3B8" roughness={0.4} metalness={0.8} flatShading />
-            </mesh>
-          </group>
-        )}
-
         {selectedTool === 'watering_can' && (
           <group position={[0, -0.26, 0.06]} rotation={[-0.2, 0, 0]}>
             <mesh castShadow>

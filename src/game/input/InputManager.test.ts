@@ -222,7 +222,7 @@ describe('Task 6: Cross-Platform Input Pipeline', () => {
       keyboard.onToolSelect = toolSpy;
 
       window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit1', key: '1' }));
-      expect(toolSpy).toHaveBeenCalledWith('trowel');
+      expect(toolSpy).toHaveBeenCalledWith('watering_can');
 
       window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit2', key: '2' }));
       expect(toolSpy).toHaveBeenCalledWith('watering_can');
@@ -624,7 +624,7 @@ describe('Task 6: Cross-Platform Input Pipeline', () => {
 
       useUiStore.getState().closeModal();
       window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit1', key: '1' }));
-      expect(toolSpy).toHaveBeenCalledWith('trowel');
+      expect(toolSpy).toHaveBeenCalledWith('watering_can');
     });
 
     it('clears all input on window blur', () => {

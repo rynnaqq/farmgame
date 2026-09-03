@@ -129,14 +129,12 @@ export class KeyboardInput {
       return;
     }
 
-    // Tools 1-4
+    // Tools 1-3: 1 Water, 2 Seeds, 3 Harvest
     if (code === 'Digit1' || key === '1') {
-      this.onToolSelect?.('trowel');
-    } else if (code === 'Digit2' || key === '2') {
       this.onToolSelect?.('watering_can');
-    } else if (code === 'Digit3' || key === '3') {
+    } else if (code === 'Digit2' || key === '2') {
       this.onToolSelect?.('seed_bag');
-    } else if (code === 'Digit4' || key === '4') {
+    } else if (code === 'Digit3' || key === '3') {
       this.onToolSelect?.('hand');
     }
 
