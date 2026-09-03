@@ -1,7 +1,13 @@
 # Desain Redesign Empat Lahan dan Penanaman Bebas
 
 **Tanggal:** 2026-09-02
-**Status:** Disetujui dan ditinjau; siap diimplementasikan
+**Status:** Implemented and verified
+
+> Catatan verifikasi 2026-09-03: lint, typecheck, unit tests (54 file / 873 tes), dan build lulus pada output aktual.
+> Batas environment: Playwright E2E tidak dapat dijalankan di Termux/Android (`Unsupported platform: android`), dan
+> Supabase CLI tidak tersedia sehingga smoke test migration/RPC (`supabase db reset` + dua call `farm_plant_at`
+> konkuren) belum dijalankan — migration 0007 bersifat statically reviewed. Pemeriksaan visual desktop/mobile
+> belum dapat dilakukan pada environment ini.
 **Referensi visual:** `Screenshot_20260901-180931.jpg`
 **Implementasi saat ini:** commit `6ca9e37`
 
