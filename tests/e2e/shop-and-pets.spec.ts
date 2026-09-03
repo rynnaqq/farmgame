@@ -105,7 +105,7 @@ test.describe('Shop Economy, Upgrades, and Companion Pets E2E', () => {
     await eggsTab.click();
     await expect(page.locator('[data-testid="pane-eggs"]')).toBeVisible();
 
-    // 3. Buy Common Egg (Cost: 250c)
+    // 3. Buy Common Egg (Cost: 450c in local PRD mode)
     const buyCommonEggBtn = page.locator('[data-testid="buy-egg-common"]');
     await expect(buyCommonEggBtn).toBeEnabled();
     await buyCommonEggBtn.click();

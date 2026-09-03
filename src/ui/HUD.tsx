@@ -6,6 +6,7 @@ import { selectCoins, selectEquippedPet, selectTotalProduceCount } from '../stat
 import { audioManager } from '../game/audio/AudioManager';
 import { useNetStore } from '../game/multiplayer/netStore';
 import { useAuthStore } from '../features/auth/authStore';
+import { isVerdantMode } from '../game/core/gameMode';
 
 export interface HUDProps {
   className?: string;
@@ -150,7 +151,8 @@ export const HUD: React.FC<HUDProps> = ({ className = '' }) => {
     }
   }, [coins]);
 
-  // Weather countdown ticker
+  // Weather countdown ticker (sim-aware: follows fast-forwarded sim time)
+  const lastSavedUtcMs = useGameStore((state) => state.lastSavedUtcMs);
   const [now, setNow] = useState<number>(() => Date.now());
 
   useEffect(() => {
@@ -160,8 +162,9 @@ export const HUD: React.FC<HUDProps> = ({ className = '' }) => {
     return () => clearInterval(interval);
   }, []);
 
+  const simNow = Math.max(now, lastSavedUtcMs || 0);
   const weatherDef = WEATHER_CONFIGS[weather.current] ?? WEATHER_CONFIGS.sunny;
-  const remainingWeatherMs = Math.max(0, weather.endsAtUtcMs - now);
+  const remainingWeatherMs = Math.max(0, weather.endsAtUtcMs - simNow);
   const formattedTimer = useMemo(() => formatCountdown(remainingWeatherMs), [remainingWeatherMs]);
 
   // Inventory toggle
@@ -186,6 +189,7 @@ export const HUD: React.FC<HUDProps> = ({ className = '' }) => {
 
   const netQuality = useNetStore((state) => state.quality);
   const authUsername = useAuthStore((state) => state.session?.username ?? null);
+  const isVerdant = useMemo(() => isVerdantMode(), []);
 
   const handleOpenLeaderboard = useCallback(() => {
     audioManager.playSfx('ui_click');
@@ -206,8 +210,8 @@ export const HUD: React.FC<HUDProps> = ({ className = '' }) => {
       {/* Left Region: Coins & Weather Widget        */}
       {/* ========================================== */}
       <div className="flex items-center gap-1.5 sm:gap-2.5 flex-wrap pointer-events-none">
-        {/* Connection-quality indicator: only when degraded (PRD §14.2) */}
-        {netQuality !== 'connected' && (
+        {/* Connection-quality indicator: verdant-only, only when degraded (PRD §14.2) */}
+        {isVerdant && netQuality !== 'connected' && (
           <div
             data-testid="hud-connection-indicator"
             role="status"
@@ -216,7 +220,7 @@ export const HUD: React.FC<HUDProps> = ({ className = '' }) => {
             {netQuality === 'degraded' ? '⚠ Reconnecting…' : '⚠ Offline'}
           </div>
         )}
-        {authUsername && (
+        {isVerdant && authUsername && (
           <div
             data-testid="hud-username-badge"
             className="px-2.5 py-1 rounded-xl bg-slate-900/90 border border-emerald-400/30 text-emerald-200 font-bold text-[10px] sm:text-xs shadow-lg"
@@ -402,24 +406,26 @@ export const HUD: React.FC<HUDProps> = ({ className = '' }) => {
           )}
         </button>
 
-        {/* Leaderboard Button (opens accessible Top 10 mirror) */}
-        <button
-          type="button"
-          data-testid="hud-leaderboard-button"
-          aria-label="Open Leaderboard"
-          aria-pressed={activeModal === 'leaderboard'}
-          onClick={handleOpenLeaderboard}
-          className={`pointer-events-auto min-w-[38px] min-h-[38px] sm:min-w-[42px] sm:min-h-[42px] px-2.5 sm:px-3 py-1.5 rounded-xl flex items-center justify-center gap-1.5 border shadow-lg transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-amber-400 cursor-pointer ${
-            activeModal === 'leaderboard'
-              ? 'bg-amber-950/90 border-amber-400/60 text-amber-200 ring-2 ring-amber-400/30'
-              : 'bg-slate-900/90 hover:bg-slate-800/90 border-white/15 text-slate-200 hover:text-white'
-          }`}
-        >
-          <span className="text-base sm:text-lg" role="img" aria-hidden="true">
-            🏆
-          </span>
-          <span className="text-xs font-bold hidden lg:inline">Top 10</span>
-        </button>
+        {/* Leaderboard Button (verdant-only; opens accessible Top 10 mirror) */}
+        {isVerdant && (
+          <button
+            type="button"
+            data-testid="hud-leaderboard-button"
+            aria-label="Open Leaderboard"
+            aria-pressed={activeModal === 'leaderboard'}
+            onClick={handleOpenLeaderboard}
+            className={`pointer-events-auto min-w-[38px] min-h-[38px] sm:min-w-[42px] sm:min-h-[42px] px-2.5 sm:px-3 py-1.5 rounded-xl flex items-center justify-center gap-1.5 border shadow-lg transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-amber-400 cursor-pointer ${
+              activeModal === 'leaderboard'
+                ? 'bg-amber-950/90 border-amber-400/60 text-amber-200 ring-2 ring-amber-400/30'
+                : 'bg-slate-900/90 hover:bg-slate-800/90 border-white/15 text-slate-200 hover:text-white'
+            }`}
+          >
+            <span className="text-base sm:text-lg" role="img" aria-hidden="true">
+              🏆
+            </span>
+            <span className="text-xs font-bold hidden lg:inline">Top 10</span>
+          </button>
+        )}
 
         {/* Fullscreen Toggle Button */}
         <button

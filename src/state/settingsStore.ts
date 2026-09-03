@@ -53,7 +53,9 @@ function getStoredSettings(): Partial<SettingsState> {
   try {
     const raw = storage.getItem(SETTINGS_STORAGE_KEY);
     if (!raw) return {};
-    return JSON.parse(raw);
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    return parsed as Partial<SettingsState>;
   } catch {
     return {};
   }

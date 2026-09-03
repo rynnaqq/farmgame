@@ -1,4 +1,5 @@
 import type { WeatherType } from '../../state/storeTypes';
+import { WEATHER_VISUAL_PRESETS } from '../weather/weatherDefinitions';
 
 export interface LightingTheme {
   dirLightColor: string;
@@ -11,45 +12,27 @@ export interface LightingTheme {
   ambientIntensity: number;
 }
 
+function toLightingTheme(weather: WeatherType): LightingTheme {
+  const preset = WEATHER_VISUAL_PRESETS[weather];
+  return {
+    dirLightColor: preset.dirLightColor,
+    dirLightIntensity: preset.dirLightIntensity,
+    dirLightPosition: preset.dirLightPosition,
+    skyColor: preset.skyColor,
+    groundColor: preset.groundColor,
+    hemiIntensity: preset.hemiIntensity,
+    ambientColor: preset.ambientColor,
+    ambientIntensity: preset.ambientIntensity,
+  };
+}
+
+/**
+ * Single-source lighting derived from `WEATHER_VISUAL_PRESETS`.
+ * Kept as a re-export shim so existing imports keep working without drift.
+ */
 export const WEATHER_LIGHTING: Record<WeatherType, LightingTheme> = {
-  sunny: {
-    dirLightColor: '#FFFBF0',
-    dirLightIntensity: 1.85,
-    dirLightPosition: [12, 18, 10],
-    skyColor: '#5BC7F5',
-    groundColor: '#52D12B',
-    hemiIntensity: 0.8,
-    ambientColor: '#E6F4FF',
-    ambientIntensity: 0.38,
-  },
-  heavy_rain: {
-    dirLightColor: '#8BA3B8',
-    dirLightIntensity: 0.75,
-    dirLightPosition: [10, 16, 8],
-    skyColor: '#5A6B7C',
-    groundColor: '#3D4A38',
-    hemiIntensity: 0.5,
-    ambientColor: '#78909C',
-    ambientIntensity: 0.25,
-  },
-  heatwave: {
-    dirLightColor: '#FFB347',
-    dirLightIntensity: 2.1,
-    dirLightPosition: [14, 20, 8],
-    skyColor: '#FFE4B5',
-    groundColor: '#8B7355',
-    hemiIntensity: 0.9,
-    ambientColor: '#FFA726',
-    ambientIntensity: 0.4,
-  },
-  blood_moon: {
-    dirLightColor: '#E63946',
-    dirLightIntensity: 1.2,
-    dirLightPosition: [10, 15, -12],
-    skyColor: '#4A1525',
-    groundColor: '#220911',
-    hemiIntensity: 0.4,
-    ambientColor: '#880E4F',
-    ambientIntensity: 0.2,
-  },
+  sunny: toLightingTheme('sunny'),
+  heavy_rain: toLightingTheme('heavy_rain'),
+  heatwave: toLightingTheme('heatwave'),
+  blood_moon: toLightingTheme('blood_moon'),
 };

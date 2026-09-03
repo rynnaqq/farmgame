@@ -135,4 +135,21 @@ test.describe('Farming Loop E2E', () => {
     const produceAfterSell = await page.evaluate(() => window.__getGameState?.().inventory.produce);
     expect(produceAfterSell?.length).toBe(0);
   });
+
+  test('real-canvas click path: clicking the 3D canvas does not crash and HUD stays live', async ({
+    page,
+  }) => {
+    const canvas = page.locator('canvas').first();
+    await expect(canvas).toBeVisible();
+
+    // Real mouse click through the raycast path (not a __* hook).
+    await canvas.click({ position: { x: 100, y: 100 } });
+
+    await expect(page.locator('[data-testid="hud-container"]')).toBeVisible();
+    await expect(page.locator('[data-testid="garden-island-app"]')).toBeVisible();
+    const errors: string[] = [];
+    page.on('pageerror', (err) => errors.push(String(err)));
+    await page.waitForTimeout(500);
+    expect(errors).toEqual([]);
+  });
 });

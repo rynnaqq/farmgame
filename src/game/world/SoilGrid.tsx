@@ -1,14 +1,17 @@
 import React, { useMemo, useState, useEffect, useLayoutEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { PLOT_SIZE, MAX_GRID_SIZE } from '../core/constants';
+import { isVerdantMode } from '../core/gameMode';
 import type { PlotId } from '../../state/storeTypes';
 import { useGameStore } from '../../state/gameStore';
 import { useUiStore } from '../../state/uiStore';
 import { useSettingsStore } from '../../state/settingsStore';
 import { PlotMesh } from './PlotMesh';
 import {
-  getPlotPosition,
+  getRenderedPlotPosition,
   getPlotId,
+  getLockedPlotSlots,
+  isPlotUnlocked,
   type LockedPlotSlot,
 } from './gridCoordinates';
 import {
@@ -196,9 +199,20 @@ export interface SoilGridProps {
 export const SoilGrid: React.FC<SoilGridProps> = ({ onPlotClick }) => {
   const plots = useGameStore((state) => state.farm.plots);
   const gridSize = useGameStore((state) => state.farm.gridSize);
+  const isVerdant = useMemo(() => isVerdantMode(), []);
   const hoveredPlotId = useUiStore((state) => state.hoveredPlotId);
   const targetedPlotId = useUiStore((state) => state.targetedPlotId);
   const reducedMotion = useSettingsStore((state) => state.reducedMotion);
+  // Sim-aware clock: wall clock normally leads; after deterministic
+  // fast-forward (testClock/offline sim) lastSavedUtcMs leads. Displayed
+  // hydration must follow sim time so expiry renders correctly.
+  const lastSavedUtcMs = useGameStore((state) => state.lastSavedUtcMs);
+  const [wallNow, setWallNow] = useState<number>(() => Date.now());
+  useEffect(() => {
+    const interval = setInterval(() => setWallNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+  const simNow = Math.max(wallNow, lastSavedUtcMs || 0);
 
   // Expansion wave animation state
   const [waveState, setWaveState] = useState<{
@@ -256,37 +270,45 @@ export const SoilGrid: React.FC<SoilGridProps> = ({ onPlotClick }) => {
   };
 
   // Active plot list spanning Left Bed and Right Bed (Growden.io style)
+  // Local PRD mode only activates unlocked plots; verdant free-placement
+  // activates the full 8x8 immediately.
   const activePlots = useMemo(() => {
     const list = [];
     const totalCols = MAX_GRID_SIZE;
     const totalRows = MAX_GRID_SIZE;
-    const halfCols = Math.floor(totalCols / 2);
 
     for (let r = 0; r < totalRows; r++) {
       for (let c = 0; c < totalCols; c++) {
+        if (!isVerdant && !isPlotUnlocked(r, c, gridSize)) continue;
         const id = getPlotId(r, c);
         const plotData = plots[id] || {
           id,
           row: r,
           col: c,
-          tilled: true,
+          tilled: isVerdant,
           crop: null,
           hydratedUntilUtcMs: 0,
         };
 
-        const [baseX, y, baseZ] = getPlotPosition(r, c, MAX_GRID_SIZE);
-        const bedShiftX = c < halfCols ? -1.8 : 1.8;
+        const [baseX, y, baseZ] = getRenderedPlotPosition(r, c, MAX_GRID_SIZE);
         list.push({
           plot: plotData,
-          position: [baseX + bedShiftX, y, baseZ] as [number, number, number],
+          position: [baseX, y, baseZ] as [number, number, number],
         });
       }
     }
     return list;
-  }, [plots]);
+  }, [plots, gridSize, isVerdant]);
 
-  // Locked plot slots: All farm plots unlocked immediately per user specification
-  const lockedSlots: LockedPlotSlot[] = useMemo(() => [], []);
+  // Locked plot slots: verdant unlocks everything immediately;
+  // local PRD mode shows stone-bordered locked tiles with lock indicators.
+  const lockedSlots: LockedPlotSlot[] = useMemo(() => {
+    if (isVerdant) return [];
+    return getLockedPlotSlots(gridSize, MAX_GRID_SIZE).map((slot) => ({
+      ...slot,
+      position: getRenderedPlotPosition(slot.row, slot.col, MAX_GRID_SIZE),
+    }));
+  }, [gridSize, isVerdant]);
 
   return (
     <group name="SoilGrid">
@@ -372,10 +394,11 @@ export const SoilGrid: React.FC<SoilGridProps> = ({ onPlotClick }) => {
           isHovered={hoveredPlotId === plot.id}
           isTargeted={targetedPlotId === plot.id}
           onPlotClick={onPlotClick}
+          nowMs={simNow}
         />
       ))}
 
-      {/* GPU-Instanced Locked Plot Markers (Empty, no locks!) */}
+      {/* GPU-Instanced Locked Plot Markers */}
       <LockedPlotsInstanced slots={lockedSlots} />
     </group>
   );

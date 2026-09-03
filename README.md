@@ -5,7 +5,7 @@
 [![Three.js](https://img.shields.io/badge/Three.js-0.180-black.svg)](https://threejs.org/)
 [![R3F](https://img.shields.io/badge/React_Three_Fiber-9.1-orange.svg)](https://docs.pmnd.rs/react-three-fiber)
 [![Zustand](https://img.shields.io/badge/Zustand-5.0-brown.svg)](https://github.com/pmndrs/zustand)
-[![Tests](https://img.shields.io/badge/Tests-810_Passing-brightgreen.svg)](<>)
+[![Tests](https://img.shields.io/badge/Tests-894_Passing-brightgreen.svg)](<>)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](<>)
 
 **Garden Island 3D** is a rich, cozy, low-poly procedural farming simulation game built entirely for the modern web. Featuring 100% procedurally synthesized 3D meshes, custom GLSL mutation shaders, procedural Web Audio sound synthesis, deterministic offline progression, companion pets, dynamic weather systems, and responsive desktop & mobile touch controls.
@@ -161,7 +161,7 @@ flowchart TB
 - **Zustand 5**: High-performance, lightweight reactive state store.
 - **Dexie.js & Zod**: Type-safe IndexedDB persistence with versioned schema migrations and runtime validation.
 - **Tailwind CSS & Lucide Icons**: Modern, responsive HUD and UI layouts.
-- **Vitest & Testing Library**: Comprehensive unit, component, and simulation test suites (810+ tests).
+- **Vitest & Testing Library**: Comprehensive unit, component, and simulation test suites (890+ tests).
 - **Playwright**: End-to-end user journey verification and graphics integration tests.
 
 ---
@@ -170,8 +170,13 @@ flowchart TB
 
 ### Prerequisites
 
-- **Node.js**: `v20.0.0` or higher
+- **Node.js**: `v22.0.0` or higher (Node 22 LTS)
 - **npm**: `v10.0.0` or higher
+
+### Game modes
+
+- `VITE_GAME_MODE=local` (default): strict single-player offline-first game, no backend required.
+- `VITE_GAME_MODE=verdant`: Project Verdant MMO overlay (Supabase auth, rooms, leaderboard). Requires `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY` — see `docs/verdant/SETUP.md` and `.env.example`. Never commit real keys.
 
 ### Installation
 
@@ -192,7 +197,7 @@ flowchart TB
    ```bash
    npm run dev
    ```
-   Open your browser at `http://localhost:5173`.
+    Open your browser at `http://localhost:3000`.
 
 ---
 
@@ -203,7 +208,7 @@ flowchart TB
 | `npm run dev`        | Starts Vite local development server with HMR.                                             |
 | `npm run build`      | Runs strict typecheck (`tsc --noEmit`) and creates optimized production bundle in `dist/`. |
 | `npm run preview`    | Serves the production build locally for testing.                                           |
-| `npm run test`       | Executes full Vitest test suite (810 tests across 44 test files).                          |
+| `npm run test`       | Executes full Vitest test suite (~890 tests across 52 test files).                          |
 | `npm run test:watch` | Runs Vitest in interactive watch mode for TDD.                                             |
 | `npm run test:e2e`   | Runs Playwright end-to-end browser test suites.                                            |
 | `npm run typecheck`  | Validates TypeScript types across the entire project with zero errors.                     |
@@ -216,26 +221,33 @@ flowchart TB
 
 ```text
 garden-island-3d/
-├── e2e/                     # Playwright end-to-end tests
+├── tests/e2e/             # Playwright end-to-end tests (desktop 1440×900 + mobile)
 ├── src/
 │   ├── app/                # Root App component and application layout
 │   ├── game/
 │   │   ├── audio/          # Procedural Web Audio API sound & ambience synthesizers
 │   │   ├── camera/         # Isometric camera controller and orbit bounds
-│   │   ├── core/           # Fixed-step game loop, GameClock, coordinate math
+│   │   ├── core/           # Fixed-step game loop, GameClock, coordinate math, gameMode flag
 │   │   ├── economy/        # Shop pricing, sell values, crop catalog
 │   │   ├── effects/        # Particle systems, post-processing, mutation shaders
 │   │   ├── farming/        # Soil grid, crop growth, plot state machines, mutations
 │   │   ├── input/          # Keyboard, mouse, and touch input handlers
+│   │   ├── multiplayer/    # Verdant-only rooms/presence (gated, off in local mode)
 │   │   ├── pets/           # Companion pet AI, behaviors, incubation system
 │   │   ├── player/         # Character physics, animations, tool interactions
 │   │   ├── weather/        # Dynamic weather renderer, transitions, lighting
 │   │   └── world/          # Procedural island meshes, ocean shaders, grid expansion
+│   ├── features/
+│   │   ├── auth/           # Verdant-only login (gated, off in local mode)
+│   │   └── leaderboard/    # Verdant-only Top 10 (gated, off in local mode)
+│   ├── lib/supabase/       # Verdant-only Supabase client (lazy, local has zero backend calls)
 │   ├── persistence/        # IndexedDB Dexie DB, Zod schemas, migrations, offline sim
 │   ├── state/              # Zustand stores (gameStore, uiStore, settingsStore)
 │   ├── styles/             # Tailwind CSS stylesheets and design tokens
-│   ├── test/               # Test setup, mocks, and sanity helpers
+│   ├── test/               # Test setup, deterministic test clock, sanity helpers
 │   └── ui/                 # React UI HUD, Toolbelt, Modals, Mobile Virtual Joystick
+├── supabase/               # Verdant-only migrations + seed (not used in local mode)
+├── docs/                   # verdant/SETUP.md + planning artifacts
 ├── public/                 # Static assets and icons
 ├── eslint.config.js        # ESLint flat configuration
 ├── package.json            # Project dependencies and script runner
@@ -243,6 +255,37 @@ garden-island-3d/
 ├── tsconfig.json           # TypeScript configuration
 └── vite.config.ts          # Vite build and plugin configuration
 ```
+
+---
+
+## 💾 Save & Offline Progression
+
+- Saves live in IndexedDB (`GardenIslandDB`, Dexie) mirrored to `localStorage`; tiny display/input settings use `localStorage` only.
+- Autosave every 10s when dirty + immediately after purchases, sales, harvests, planting, expansion, pet changes, mutations + on tab hide (`visibilitychange`/`pagehide`).
+- Returning players get a deterministic event-boundary catch-up (hydration expiry → weather → growth → mutation → Dog harvest → egg hatch) capped at **24h**; backward clocks credit zero with a warning; reloading right after the Offline Summary never double-grants (idempotent `savedAt` commit).
+- Corrupt/old saves are preserved as dated backups and replaced with a valid save + user notice — never silently erased. If storage is unavailable (quota/private mode), the session stays playable in memory with a warning and retries later.
+
+## 🧪 Deterministic Test Mode
+
+Dev/test builds install `window.__*` helpers via `src/test/testClock.ts` (ready flag `window.__testClockReady`):
+
+- `__resetGame(seed)` — clean save with known RNG seed.
+- `__advanceGameTime(ms)` — event-boundary fast-forward (growth, weather, hydration, eggs, Dog harvest).
+- `__tillPlot/__plantCrop/__waterPlot/__harvestCrop/__setWeather/__addCoins/__setPlayerPosition/__incubateEgg/__hatchEgg/__openModal/__getGameState/__saveGame/__loadGame`.
+- E2E (`tests/e2e/`, desktop Chromium 1440×900 + Pixel 5 + iPhone 12) uses these so suites never wait real crop/weather durations.
+
+## ✨ Quality, Accessibility & Browsers
+
+- Quality Auto/Low/Medium/High (pixel-ratio caps, shadows, particle density, bloom scope, decor density); Auto steps down below 45 FPS and up above 58 FPS, max one step per 10s.
+- Settings: master/music/SFX volume, mute, quality, reduced motion (also honors OS preference on first load), haptics, input mode Auto/Desktop/Touch, camera sensitivity, invert-Y, two-step save reset.
+- Accessibility: named controls, visible focus, modal focus-trap + Escape, 44px targets (56px primary action), no color-only state, no hover-only or audio-only actions, safe-area aware, `pointercancel`/blur/orientation/WebGL-loss handling.
+- Browsers: latest two Chrome/Edge/Firefox/Safari, Android Chrome, iOS Safari 17+. **WebGL2 required** — without it the app shows a full-page explanation with retry instead of a blank canvas.
+
+## ⚠️ Known Limitations
+
+- Large 8×8 farms with pets + weather target 60 FPS desktop / 30 FPS mobile; low-end devices fall back via Auto quality.
+- Offline progress caps at 24h and distance-based egg hatching advances by timer only while away.
+- Production bundles exclude source maps (smaller deploys, no deployed sources).
 
 ---
 

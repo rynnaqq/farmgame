@@ -22,6 +22,7 @@ import { simulateOfflineProgression } from '../persistence/offlineSimulation';
 import { useGameStore } from '../state/gameStore';
 import { useUiStore } from '../state/uiStore';
 import { AUTOSAVE_INTERVAL_MS } from '../game/core/constants';
+import { getGameMode } from '../game/core/gameMode';
 import { executeToolAction } from '../game/farming/farmingCommands';
 import { installTestClock } from '../test/testClock';
 import { AuthModal } from '../features/auth/AuthModal';
@@ -58,16 +59,20 @@ export const App: React.FC<AppProps> = ({
   const activeInputManager = inputManager ?? defaultInputManagerRef.current;
 
   const debugEnabled = useMemo(() => isDiagnosticsEnabled(), []);
+  const isVerdant = useMemo(() => getGameMode() === 'verdant', []);
 
   const authStatus = useAuthStore((state) => state.status);
   const initializeAuth = useAuthStore((state) => state.initialize);
-  const isAuthenticated = authStatus === 'authenticated';
+  // Local mode is always playable as guest; verdant requires authentication.
+  const isAuthenticated = isVerdant ? authStatus === 'authenticated' : false;
 
   useRoomSession();
 
   useEffect(() => {
-    void initializeAuth();
-  }, [initializeAuth]);
+    if (isVerdant) {
+      void initializeAuth();
+    }
+  }, [initializeAuth, isVerdant]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -79,19 +84,30 @@ export const App: React.FC<AppProps> = ({
       const unbindSettings = audioManager.bindToSettingsStore();
 
       let isMounted = true;
-      if (isAuthenticated) {
+      if (isVerdant && isAuthenticated) {
         // Server-authoritative mode (Project Verdant): persistent progression
         // lives in Supabase RPCs. Do not touch the local save slot at all, so a
         // logout returns the player to their intact local save.
-      } else {
+      } else if (!isVerdant || authStatus === 'unauthenticated') {
         saveService.load().then(async ({ envelope }) => {
           if (!isMounted) return;
 
           const { updatedEnvelope, summary } = simulateOfflineProgression(envelope, Date.now());
-          // Ensure all farm land is unlocked (8x8) immediately per user overhaul
-          updatedEnvelope.farm.gridSize = 8;
+          // Verdant free-placement keeps the full 8x8 unlocked; local PRD mode
+          // preserves the saved 4->6->8 progression.
+          if (isVerdant) {
+            updatedEnvelope.farm.gridSize = 8;
+          }
           useGameStore.getState().loadSaveEnvelope(updatedEnvelope);
-          await saveService.saveImmediate(updatedEnvelope);
+          const saved = await saveService.saveImmediate(updatedEnvelope);
+          if (!saved) {
+            useUiStore
+              .getState()
+              .showToast(
+                'Storage unavailable — progress is kept in memory and will retry.',
+                'warning'
+              );
+          }
 
           if (summary.shouldDisplay) {
             useUiStore.getState().openModal('offline_summary', summary);
@@ -117,7 +133,7 @@ export const App: React.FC<AppProps> = ({
         saveService.dispose();
       };
     }
-  }, [activeInputManager, isAuthenticated]);
+  }, [activeInputManager, isAuthenticated, isVerdant, authStatus]);
 
   const handlePlotClick = React.useCallback(
     (plotId: PlotId) => {
@@ -127,11 +143,14 @@ export const App: React.FC<AppProps> = ({
       }
       const uiState = useUiStore.getState();
       const gameState = useGameStore.getState();
+      // Local PRD mode enforces the 3u farming reach + "Move closer" feedback.
+      // Verdant free-placement removes the constraint per user overhaul.
+      const playerPosition = gameState.player.position;
       const result = executeToolAction(
         plotId,
         uiState.selectedTool,
         uiState.selectedSeed,
-        undefined, // User requested removal of "move closer to the plot" constraint
+        isVerdant ? undefined : playerPosition,
         {
           isGoldenCan: gameState.farm.goldenWateringCanOwned,
           weather: gameState.weather.current,
@@ -139,7 +158,7 @@ export const App: React.FC<AppProps> = ({
         }
       );
       if (result.ok) {
-        if (useNetStore.getState().roomId) {
+        if (isVerdant && useNetStore.getState().roomId) {
           getRoomConnection().playToolAnimation();
         }
         if (uiState.selectedTool === 'trowel') audioManager.playSfx('till');
@@ -147,12 +166,14 @@ export const App: React.FC<AppProps> = ({
         else if (uiState.selectedTool === 'seed_bag') audioManager.playSfx('plant');
         else if (uiState.selectedTool === 'hand' || uiState.selectedTool === 'scythe')
           audioManager.playSfx('harvest');
-      } else if (result.message && !result.message.toLowerCase().includes('closer')) {
+      } else if (result.message) {
         uiState.showToast(result.message, 'warning', 2000);
       }
     },
-    [onPlotClick]
+    [onPlotClick, isVerdant]
   );
+
+  const showAuthGate = isVerdant && authStatus !== 'authenticated';
 
   return (
     <ErrorBoundary>
@@ -162,7 +183,7 @@ export const App: React.FC<AppProps> = ({
           className="relative w-full h-full min-h-screen overflow-hidden select-none bg-sky-950"
           data-testid="garden-island-app"
         >
-          {authStatus !== 'authenticated' ? (
+          {showAuthGate ? (
             <AuthModal />
           ) : (
             <>
@@ -189,7 +210,7 @@ export const App: React.FC<AppProps> = ({
                 <ShopModal />
                 <InventoryPanel />
                 <SettingsModal />
-                <LeaderboardModal />
+                {isVerdant && <LeaderboardModal />}
                 <Tutorial />
                 <OfflineSummary />
                 <ToastRegion />

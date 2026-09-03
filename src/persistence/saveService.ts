@@ -8,6 +8,23 @@ export const LOCAL_STORAGE_SAVE_KEY = 'garden_island_save';
 export const LOCAL_STORAGE_BACKUP_PREFIX = 'garden_island_backup_corrupt';
 export const CURRENT_SAVE_RECORD_ID = 'current_save';
 
+let backupCounter = 0;
+
+/** Non-gameplay unique suffix: crypto when available, monotonic fallback. */
+function createBackupSuffix(): string {
+  backupCounter += 1;
+  try {
+    if (typeof crypto !== 'undefined' && 'getRandomValues' in crypto) {
+      const bytes = new Uint32Array(1);
+      crypto.getRandomValues(bytes);
+      return `${bytes[0].toString(36)}${backupCounter.toString(36)}`;
+    }
+  } catch {
+    // fall through to counter-based suffix
+  }
+  return `n${Date.now().toString(36)}${backupCounter.toString(36)}`;
+}
+
 export type LoadStatus = 'loaded' | 'migrated' | 'corrupt_reset' | 'empty_default';
 
 export interface LoadSaveResult {
@@ -80,7 +97,13 @@ export class SaveService {
     this.isSaving = true;
     try {
       const success = await this.persistToStorage(envelope);
-      this._isDirty = false;
+      // Keep dirty flag on failure so autosave retries later while the
+      // in-memory session stays playable.
+      if (success) {
+        this._isDirty = false;
+      } else {
+        this._isDirty = true;
+      }
       return success;
     } finally {
       this.isSaving = false;
@@ -108,18 +131,24 @@ export class SaveService {
 
   /**
    * Persists save envelope to IndexedDB with automatic localStorage fallback.
+   * Returns true if at least one backend accepted the write; false if both
+   * failed (e.g. quota exceeded / IndexedDB unavailable) so callers can warn
+   * while keeping the in-memory session playable.
    */
   protected async persistToStorage(envelope: SaveEnvelope): Promise<boolean> {
     const serialized = JSON.stringify(envelope);
 
     // 1. Mirror to localStorage first (or fallback)
+    let localStorageOk = false;
     try {
       localStorage.setItem(this.storageKey, serialized);
+      localStorageOk = true;
     } catch {
-      // Ignore if localStorage quota exceeded or unavailable
+      // Quota exceeded or unavailable: fall through to IndexedDB attempt
     }
 
     // 2. Primary write to Dexie IndexedDB
+    let indexedDbOk = false;
     try {
       await this.db.saves.put({
         id: this.storageRecordId,
@@ -127,11 +156,12 @@ export class SaveService {
         savedAtUtcMs: envelope.savedAtUtcMs,
         schemaVersion: envelope.schemaVersion,
       });
+      indexedDbOk = true;
     } catch {
-      // If IndexedDB fails, localStorage is already updated
+      // If IndexedDB fails, localStorage mirror (if any) is the fallback
     }
 
-    return true;
+    return localStorageOk || indexedDbOk;
   }
 
   /**
@@ -216,10 +246,12 @@ export class SaveService {
 
   /**
    * Backs up corrupt payload to Dexie backups table and localStorage.
+   * Backup IDs use crypto randomness with a monotonic fallback so gameplay
+   * RNG streams are never consumed for non-gameplay identifiers.
    */
   public async backupCorruptSave(payload: unknown, reason: string): Promise<string> {
     const timestamp = Date.now();
-    const backupId = `corrupt_${timestamp}_${Math.random().toString(36).substring(2, 8)}`;
+    const backupId = `corrupt_${timestamp}_${createBackupSuffix()}`;
     const backupRecord: BackupRecord = {
       id: backupId,
       payload,

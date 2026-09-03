@@ -448,6 +448,7 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
           ...state.inventory,
           eggs,
         },
+        isDirty: true,
       };
     });
   },

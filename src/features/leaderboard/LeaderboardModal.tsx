@@ -3,11 +3,14 @@ import { useEffect, useRef } from 'react';
 import { useUiStore } from '../../state/uiStore';
 import { useLeaderboardStore } from './leaderboardStore';
 import { getLeaderboardService } from './leaderboardService';
+import { isVerdantMode } from '../../game/core/gameMode';
 
 /**
  * Accessible HTML mirror of the 3D leaderboard monument (PRD §7.12, §14.3).
  * Opens from HUD / proximity; refreshes on open; a stale banner keeps the last
  * successful data visible with a freshness label.
+ *
+ * Verdant-only: returns null in `local` mode so no leaderboard fetch runs.
  */
 export const LeaderboardModal: React.FC = () => {
   const activeModal = useUiStore((state) => state.activeModal);
@@ -22,10 +25,12 @@ export const LeaderboardModal: React.FC = () => {
 
   useEffect(() => {
     if (!isOpen) return;
+    if (!isVerdantMode()) return;
     void getLeaderboardService().fetchTop10();
     dialogRef.current?.focus();
   }, [isOpen]);
 
+  if (!isVerdantMode()) return null;
   if (!isOpen) return null;
 
   const freshnessSeconds = lastFetchedAt

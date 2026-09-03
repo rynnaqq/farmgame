@@ -1,5 +1,13 @@
 /// <reference types="vite/client" />
 
+// Ambient augmentation for our custom env vars (used implicitly via import.meta.env).
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+interface ImportMetaEnv {
+  readonly VITE_GAME_MODE?: string;
+  readonly VITE_SUPABASE_URL?: string;
+  readonly VITE_SUPABASE_PUBLISHABLE_KEY?: string;
+}
+
 declare global {
   interface Window {
     __DEBUG__?: boolean;

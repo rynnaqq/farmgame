@@ -90,7 +90,7 @@ export const weatherSaveSchema = z.object({
 });
 
 export const tutorialSaveSchema = z.object({
-  completedSteps: z.array(z.string()),
+  completedSteps: z.array(z.string().min(1).max(64)).max(64),
   dismissed: z.boolean(),
 });
 
@@ -101,7 +101,7 @@ export const saveEnvelopeSchema = z.object({
   farm: farmSaveSchema,
   inventory: inventorySaveSchema,
   weather: weatherSaveSchema,
-  rngState: z.number().finite(),
+  rngState: z.number().int().min(0).max(0xffffffff).finite(),
   tutorial: tutorialSaveSchema,
 });
 

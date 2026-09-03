@@ -16,6 +16,23 @@ export function getPlotPosition(
   return [colOffset, yOffset, rowOffset];
 }
 
+/**
+ * Rendered world position of a plot including the dual raised-bed shift
+ * applied by SoilGrid (left bed -1.8, right bed +1.8). Gameplay range checks
+ * must use this so the 3u reach matches what the player sees.
+ */
+export function getRenderedPlotPosition(
+  row: number,
+  col: number,
+  gridSize: number = MAX_GRID_SIZE,
+  yOffset: number = 0.05
+): [number, number, number] {
+  const [x, y, z] = getPlotPosition(row, col, gridSize, yOffset);
+  const halfCols = Math.floor(MAX_GRID_SIZE / 2);
+  const bedShiftX = col < halfCols ? -1.8 : 1.8;
+  return [x + bedShiftX, y, z];
+}
+
 export interface GridBounds {
   minX: number;
   maxX: number;

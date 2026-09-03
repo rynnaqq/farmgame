@@ -5,7 +5,16 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'coverage', 'test-results', 'playwright-report'] },
+  {
+    ignores: [
+      'dist',
+      'node_modules',
+      'coverage',
+      'test-results',
+      'playwright-report',
+      '.worktrees',
+    ],
+  },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx,js,jsx}'],
@@ -25,6 +34,20 @@ export default tseslint.config(
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
+    },
+  },
+  {
+    // Gameplay-critical paths: no untyped escapes (PRD strict TypeScript).
+    files: [
+      'src/game/farming/**/*.ts',
+      'src/game/economy/**/*.ts',
+      'src/game/weather/**/*.ts',
+      'src/game/pets/**/*.ts',
+      'src/persistence/**/*.ts',
+      'src/state/**/*.ts',
+    ],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error',
     },
   }
 );

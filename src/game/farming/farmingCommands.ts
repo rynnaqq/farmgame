@@ -9,7 +9,7 @@ import {
 } from '../core/constants';
 import type { PlotId, PlotData, ToolType, CommandResult } from '../../state/storeTypes';
 import {
-  getPlotPosition,
+  getRenderedPlotPosition,
   getPlotDistance,
   isPlotUnlocked,
   getPlotId,
@@ -20,7 +20,7 @@ import { audioManager } from '../audio/AudioManager';
 
 /**
  * Validates that a target plot exists and is within physical interaction reach if playerPos is provided.
- * All plots are unlocked per user specification.
+ * Local PRD mode enforces gridSize locks; verdant activates the full grid (see SoilGrid).
  */
 function getPlotAndValidateRange(
   plotId: PlotId,
@@ -42,7 +42,7 @@ function getPlotAndValidateRange(
   }
 
   if (playerPos) {
-    const plotPos = getPlotPosition(plot.row, plot.col, gridSize);
+    const plotPos = getRenderedPlotPosition(plot.row, plot.col, gridSize);
     const distance = getPlotDistance(playerPos, plotPos);
     if (distance > FARMING_REACH) {
       return {

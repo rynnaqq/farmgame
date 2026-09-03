@@ -27,6 +27,8 @@ export interface PlotMeshProps {
   isTargeted?: boolean;
   onPlotClick?: (plotId: PlotId) => void;
   scale?: number | [number, number, number];
+  /** Simulated now in ms; defaults to wall clock. Injected by tests/deterministic sim. */
+  nowMs?: number;
 }
 
 export const PlotMesh: React.FC<PlotMeshProps> = ({
@@ -36,12 +38,13 @@ export const PlotMesh: React.FC<PlotMeshProps> = ({
   isTargeted = false,
   onPlotClick,
   scale = 1.0,
+  nowMs,
 }) => {
   const setHoveredPlot = useUiStore((state) => state.setHoveredPlot);
 
   const isHydrated = useMemo(() => {
-    return plot.tilled && plot.hydratedUntilUtcMs > Date.now();
-  }, [plot.tilled, plot.hydratedUntilUtcMs]);
+    return plot.tilled && plot.hydratedUntilUtcMs > (nowMs ?? Date.now());
+  }, [plot.tilled, plot.hydratedUntilUtcMs, nowMs]);
 
   // Determine soil visual properties based on state (Growden.io palette)
   const soilMaterialProps = useMemo(() => {

@@ -27,6 +27,7 @@ export default defineConfig({
   },
   build: {
     target: 'esnext',
-    sourcemap: true,
+    // No source maps in production bundles (perf §16); use 'hidden' locally if needed.
+    sourcemap: false,
   },
 });

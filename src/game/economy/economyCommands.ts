@@ -358,7 +358,9 @@ export function buyEgg(
     };
   }
 
-  const eggId = `egg-${nowMs}-${store.inventory.eggs.length + 1}-${Math.floor(rng.nextFloat() * 1000000)}`;
+  // Deterministic ID consuming zero extra RNG values: timestamp + slot count +
+  // outcome keeps the persisted RNG stream stable (exactly 1 value per egg).
+  const eggId = `egg-${nowMs}-${store.inventory.eggs.length + 1}-${outcomePetType}`;
   const newEgg: EggData = {
     id: eggId,
     type: eggType,

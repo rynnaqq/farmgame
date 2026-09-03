@@ -7,6 +7,7 @@ import type { ToolType } from '../state/storeTypes';
 import { SeedPicker } from './SeedPicker';
 import type { InputManager } from '../game/input/InputManager';
 import { audioManager } from '../game/audio/AudioManager';
+import { isVerdantMode } from '../game/core/gameMode';
 
 export interface ToolbeltProps {
   inputManager?: InputManager;
@@ -192,6 +193,9 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
 
   const isModalOpen = activeModal !== null;
   const isInteractive = !disabled && !isModalOpen;
+  // Verdant keeps arcade quickslots + hidden-trowel layout; local PRD mode
+  // shows the fixed 4-tool order with a visible Trowel.
+  const isVerdant = useMemo(() => isVerdantMode(), []);
 
   const currentSeedDef = CROPS[selectedSeed] ?? CROPS.carrot;
   const currentSeedCount = inventorySeeds[selectedSeed] ?? 0;
@@ -222,10 +226,7 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
       {/* Floating SeedPicker Popup above Toolbelt */}
       {isSeedBagActive && (
         <div className="mb-2 pointer-events-auto transition-all duration-200">
-          <SeedPicker
-            disabled={!isInteractive}
-            onClose={() => handleSelectTool('trowel')}
-          />
+          <SeedPicker disabled={!isInteractive} onClose={() => handleSelectTool('trowel')} />
         </div>
       )}
 
@@ -235,7 +236,7 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
         role="toolbar"
         aria-label="Farming Tools"
       >
-        {/* 1. Trowel (Hidden visually per user specification) */}
+        {/* 1. Trowel (visible in local PRD mode; verdant keeps direct-plant layout) */}
         <button
           type="button"
           data-testid="tool-trowel"
@@ -243,7 +244,7 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
           aria-pressed={isTrowelActive}
           disabled={!isInteractive}
           onClick={() => handleSelectTool('trowel')}
-          style={{ display: 'none' }}
+          style={isVerdant ? { display: 'none' } : undefined}
           className={`min-w-[44px] min-h-[44px] w-14 h-15 md:w-16 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border transition-all duration-150 relative cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
             isTrowelActive
               ? 'border-2 border-emerald-400 ring-2 ring-emerald-400/40 bg-emerald-950/80 scale-105 shadow-md shadow-emerald-500/20 z-10'
@@ -392,156 +393,161 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
           </span>
         </button>
 
-        {/* 5. Carrot Quickslot */}
-        <button
-          type="button"
-          data-testid="tool-slot-5"
-          aria-label="Carrot Produce (5)"
-          disabled={!isInteractive}
-          onClick={() => {
-            audioManager.playSfx('ui_click');
-            useUiStore.getState().openModal('inventory');
-          }}
-          className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden sm:flex"
-        >
-          <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
-            5
-          </span>
-          {carrotCount > 0 && (
-            <span className="absolute top-1 right-1 px-1 py-0.2 rounded-full text-[9px] font-bold bg-amber-900/90 text-amber-200 border border-amber-500/30 leading-tight pointer-events-none">
-              {carrotCount}
-            </span>
-          )}
-          <span className="text-xl mt-1">🥕</span>
-          <span className="text-[10px] font-bold text-slate-300 leading-tight truncate max-w-[44px]">
-            Carrot
-          </span>
-        </button>
+        {/* Verdant-only arcade quickslots (produce + backpack shortcuts) */}
+        {isVerdant && (
+          <>
+            {/* 5. Carrot Quickslot */}
+            <button
+              type="button"
+              data-testid="tool-slot-5"
+              aria-label="Carrot Produce (5)"
+              disabled={!isInteractive}
+              onClick={() => {
+                audioManager.playSfx('ui_click');
+                useUiStore.getState().openModal('inventory');
+              }}
+              className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden sm:flex"
+            >
+              <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
+                5
+              </span>
+              {carrotCount > 0 && (
+                <span className="absolute top-1 right-1 px-1 py-0.2 rounded-full text-[9px] font-bold bg-amber-900/90 text-amber-200 border border-amber-500/30 leading-tight pointer-events-none">
+                  {carrotCount}
+                </span>
+              )}
+              <span className="text-xl mt-1">🥕</span>
+              <span className="text-[10px] font-bold text-slate-300 leading-tight truncate max-w-[44px]">
+                Carrot
+              </span>
+            </button>
 
-        {/* 6. Tomato Quickslot */}
-        <button
-          type="button"
-          data-testid="tool-slot-6"
-          aria-label="Tomato Produce (6)"
-          disabled={!isInteractive}
-          onClick={() => {
-            audioManager.playSfx('ui_click');
-            useUiStore.getState().openModal('inventory');
-          }}
-          className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden sm:flex"
-        >
-          <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
-            6
-          </span>
-          {tomatoCount > 0 && (
-            <span className="absolute top-1 right-1 px-1 py-0.2 rounded-full text-[9px] font-bold bg-rose-900/90 text-rose-200 border border-rose-500/30 leading-tight pointer-events-none">
-              {tomatoCount}
-            </span>
-          )}
-          <span className="text-xl mt-1">🍅</span>
-          <span className="text-[10px] font-bold text-slate-300 leading-tight truncate max-w-[44px]">
-            Tomato
-          </span>
-        </button>
+            {/* 6. Tomato Quickslot */}
+            <button
+              type="button"
+              data-testid="tool-slot-6"
+              aria-label="Tomato Produce (6)"
+              disabled={!isInteractive}
+              onClick={() => {
+                audioManager.playSfx('ui_click');
+                useUiStore.getState().openModal('inventory');
+              }}
+              className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden sm:flex"
+            >
+              <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
+                6
+              </span>
+              {tomatoCount > 0 && (
+                <span className="absolute top-1 right-1 px-1 py-0.2 rounded-full text-[9px] font-bold bg-rose-900/90 text-rose-200 border border-rose-500/30 leading-tight pointer-events-none">
+                  {tomatoCount}
+                </span>
+              )}
+              <span className="text-xl mt-1">🍅</span>
+              <span className="text-[10px] font-bold text-slate-300 leading-tight truncate max-w-[44px]">
+                Tomato
+              </span>
+            </button>
 
-        {/* 7. Pumpkin Quickslot */}
-        <button
-          type="button"
-          data-testid="tool-slot-7"
-          aria-label="Pumpkin Produce (7)"
-          disabled={!isInteractive}
-          onClick={() => {
-            audioManager.playSfx('ui_click');
-            useUiStore.getState().openModal('inventory');
-          }}
-          className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden md:flex"
-        >
-          <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
-            7
-          </span>
-          {pumpkinCount > 0 && (
-            <span className="absolute top-1 right-1 px-1 py-0.2 rounded-full text-[9px] font-bold bg-orange-900/90 text-orange-200 border border-orange-500/30 leading-tight pointer-events-none">
-              {pumpkinCount}
-            </span>
-          )}
-          <span className="text-xl mt-1">🎃</span>
-          <span className="text-[10px] font-bold text-slate-300 leading-tight truncate max-w-[44px]">
-            Pumpkin
-          </span>
-        </button>
+            {/* 7. Pumpkin Quickslot */}
+            <button
+              type="button"
+              data-testid="tool-slot-7"
+              aria-label="Pumpkin Produce (7)"
+              disabled={!isInteractive}
+              onClick={() => {
+                audioManager.playSfx('ui_click');
+                useUiStore.getState().openModal('inventory');
+              }}
+              className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden md:flex"
+            >
+              <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
+                7
+              </span>
+              {pumpkinCount > 0 && (
+                <span className="absolute top-1 right-1 px-1 py-0.2 rounded-full text-[9px] font-bold bg-orange-900/90 text-orange-200 border border-orange-500/30 leading-tight pointer-events-none">
+                  {pumpkinCount}
+                </span>
+              )}
+              <span className="text-xl mt-1">🎃</span>
+              <span className="text-[10px] font-bold text-slate-300 leading-tight truncate max-w-[44px]">
+                Pumpkin
+              </span>
+            </button>
 
-        {/* 8. Golden Berry Quickslot */}
-        <button
-          type="button"
-          data-testid="tool-slot-8"
-          aria-label="Golden Berry (8)"
-          disabled={!isInteractive}
-          onClick={() => {
-            audioManager.playSfx('ui_click');
-            useUiStore.getState().openModal('inventory');
-          }}
-          className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden md:flex"
-        >
-          <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
-            8
-          </span>
-          {goldenBerryCount > 0 && (
-            <span className="absolute top-1 right-1 px-1 py-0.2 rounded-full text-[9px] font-bold bg-amber-900/90 text-amber-200 border border-amber-500/30 leading-tight pointer-events-none">
-              {goldenBerryCount}
-            </span>
-          )}
-          <span className="text-xl mt-1">🫐</span>
-          <span className="text-[10px] font-bold text-slate-300 leading-tight truncate max-w-[44px]">
-            Berry
-          </span>
-        </button>
+            {/* 8. Golden Berry Quickslot */}
+            <button
+              type="button"
+              data-testid="tool-slot-8"
+              aria-label="Golden Berry (8)"
+              disabled={!isInteractive}
+              onClick={() => {
+                audioManager.playSfx('ui_click');
+                useUiStore.getState().openModal('inventory');
+              }}
+              className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden md:flex"
+            >
+              <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
+                8
+              </span>
+              {goldenBerryCount > 0 && (
+                <span className="absolute top-1 right-1 px-1 py-0.2 rounded-full text-[9px] font-bold bg-amber-900/90 text-amber-200 border border-amber-500/30 leading-tight pointer-events-none">
+                  {goldenBerryCount}
+                </span>
+              )}
+              <span className="text-xl mt-1">🫐</span>
+              <span className="text-[10px] font-bold text-slate-300 leading-tight truncate max-w-[44px]">
+                Berry
+              </span>
+            </button>
 
-        {/* 9. Starfruit Quickslot */}
-        <button
-          type="button"
-          data-testid="tool-slot-9"
-          aria-label="Starfruit (9)"
-          disabled={!isInteractive}
-          onClick={() => {
-            audioManager.playSfx('ui_click');
-            useUiStore.getState().openModal('inventory');
-          }}
-          className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden lg:flex"
-        >
-          <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
-            9
-          </span>
-          {starfruitCount > 0 && (
-            <span className="absolute top-1 right-1 px-1 py-0.2 rounded-full text-[9px] font-bold bg-yellow-900/90 text-yellow-200 border border-yellow-500/30 leading-tight pointer-events-none">
-              {starfruitCount}
-            </span>
-          )}
-          <span className="text-xl mt-1">⭐</span>
-          <span className="text-[10px] font-bold text-slate-300 leading-tight truncate max-w-[44px]">
-            Starfruit
-          </span>
-        </button>
+            {/* 9. Starfruit Quickslot */}
+            <button
+              type="button"
+              data-testid="tool-slot-9"
+              aria-label="Starfruit (9)"
+              disabled={!isInteractive}
+              onClick={() => {
+                audioManager.playSfx('ui_click');
+                useUiStore.getState().openModal('inventory');
+              }}
+              className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden lg:flex"
+            >
+              <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
+                9
+              </span>
+              {starfruitCount > 0 && (
+                <span className="absolute top-1 right-1 px-1 py-0.2 rounded-full text-[9px] font-bold bg-yellow-900/90 text-yellow-200 border border-yellow-500/30 leading-tight pointer-events-none">
+                  {starfruitCount}
+                </span>
+              )}
+              <span className="text-xl mt-1">⭐</span>
+              <span className="text-[10px] font-bold text-slate-300 leading-tight truncate max-w-[44px]">
+                Starfruit
+              </span>
+            </button>
 
-        {/* 0. Backpack Quickslot */}
-        <button
-          type="button"
-          data-testid="tool-slot-0"
-          aria-label="Backpack (0)"
-          disabled={!isInteractive}
-          onClick={() => {
-            audioManager.playSfx('ui_click');
-            useUiStore.getState().openModal('inventory');
-          }}
-          className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden lg:flex"
-        >
-          <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
-            0
-          </span>
-          <span className="text-xl mt-1">🎒</span>
-          <span className="text-[10px] font-bold text-slate-300 leading-tight truncate max-w-[44px]">
-            Bag
-          </span>
-        </button>
+            {/* 0. Backpack Quickslot */}
+            <button
+              type="button"
+              data-testid="tool-slot-0"
+              aria-label="Backpack (0)"
+              disabled={!isInteractive}
+              onClick={() => {
+                audioManager.playSfx('ui_click');
+                useUiStore.getState().openModal('inventory');
+              }}
+              className="min-w-[40px] min-h-[44px] w-12 h-15 md:w-14 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 transition-all duration-150 relative cursor-pointer outline-none opacity-75 hover:opacity-100 hidden lg:flex"
+            >
+              <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
+                0
+              </span>
+              <span className="text-xl mt-1">🎒</span>
+              <span className="text-[10px] font-bold text-slate-300 leading-tight truncate max-w-[44px]">
+                Bag
+              </span>
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

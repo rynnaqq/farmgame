@@ -1,14 +1,16 @@
 # Project Verdant — Supabase Setup Guide
 
-This project uses your existing Supabase project (`seagnmdgauxhqwvmveij.supabase.co`) for authentication, authoritative game data, realtime, and the leaderboard.
+> Only needed for `VITE_GAME_MODE=verdant`. Local single-player mode
+> (`VITE_GAME_MODE=local`, the default) needs no Supabase project at all.
 
 ## 1. Environment
 
-`.env` (already created, gitignored):
+`.env` (gitignored — never commit real values; see `.env.example`):
 
 ```dotenv
-VITE_SUPABASE_URL=https://seagnmdgauxhqwvmveij.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_N2fFvs8IEwxDyK0pysbOcw_Q_r3Yo5Y
+VITE_GAME_MODE=verdant
+VITE_SUPABASE_URL=https://<project-ref>.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 
 The publishable key is safe to ship in the browser. Never place a `service_role` key in any `VITE_*` variable.
