@@ -10,13 +10,13 @@ import {
   selectHarvestableCount,
   selectEquippedPet,
   selectActivePerks,
-  selectCanExpand,
   selectPetCount,
   selectIsPetLimitReached,
   selectPlotById,
   selectProduceStacks,
 } from './selectors';
-import type { PlotData, EggData, PetData } from './storeTypes';
+import { DEFAULT_TEST_PLACEMENT } from '../test/farmFixtures';
+import type { EggData, PetData, PlotData } from './storeTypes';
 
 describe('useGameStore', () => {
   beforeEach(() => {
@@ -24,21 +24,23 @@ describe('useGameStore', () => {
   });
 
   describe('Initial State', () => {
-    it('has standard starting parameters from game constants', () => {
+    it('has standard starting parameters with 64 logical slots', () => {
       const state = useGameStore.getState();
       expect(state.player.coins).toBe(100);
       expect(state.player.position).toEqual([0, 0, 0]);
       expect(state.player.totalDistance).toBe(0);
 
-      expect(state.farm.gridSize).toBe(4);
+      expect(state.farm.gridSize).toBe(8);
       expect(state.farm.goldenWateringCanOwned).toBe(false);
-      expect(Object.keys(state.farm.plots)).toHaveLength(16);
+      expect(Object.keys(state.farm.plots)).toHaveLength(64);
 
-      // Verify plot format plot-0-0 to plot-3-3
       expect(state.farm.plots['plot-0-0']).toBeDefined();
-      expect(state.farm.plots['plot-0-0'].tilled).toBe(false);
       expect(state.farm.plots['plot-0-0'].crop).toBeNull();
       expect(state.farm.plots['plot-0-0'].hydratedUntilUtcMs).toBe(0);
+      expect('tilled' in state.farm.plots['plot-0-0']).toBe(false);
+
+      expect(state.farm.plots['plot-7-7']).toBeDefined();
+      expect(state.farm.plots['plot-7-7'].crop).toBeNull();
 
       expect(state.inventory.seeds.carrot).toBe(5);
       expect(state.inventory.seeds.tomato).toBe(0);
@@ -61,12 +63,12 @@ describe('useGameStore', () => {
         id: 'plot-1-2',
         row: 1,
         col: 2,
-        tilled: true,
         crop: {
           cropId: 'carrot',
           growthProgressSec: 15,
           mutation: 'none',
           plantedAtUtcMs: 1000,
+          placement: DEFAULT_TEST_PLACEMENT,
         },
         hydratedUntilUtcMs: 5000,
       };
@@ -80,15 +82,15 @@ describe('useGameStore', () => {
 
     it('updates multiple plots with updatePlots', () => {
       const plots = useGameStore.getState().farm.plots;
-      const plot1 = { ...plots['plot-0-0'], tilled: true };
-      const plot2 = { ...plots['plot-0-1'], tilled: true };
+      const plot1 = { ...plots['plot-0-0'], hydratedUntilUtcMs: 111 };
+      const plot2 = { ...plots['plot-0-1'], hydratedUntilUtcMs: 222 };
 
       useGameStore.getState().updatePlots([plot1, plot2]);
 
       const state = useGameStore.getState();
-      expect(state.farm.plots['plot-0-0'].tilled).toBe(true);
-      expect(state.farm.plots['plot-0-1'].tilled).toBe(true);
-      expect(state.farm.plots['plot-0-2'].tilled).toBe(false);
+      expect(state.farm.plots['plot-0-0'].hydratedUntilUtcMs).toBe(111);
+      expect(state.farm.plots['plot-0-1'].hydratedUntilUtcMs).toBe(222);
+      expect(state.farm.plots['plot-0-2'].hydratedUntilUtcMs).toBe(0);
     });
 
     it('sets plot hydration timestamp with setPlotHydration', () => {
@@ -98,39 +100,21 @@ describe('useGameStore', () => {
       expect(plot.hydratedUntilUtcMs).toBe(12345678);
     });
 
-    it('expands grid size and preserves existing plot contents and IDs', () => {
-      // Till and plant on plot-0-0
-      useGameStore.getState().setPlot({
-        id: 'plot-0-0',
-        row: 0,
-        col: 0,
-        tilled: true,
-        crop: {
-          cropId: 'tomato',
-          growthProgressSec: 45,
-          mutation: 'gold',
-          plantedAtUtcMs: 2000,
+    it('always exposes all 64 logical slots regardless of save payload', () => {
+      const partial: PlotData[] = [
+        { id: 'plot-3-3', row: 3, col: 3, crop: null, hydratedUntilUtcMs: 0 },
+      ];
+      useGameStore.getState().loadSaveEnvelope({
+        ...useGameStore.getState().toSaveEnvelope(1000),
+        farm: {
+          gridSize: 8,
+          plots: partial,
+          goldenWateringCanOwned: false,
         },
-        hydratedUntilUtcMs: 8000,
       });
-
-      // Expand to 6x6
-      useGameStore.getState().setGridSize(6);
-
-      let state = useGameStore.getState();
-      expect(state.farm.gridSize).toBe(6);
-      expect(Object.keys(state.farm.plots)).toHaveLength(36);
-      expect(state.farm.plots['plot-0-0'].crop?.cropId).toBe('tomato');
-      expect(state.farm.plots['plot-0-0'].crop?.mutation).toBe('gold');
-      expect(state.farm.plots['plot-5-5']).toBeDefined();
-      expect(state.farm.plots['plot-5-5'].tilled).toBe(false);
-
-      // Expand to 8x8
-      useGameStore.getState().setGridSize(8);
-      state = useGameStore.getState();
-      expect(state.farm.gridSize).toBe(8);
+      const state = useGameStore.getState();
       expect(Object.keys(state.farm.plots)).toHaveLength(64);
-      expect(state.farm.plots['plot-7-7']).toBeDefined();
+      expect(state.farm.plots['plot-0-0']).toBeDefined();
     });
   });
 
@@ -308,10 +292,13 @@ describe('useGameStore', () => {
   describe('Tutorial Actions', () => {
     it('tracks tutorial progress idempotently', () => {
       useGameStore.getState().completeTutorialStep('movement');
-      useGameStore.getState().completeTutorialStep('tilling');
+      useGameStore.getState().completeTutorialStep('planting');
       useGameStore.getState().completeTutorialStep('movement');
 
-      expect(useGameStore.getState().tutorial.completedSteps).toEqual(['movement', 'tilling']);
+      expect(useGameStore.getState().tutorial.completedSteps).toEqual([
+        'movement',
+        'planting',
+      ]);
 
       useGameStore.getState().dismissTutorial();
       expect(useGameStore.getState().tutorial.dismissed).toBe(true);
@@ -319,19 +306,18 @@ describe('useGameStore', () => {
   });
 
   describe('Persistence Serialization & Loading', () => {
-    it('serializes to SaveEnvelope and restores completely', () => {
+    it('serializes to SaveEnvelope v2 and restores completely', () => {
       useGameStore.getState().addCoins(250);
       useGameStore.getState().addSeeds('starfruit', 2);
       useGameStore.getState().setGoldenWateringCan(true);
-      useGameStore.getState().setGridSize(6);
 
       const envelope = useGameStore.getState().toSaveEnvelope(500000);
-      expect(envelope.schemaVersion).toBe(1);
+      expect(envelope.schemaVersion).toBe(2);
       expect(envelope.savedAtUtcMs).toBe(500000);
       expect(envelope.player.coins).toBe(350);
-      expect(envelope.farm.gridSize).toBe(6);
+      expect(envelope.farm.gridSize).toBe(8);
       expect(envelope.farm.goldenWateringCanOwned).toBe(true);
-      expect(envelope.farm.plots).toHaveLength(36);
+      expect(envelope.farm.plots).toHaveLength(64);
 
       // Reset and reload envelope
       resetGameStore();
@@ -340,10 +326,48 @@ describe('useGameStore', () => {
       useGameStore.getState().loadSaveEnvelope(envelope);
       const state = useGameStore.getState();
       expect(state.player.coins).toBe(350);
-      expect(state.farm.gridSize).toBe(6);
+      expect(state.farm.gridSize).toBe(8);
       expect(state.farm.goldenWateringCanOwned).toBe(true);
       expect(state.inventory.seeds.starfruit).toBe(2);
       expect(state.isDirty).toBe(false);
+    });
+
+    it('never serializes the legacy tilled flag and resets empty-slot hydration', () => {
+      const state = useGameStore.getState();
+      state.setPlotHydration('plot-1-1', 999);
+
+      const envelope = state.toSaveEnvelope(1000);
+      for (const plot of envelope.farm.plots) {
+        expect('tilled' in plot).toBe(false);
+        expect(plot.hydratedUntilUtcMs).toBe(0);
+      }
+    });
+
+    it('preserves crop placement exactly through toSaveEnvelope/loadSaveEnvelope', () => {
+      const placement = { bedId: 'south-east' as const, localX: 1.234, localZ: -2.111 };
+      const state = useGameStore.getState();
+      state.setPlot({
+        id: 'plot-4-4',
+        row: 4,
+        col: 4,
+        crop: {
+          cropId: 'tomato',
+          plantedAtUtcMs: 1000,
+          growthProgressSec: 10,
+          mutation: 'none',
+          placement,
+        },
+        hydratedUntilUtcMs: 40000,
+      });
+
+      const envelope = state.toSaveEnvelope(2000);
+      expect(envelope.farm.plots.find((p) => p.id === 'plot-4-4')?.crop?.placement).toEqual(
+        placement
+      );
+
+      resetGameStore();
+      useGameStore.getState().loadSaveEnvelope(envelope);
+      expect(useGameStore.getState().farm.plots['plot-4-4'].crop?.placement).toEqual(placement);
     });
   });
 
@@ -371,12 +395,12 @@ describe('useGameStore', () => {
         id: 'plot-0-0',
         row: 0,
         col: 0,
-        tilled: true,
         crop: {
           cropId: 'carrot',
           growthProgressSec: 45, // Carrot baseGrowthSec = 45 -> 100%
           mutation: 'none',
           plantedAtUtcMs: 1000,
+          placement: DEFAULT_TEST_PLACEMENT,
         },
         hydratedUntilUtcMs: 0,
       });
@@ -399,13 +423,6 @@ describe('useGameStore', () => {
         growthSpeedMultiplier: 1.15,
         autoHarvest: false,
         mutationChanceMultiplier: 1.0,
-      });
-
-      // Grid expansion selector
-      expect(selectCanExpand(petState)).toEqual({
-        canExpand: true,
-        nextSize: 6,
-        cost: 750,
       });
     });
   });

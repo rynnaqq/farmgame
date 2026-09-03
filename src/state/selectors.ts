@@ -2,8 +2,6 @@ import {
   CROPS,
   MUTATION_MULTIPLIERS,
   PET_PERKS,
-  EXPANSION_1_COST,
-  EXPANSION_2_COST,
   MAX_PET_INVENTORY,
 } from '../game/core/constants';
 import type { GameStoreState } from './gameStore';
@@ -89,23 +87,6 @@ export const selectActivePerks = (state: GameStoreState): ActivePerks => {
   };
 };
 
-export interface CanExpandResult {
-  canExpand: boolean;
-  nextSize?: 6 | 8;
-  cost?: number;
-}
-
-export const selectCanExpand = (state: GameStoreState): CanExpandResult => {
-  const current = state.farm.gridSize;
-  if (current === 4) {
-    return { canExpand: true, nextSize: 6, cost: EXPANSION_1_COST };
-  }
-  if (current === 6) {
-    return { canExpand: true, nextSize: 8, cost: EXPANSION_2_COST };
-  }
-  return { canExpand: false };
-};
-
 export const selectPetCount = (state: GameStoreState): number =>
   state.inventory.pets.length + state.inventory.eggs.length;
 
@@ -114,7 +95,7 @@ export const selectIsPetLimitReached = (state: GameStoreState): boolean =>
 
 export const selectGridDimensions = (
   state: GameStoreState
-): { gridSize: 4 | 6 | 8; totalPlots: number } => ({
-  gridSize: state.farm.gridSize,
+): { gridSize: 8; totalPlots: number } => ({
+  gridSize: 8,
   totalPlots: Object.keys(state.farm.plots).length,
 });

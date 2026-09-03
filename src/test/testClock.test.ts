@@ -11,6 +11,7 @@ import { useGameStore, resetGameStore } from '../state/gameStore';
 import { useUiStore, resetUiStore } from '../state/uiStore';
 import { saveService } from '../persistence/saveService';
 import { CROPS } from '../game/core/constants';
+import { createTestCrop, DEFAULT_TEST_PLACEMENT } from './farmFixtures';
 
 describe('src/test/testClock.ts Unit Tests', () => {
   beforeEach(() => {
@@ -33,12 +34,12 @@ describe('src/test/testClock.ts Unit Tests', () => {
         id: 'plot-0-0',
         row: 0,
         col: 0,
-        tilled: true,
         crop: {
           cropId: 'carrot',
           plantedAtUtcMs: baseTime,
           growthProgressSec: 0,
           mutation: 'none',
+          placement: DEFAULT_TEST_PLACEMENT,
         },
         hydratedUntilUtcMs: baseTime + 120_000,
       });
@@ -67,12 +68,12 @@ describe('src/test/testClock.ts Unit Tests', () => {
         id: 'plot-0-0',
         row: 0,
         col: 0,
-        tilled: true,
         crop: {
           cropId: 'carrot',
           plantedAtUtcMs: baseTime,
           growthProgressSec: 0,
           mutation: 'none',
+          placement: DEFAULT_TEST_PLACEMENT,
         },
         hydratedUntilUtcMs: baseTime + 120_000,
       });
@@ -94,12 +95,12 @@ describe('src/test/testClock.ts Unit Tests', () => {
         id: 'plot-0-0',
         row: 0,
         col: 0,
-        tilled: true,
         crop: {
           cropId: 'carrot',
           plantedAtUtcMs: baseTime,
           growthProgressSec: 0,
           mutation: 'none',
+          placement: DEFAULT_TEST_PLACEMENT,
         },
         hydratedUntilUtcMs: baseTime + 120_000,
       });
@@ -120,21 +121,19 @@ describe('src/test/testClock.ts Unit Tests', () => {
       expect(weatherState.endsAtUtcMs).toBeGreaterThan(Date.now());
     });
 
-    it('hydrates all tilled plots when weather is heavy_rain', () => {
+    it('hydrates all planted crops when weather is heavy_rain', () => {
       const store = useGameStore.getState();
       store.setPlot({
         id: 'plot-0-0',
         row: 0,
         col: 0,
-        tilled: true,
-        crop: null,
+        crop: createTestCrop(),
         hydratedUntilUtcMs: 0,
       });
       store.setPlot({
         id: 'plot-0-1',
         row: 0,
         col: 1,
-        tilled: false,
         crop: null,
         hydratedUntilUtcMs: 0,
       });
@@ -143,7 +142,7 @@ describe('src/test/testClock.ts Unit Tests', () => {
 
       const plots = useGameStore.getState().farm.plots;
       expect(plots['plot-0-0'].hydratedUntilUtcMs).toBeGreaterThan(Date.now());
-      // Untilled plot remains unhydrated
+      // Empty slot remains unhydrated
       expect(plots['plot-0-1'].hydratedUntilUtcMs).toBe(0);
     });
   });
@@ -153,7 +152,7 @@ describe('src/test/testClock.ts Unit Tests', () => {
       useGameStore.getState().setCoins(777);
       const snapshot = getTestGameState();
       expect(snapshot.player.coins).toBe(777);
-      expect(snapshot.schemaVersion).toBe(1);
+      expect(snapshot.schemaVersion).toBe(2);
     });
 
     it('resetTestGame resets store to initial conditions with optional seed', () => {
@@ -172,9 +171,8 @@ describe('src/test/testClock.ts Unit Tests', () => {
       expect(typeof window.__setWeather).toBe('function');
       expect(typeof window.__getGameState).toBe('function');
       expect(typeof window.__resetGame).toBe('function');
-      expect(typeof window.__tillPlot).toBe('function');
-      expect(typeof window.__plantCrop).toBe('function');
-      expect(typeof window.__waterPlot).toBe('function');
+      expect(typeof window.__plantCropAt).toBe('function');
+      expect(typeof window.__waterCrop).toBe('function');
       expect(typeof window.__harvestCrop).toBe('function');
       expect(typeof window.__addCoins).toBe('function');
       expect(typeof window.__setPlayerPosition).toBe('function');
@@ -200,18 +198,18 @@ describe('src/test/testClock.ts Unit Tests', () => {
       window.__closeModal!();
       expect(useUiStore.getState().activeModal).toBeNull();
 
-      // Till, plant, water, harvest helpers
-      const tillRes = window.__tillPlot!('plot-0-0');
-      expect(tillRes?.ok).toBe(true);
-      expect(useGameStore.getState().farm.plots['plot-0-0'].tilled).toBe(true);
-
-      const plantRes = window.__plantCrop!('plot-0-0', 'carrot');
+      // Plant, water, harvest helpers (exact placement API)
+      const plantRes = window.__plantCropAt!(
+        { bedId: 'north-west', localX: 0, localZ: 0 },
+        'carrot'
+      );
       expect(plantRes?.ok).toBe(true);
-      expect(useGameStore.getState().farm.plots['plot-0-0'].crop?.cropId).toBe('carrot');
+      const slotId = plantRes?.ok ? plantRes.value.slotId : 'plot-0-0';
+      expect(useGameStore.getState().farm.plots[slotId].crop?.cropId).toBe('carrot');
 
-      const waterRes = window.__waterPlot!('plot-0-0');
+      const waterRes = window.__waterCrop!(slotId);
       expect(waterRes?.ok).toBe(true);
-      expect(useGameStore.getState().farm.plots['plot-0-0'].hydratedUntilUtcMs).toBeGreaterThan(0);
+      expect(useGameStore.getState().farm.plots[slotId].hydratedUntilUtcMs).toBeGreaterThan(0);
 
       // Save and load
       const saveSpy = vi.spyOn(saveService, 'saveImmediate').mockResolvedValue(true);
@@ -246,7 +244,7 @@ describe('src/test/testClock.ts Unit Tests', () => {
       expect(useGameStore.getState().inventory.pets.length).toBe(1);
 
       // Harvest immature crop fails
-      const harvestRes = window.__harvestCrop!('plot-0-0');
+      const harvestRes = window.__harvestCrop!(slotId);
       expect(harvestRes?.ok).toBe(false);
 
       // Uninstall test clock

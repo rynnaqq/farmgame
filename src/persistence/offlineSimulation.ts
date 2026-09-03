@@ -253,7 +253,7 @@ export function simulateOfflineProgression(
     const plotIds = Object.keys(plots);
     for (const plotId of plotIds) {
       const plot = plots[plotId];
-      if (!plot.crop || !plot.tilled) continue;
+      if (!plot.crop) continue;
 
       const cropDef = getCropDefinition(plot.crop.cropId);
       if (!cropDef || plot.crop.growthProgressSec >= cropDef.baseGrowthSec) continue;
@@ -302,7 +302,7 @@ export function simulateOfflineProgression(
       // Advance plot growth
       for (const plotId of plotIds) {
         const plot = plots[plotId];
-        if (!plot.crop || !plot.tilled) continue;
+        if (!plot.crop) continue;
 
         const cropDef = getCropDefinition(plot.crop.cropId);
         if (!cropDef || plot.crop.growthProgressSec >= cropDef.baseGrowthSec) continue;
@@ -369,7 +369,7 @@ export function simulateOfflineProgression(
     const sortedPlotIds = Object.keys(plots).sort();
     for (const plotId of sortedPlotIds) {
       const plot = plots[plotId];
-      if (!plot.crop || !plot.tilled) continue;
+      if (!plot.crop) continue;
 
       const cropDef = getCropDefinition(plot.crop.cropId);
       if (!cropDef) continue;
@@ -447,7 +447,7 @@ export function simulateOfflineProgression(
         const rainExpiry = weather.endsAtUtcMs + RAIN_HYDRATION_BUFFER_MS;
         for (const plotId of Object.keys(plots)) {
           const plot = plots[plotId];
-          if (plot.tilled && plot.hydratedUntilUtcMs < rainExpiry) {
+          if (plot.crop && plot.hydratedUntilUtcMs < rainExpiry) {
             plot.hydratedUntilUtcMs = rainExpiry;
           }
         }

@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import {
   STARTING_COINS,
-  STARTING_GRID_SIZE,
   STARTING_SEEDS,
   PLAYER_SPAWN_POSITION,
   CURRENT_SCHEMA_VERSION,
@@ -24,23 +23,13 @@ import type {
 } from './storeTypes';
 
 export function generateDefaultPlots(
-  gridSize: 4 | 6 | 8,
   existingPlots: Record<PlotId, PlotData> = {}
 ): Record<PlotId, PlotData> {
   const plots: Record<PlotId, PlotData> = { ...existingPlots };
-  for (let r = 0; r < gridSize; r++) {
-    for (let c = 0; c < gridSize; c++) {
-      const id: PlotId = `plot-${r}-${c}`;
-      if (!plots[id]) {
-        plots[id] = {
-          id,
-          row: r,
-          col: c,
-          tilled: false,
-          crop: null,
-          hydratedUntilUtcMs: 0,
-        };
-      }
+  for (let row = 0; row < 8; row += 1) {
+    for (let col = 0; col < 8; col += 1) {
+      const id = `plot-${row}-${col}`;
+      plots[id] ??= { id, row, col, crop: null, hydratedUntilUtcMs: 0 };
     }
   }
   return plots;
@@ -60,7 +49,6 @@ export interface GameStoreState {
   setPlot: (plot: PlotData) => void;
   updatePlots: (plots: PlotData[] | Record<PlotId, Partial<PlotData>>) => void;
   setPlotHydration: (plotId: PlotId, hydratedUntilUtcMs: number) => void;
-  setGridSize: (size: 4 | 6 | 8) => void;
 
   // Economy Actions
   addCoins: (amount: number) => void;
@@ -108,8 +96,8 @@ function createInitialState(seed: number = 1) {
       totalDistance: 0,
     },
     farm: {
-      gridSize: STARTING_GRID_SIZE as 4 | 6 | 8,
-      plots: generateDefaultPlots(STARTING_GRID_SIZE as 4),
+      gridSize: 8 as const,
+      plots: generateDefaultPlots(),
       goldenWateringCanOwned: false,
     },
     inventory: {
@@ -194,17 +182,6 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
         isDirty: true,
       };
     });
-  },
-
-  setGridSize: (size: 4 | 6 | 8) => {
-    set((state) => ({
-      farm: {
-        ...state.farm,
-        gridSize: size,
-        plots: generateDefaultPlots(size, state.farm.plots),
-      },
-      isDirty: true,
-    }));
   },
 
   addCoins: (amount: number) => {
@@ -509,7 +486,25 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
       },
       farm: {
         gridSize: state.farm.gridSize,
-        plots: Object.values(state.farm.plots),
+        plots: Object.values(state.farm.plots).map((plot) => ({
+          id: plot.id,
+          row: plot.row,
+          col: plot.col,
+          crop: plot.crop
+            ? {
+                cropId: plot.crop.cropId,
+                plantedAtUtcMs: plot.crop.plantedAtUtcMs,
+                growthProgressSec: plot.crop.growthProgressSec,
+                mutation: plot.crop.mutation,
+                placement: {
+                  bedId: plot.crop.placement.bedId,
+                  localX: plot.crop.placement.localX,
+                  localZ: plot.crop.placement.localZ,
+                },
+              }
+            : null,
+          hydratedUntilUtcMs: plot.crop ? plot.hydratedUntilUtcMs : 0,
+        })),
         goldenWateringCanOwned: state.farm.goldenWateringCanOwned,
       },
       inventory: {
@@ -537,8 +532,17 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
   loadSaveEnvelope: (envelope: SaveEnvelope) => {
     const plotsRecord: Record<PlotId, PlotData> = {};
     for (const plot of envelope.farm.plots) {
-      plotsRecord[plot.id] = { ...plot };
+      plotsRecord[plot.id] = {
+        id: plot.id,
+        row: plot.row,
+        col: plot.col,
+        crop: plot.crop
+          ? { ...plot.crop, placement: { ...plot.crop.placement } }
+          : null,
+        hydratedUntilUtcMs: plot.crop ? plot.hydratedUntilUtcMs : 0,
+      };
     }
+    const completePlots = generateDefaultPlots(plotsRecord);
 
     set({
       player: {
@@ -547,8 +551,8 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
         totalDistance: envelope.player.totalDistance,
       },
       farm: {
-        gridSize: envelope.farm.gridSize,
-        plots: plotsRecord,
+        gridSize: 8,
+        plots: completePlots,
         goldenWateringCanOwned: envelope.farm.goldenWateringCanOwned,
       },
       inventory: {

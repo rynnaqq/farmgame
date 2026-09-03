@@ -18,18 +18,14 @@ declare global {
     __getGameState?: () => import('./state/storeTypes').SaveEnvelope;
     __resetGame?: (seed?: number) => void;
     __advanceDistance?: (deltaUnits: number) => void;
-    __tillPlot?: (
-      plotId: import('./state/storeTypes').PlotId
-    ) => import('./state/storeTypes').CommandResult<{
-      plotId: import('./state/storeTypes').PlotId;
-    }>;
-    __plantCrop?: (
-      plotId: import('./state/storeTypes').PlotId,
+    __plantCropAt?: (
+      placement: import('./game/world/farmLayout').CropPlacement,
       cropId: import('./state/storeTypes').CropId
     ) => import('./state/storeTypes').CommandResult<{
       cropId: import('./state/storeTypes').CropId;
+      slotId: import('./state/storeTypes').PlotId;
     }>;
-    __waterPlot?: (
+    __waterCrop?: (
       plotId: import('./state/storeTypes').PlotId
     ) => import('./state/storeTypes').CommandResult<{
       hydratedPlotIds: import('./state/storeTypes').PlotId[];

@@ -7,7 +7,11 @@ import {
   type OfflineSummaryData,
 } from '../persistence/offlineSimulation';
 import { applyWeatherHydration } from '../game/weather/weatherSystem';
-import { tillPlot, plantCrop, waterPlot, harvestCrop } from '../game/farming/farmingCommands';
+import {
+  plantCropAt,
+  waterCrop,
+  harvestCrop,
+} from '../game/farming/farmingCommands';
 import { hatchEgg } from '../game/pets/petSystem';
 import type {
   SaveEnvelope,
@@ -19,6 +23,7 @@ import type {
   PetData,
   WeatherState,
 } from '../state/storeTypes';
+import type { CropPlacement } from '../game/world/farmLayout';
 
 declare global {
   interface Window {
@@ -29,9 +34,11 @@ declare global {
     __setWeather?: (type: WeatherType, durationSeconds?: number) => WeatherState;
     __getGameState?: () => SaveEnvelope;
     __resetGame?: (seed?: number) => void;
-    __tillPlot?: (plotId: PlotId) => CommandResult<{ plotId: PlotId }>;
-    __plantCrop?: (plotId: PlotId, cropId: CropId) => CommandResult<{ cropId: CropId }>;
-    __waterPlot?: (plotId: PlotId) => CommandResult<{ hydratedPlotIds: PlotId[] }>;
+    __plantCropAt?: (
+      placement: CropPlacement,
+      cropId: CropId
+    ) => CommandResult<{ cropId: CropId; slotId: PlotId }>;
+    __waterCrop?: (plotId: PlotId) => CommandResult<{ hydratedPlotIds: PlotId[] }>;
     __harvestCrop?: (
       plotId: PlotId
     ) => CommandResult<{ cropId: CropId; mutation: MutationType; saleValue: number }>;
@@ -129,15 +136,13 @@ export function installTestClock(): boolean {
   window.__setWeather = setTestWeather;
   window.__getGameState = getTestGameState;
   window.__resetGame = resetTestGame;
-  window.__tillPlot = (plotId: PlotId) => tillPlot(plotId);
-  window.__plantCrop = (plotId: PlotId, cropId: CropId) => plantCrop(plotId, cropId);
-  window.__waterPlot = (plotId: PlotId) =>
-    waterPlot(
-      plotId,
-      undefined,
-      useGameStore.getState().farm.goldenWateringCanOwned,
-      useGameStore.getState().weather.current
-    );
+  window.__plantCropAt = (placement: CropPlacement, cropId: CropId) =>
+    plantCropAt(placement, cropId);
+  window.__waterCrop = (plotId: PlotId) =>
+    waterCrop(plotId, {
+      isGoldenCan: useGameStore.getState().farm.goldenWateringCanOwned,
+      weather: useGameStore.getState().weather.current,
+    });
   window.__harvestCrop = (plotId: PlotId) => harvestCrop(plotId);
   window.__addCoins = (amount: number) => {
     useGameStore.getState().addCoins(amount);
@@ -189,9 +194,8 @@ export function uninstallTestClock(): void {
   delete window.__setWeather;
   delete window.__getGameState;
   delete window.__resetGame;
-  delete window.__tillPlot;
-  delete window.__plantCrop;
-  delete window.__waterPlot;
+  delete window.__plantCropAt;
+  delete window.__waterCrop;
   delete window.__harvestCrop;
   delete window.__addCoins;
   delete window.__setPlayerPosition;

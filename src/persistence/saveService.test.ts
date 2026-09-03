@@ -46,7 +46,7 @@ describe('SaveService', () => {
     it('returns empty_default when loading without any saved data', async () => {
       const loadResult = await saveService.load();
       expect(loadResult.status).toBe('empty_default');
-      expect(loadResult.envelope.schemaVersion).toBe(1);
+      expect(loadResult.envelope.schemaVersion).toBe(2);
       expect(loadResult.envelope.player.coins).toBe(100);
     });
 
@@ -194,7 +194,7 @@ describe('SaveService', () => {
 
       const loadResult = await saveService.load();
       expect(loadResult.status).toBe('corrupt_reset');
-      expect(loadResult.envelope.schemaVersion).toBe(1);
+      expect(loadResult.envelope.schemaVersion).toBe(2);
       expect(loadResult.envelope.player.coins).toBe(100);
 
       // Corrupt backup should exist in backups
@@ -205,7 +205,7 @@ describe('SaveService', () => {
       // Next load should be clean and valid
       const nextLoad = await saveService.load();
       expect(nextLoad.status).toBe('loaded');
-      expect(nextLoad.envelope.schemaVersion).toBe(1);
+      expect(nextLoad.envelope.schemaVersion).toBe(2);
     });
 
     it('backs up corrupt raw JSON string in localStorage', async () => {
@@ -213,7 +213,7 @@ describe('SaveService', () => {
 
       const loadResult = await saveService.load();
       expect(loadResult.status).toBe('corrupt_reset');
-      expect(loadResult.envelope.schemaVersion).toBe(1);
+      expect(loadResult.envelope.schemaVersion).toBe(2);
     });
   });
 

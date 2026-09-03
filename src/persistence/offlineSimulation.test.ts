@@ -5,6 +5,7 @@ import type { EggData, WeatherType } from '../state/storeTypes';
 import { SeededRNG } from '../game/core/rng';
 
 import { CROPS, MAX_OFFLINE_PROGRESSION_MS } from '../game/core/constants';
+import { DEFAULT_TEST_PLACEMENT } from '../test/farmFixtures';
 import { rollNextWeather } from '../game/weather/weatherSystem';
 
 describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
@@ -101,37 +102,32 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
   });
 
   describe('Crop Growth & Hydration Windows', () => {
-    it('does not advance crop growth on untilled or unwatered dry plots', () => {
+    it('does not advance crop growth on empty or unwatered dry plots', () => {
       const envelope = createDefaultSaveEnvelope(BASE_TIME, 1);
-      // Untilled plot with crop (invalid state, should not grow)
+      // Empty slot (no crop at all)
       envelope.farm.plots[0] = {
         ...envelope.farm.plots[0],
-        tilled: false,
-        crop: {
-          cropId: 'carrot',
-          plantedAtUtcMs: BASE_TIME,
-          growthProgressSec: 0,
-          mutation: 'none',
-        },
+        crop: null,
         hydratedUntilUtcMs: 0,
       };
 
-      // Tilled plot but dry
+      // Planted but dry
       envelope.farm.plots[1] = {
         ...envelope.farm.plots[1],
-        tilled: true,
         crop: {
           cropId: 'carrot',
           plantedAtUtcMs: BASE_TIME,
           growthProgressSec: 10,
           mutation: 'none',
+          placement: DEFAULT_TEST_PLACEMENT,
         },
         hydratedUntilUtcMs: 0,
       };
 
       const result = simulateOfflineProgression(envelope, BASE_TIME + 60_000);
 
-      expect(result.updatedEnvelope.farm.plots[0].crop?.growthProgressSec).toBe(0);
+      expect(result.updatedEnvelope.farm.plots[0].crop).toBeNull();
+      expect(result.updatedEnvelope.farm.plots[0].hydratedUntilUtcMs).toBe(0);
       expect(result.updatedEnvelope.farm.plots[1].crop?.growthProgressSec).toBe(10);
       expect(result.summary.totalMaturedCount).toBe(0);
     });
@@ -141,12 +137,12 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
       // Carrot needs 45s. Hydrated for only 20s.
       envelope.farm.plots[0] = {
         ...envelope.farm.plots[0],
-        tilled: true,
         crop: {
           cropId: 'carrot',
           plantedAtUtcMs: BASE_TIME,
           growthProgressSec: 0,
           mutation: 'none',
+          placement: DEFAULT_TEST_PLACEMENT,
         },
         hydratedUntilUtcMs: BASE_TIME + 20_000,
       };
@@ -160,7 +156,7 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
       expect(result.summary.totalMaturedCount).toBe(0);
     });
 
-    it('automatically hydrates all tilled plots during Heavy Rain weather', () => {
+    it('automatically hydrates all planted plots during Heavy Rain weather', () => {
       const envelope = createDefaultSaveEnvelope(BASE_TIME, 1);
       // Heavy rain for 100s
       envelope.weather = {
@@ -170,15 +166,15 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
         previousWeather: null,
       };
 
-      // Dry tilled plot with tomato (needs 90s)
+      // Dry planted plot with tomato (needs 90s)
       envelope.farm.plots[0] = {
         ...envelope.farm.plots[0],
-        tilled: true,
         crop: {
           cropId: 'tomato',
           plantedAtUtcMs: BASE_TIME,
           growthProgressSec: 0,
           mutation: 'none',
+          placement: DEFAULT_TEST_PLACEMENT,
         },
         hydratedUntilUtcMs: 0, // initially dry!
       };
@@ -202,12 +198,12 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
       // In 30 seconds of hydration, growth progress = 30 * 1.15 = 34.5s.
       envelope.farm.plots[0] = {
         ...envelope.farm.plots[0],
-        tilled: true,
         crop: {
           cropId: 'carrot',
           plantedAtUtcMs: BASE_TIME,
           growthProgressSec: 0,
           mutation: 'none',
+          placement: DEFAULT_TEST_PLACEMENT,
         },
         hydratedUntilUtcMs: BASE_TIME + 60_000,
       };
@@ -227,12 +223,12 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
       // Carrot needs 45s. Hydrated for 60s.
       envelope.farm.plots[0] = {
         ...envelope.farm.plots[0],
-        tilled: true,
         crop: {
           cropId: 'carrot',
           plantedAtUtcMs: BASE_TIME,
           growthProgressSec: 40, // 5s remaining
           mutation: 'none',
+          placement: DEFAULT_TEST_PLACEMENT,
         },
         hydratedUntilUtcMs: BASE_TIME + 60_000,
       };
@@ -249,12 +245,12 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
       const envelope = createDefaultSaveEnvelope(BASE_TIME, 50);
       envelope.farm.plots[0] = {
         ...envelope.farm.plots[0],
-        tilled: true,
         crop: {
           cropId: 'carrot',
           plantedAtUtcMs: BASE_TIME - 100_000,
           growthProgressSec: 45,
           mutation: 'gold',
+          placement: DEFAULT_TEST_PLACEMENT,
         },
         hydratedUntilUtcMs: BASE_TIME + 60_000,
       };
@@ -279,12 +275,12 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
       // Dog harvests at t = 45s + 30s = 75s.
       envelope.farm.plots[0] = {
         ...envelope.farm.plots[0],
-        tilled: true,
         crop: {
           cropId: 'carrot',
           plantedAtUtcMs: BASE_TIME,
           growthProgressSec: 0,
           mutation: 'none',
+          placement: DEFAULT_TEST_PLACEMENT,
         },
         hydratedUntilUtcMs: BASE_TIME + 100_000,
       };
@@ -316,12 +312,12 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
       // Crop is already mature at save time
       envelope.farm.plots[0] = {
         ...envelope.farm.plots[0],
-        tilled: true,
         crop: {
           cropId: 'pumpkin',
           plantedAtUtcMs: BASE_TIME - 200_000,
           growthProgressSec: 180,
           mutation: 'giant',
+          placement: DEFAULT_TEST_PLACEMENT,
         },
         hydratedUntilUtcMs: 0,
       };
@@ -341,12 +337,12 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
 
       envelope.farm.plots[0] = {
         ...envelope.farm.plots[0],
-        tilled: true,
         crop: {
           cropId: 'carrot',
           plantedAtUtcMs: BASE_TIME,
           growthProgressSec: 0,
           mutation: 'none',
+          placement: DEFAULT_TEST_PLACEMENT,
         },
         hydratedUntilUtcMs: BASE_TIME + 100_000,
       };
@@ -433,12 +429,12 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
       // Dog harvests crop at t = 20s + 30s = 50s.
       envelope.farm.plots[0] = {
         ...envelope.farm.plots[0],
-        tilled: true,
         crop: {
           cropId: 'carrot',
           plantedAtUtcMs: BASE_TIME,
           growthProgressSec: 25, // 20s to mature
           mutation: 'none',
+          placement: DEFAULT_TEST_PLACEMENT,
         },
         hydratedUntilUtcMs: BASE_TIME + 100_000,
       };
@@ -459,12 +455,12 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
       const envelope = createDefaultSaveEnvelope(BASE_TIME, 77);
       envelope.farm.plots[0] = {
         ...envelope.farm.plots[0],
-        tilled: true,
         crop: {
           cropId: 'carrot',
           plantedAtUtcMs: BASE_TIME,
           growthProgressSec: 0,
           mutation: 'none',
+          placement: DEFAULT_TEST_PLACEMENT,
         },
         hydratedUntilUtcMs: BASE_TIME + 100_000,
       };
@@ -497,12 +493,12 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
       // 2. Elapsed < 30s (e.g. 10s) with mature crop -> shouldDisplay = false
       envelope.farm.plots[0] = {
         ...envelope.farm.plots[0],
-        tilled: true,
         crop: {
           cropId: 'carrot',
           plantedAtUtcMs: BASE_TIME,
           growthProgressSec: 42,
           mutation: 'none',
+          placement: DEFAULT_TEST_PLACEMENT,
         },
         hydratedUntilUtcMs: BASE_TIME + 20_000,
       };

@@ -6,6 +6,7 @@ import type {
   EggType,
   QualityLevel,
 } from '../game/core/constants';
+import type { CropPlacement } from '../game/world/farmLayout';
 
 export type { CropId, WeatherType, MutationType, PetType, EggType, QualityLevel };
 
@@ -13,9 +14,9 @@ export type PlotId = string;
 
 export type CropStage = 'sprout' | 'mid' | 'grown';
 
-export type PlotState = 'untilled' | 'tilled' | 'planted' | 'watered' | 'harvestable';
+export type PlotState = 'empty' | 'planted' | 'watered' | 'harvestable';
 
-export type ToolType = 'trowel' | 'watering_can' | 'seed_bag' | 'scythe' | 'hand';
+export type ToolType = 'watering_can' | 'seed_bag' | 'scythe' | 'hand';
 
 export type CommandFailureReason =
   | 'out_of_range'
@@ -29,6 +30,10 @@ export type CommandFailureReason =
   | 'max_pets_reached'
   | 'already_owned'
   | 'already_incubating'
+  | 'outside_planting_area'
+  | 'occupied_position'
+  | 'farm_full'
+  | 'invalid_placement'
   | 'unknown';
 
 export type CommandResult<T = undefined> =
@@ -40,13 +45,13 @@ export interface CropData {
   plantedAtUtcMs: number;
   growthProgressSec: number;
   mutation: MutationType;
+  placement: CropPlacement;
 }
 
 export interface PlotData {
   id: PlotId;
   row: number;
   col: number;
-  tilled: boolean;
   crop: CropData | null;
   hydratedUntilUtcMs: number;
 }
@@ -80,7 +85,7 @@ export interface PlayerState {
 }
 
 export interface FarmState {
-  gridSize: 4 | 6 | 8;
+  gridSize: 8;
   plots: Record<PlotId, PlotData>;
   goldenWateringCanOwned: boolean;
 }
@@ -107,7 +112,7 @@ export interface TutorialState {
 }
 
 export interface SaveEnvelope {
-  schemaVersion: number;
+  schemaVersion: 2;
   savedAtUtcMs: number;
   player: {
     position: [number, number, number];
@@ -115,7 +120,7 @@ export interface SaveEnvelope {
     totalDistance: number;
   };
   farm: {
-    gridSize: 4 | 6 | 8;
+    gridSize: 8;
     plots: PlotData[];
     goldenWateringCanOwned: boolean;
   };

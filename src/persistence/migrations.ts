@@ -1,6 +1,8 @@
 import { CURRENT_SCHEMA_VERSION } from '../game/core/constants';
 import type { SaveEnvelope } from '../state/storeTypes';
-import { parseSaveEnvelope } from './saveSchema';
+import { parseSaveEnvelope, parseVersionOneEnvelope } from './saveSchema';
+import { generateDefaultPlots } from '../state/gameStore';
+import { legacyGridToPlacement } from '../game/world/farmLayout';
 
 export { CURRENT_SCHEMA_VERSION };
 
@@ -69,6 +71,38 @@ export const MIGRATIONS: Record<number, MigrationFn> = {
         ...rawTutorial,
       },
     };
+  },
+
+  // 1 -> 2 (Free-placement farm: 64 logical slots, no tilled state, deterministic placement)
+  1: (data: Record<string, unknown>) => {
+    const parsed = parseVersionOneEnvelope(data);
+    const byId = new Map(parsed.farm.plots.map((plot) => [plot.id, plot]));
+
+    const plots = Object.values(generateDefaultPlots()).map((empty) => {
+      const legacy = byId.get(empty.id);
+      if (!legacy?.crop) return empty;
+      return {
+        ...empty,
+        hydratedUntilUtcMs: legacy.crop ? legacy.hydratedUntilUtcMs : 0,
+        crop: {
+          cropId: legacy.crop.cropId,
+          plantedAtUtcMs: legacy.crop.plantedAtUtcMs,
+          growthProgressSec: legacy.crop.growthProgressSec,
+          mutation: legacy.crop.mutation,
+          placement: legacyGridToPlacement(legacy.row, legacy.col),
+        },
+      };
+    });
+
+    return {
+      ...parsed,
+      schemaVersion: 2,
+      farm: {
+        gridSize: 8,
+        plots,
+        goldenWateringCanOwned: parsed.farm.goldenWateringCanOwned,
+      },
+    } as unknown as Record<string, unknown>;
   },
 };
 

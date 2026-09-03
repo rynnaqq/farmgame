@@ -33,23 +33,10 @@ export const PLOT_SLOT_POSITIONS = [
 ] as const;
 
 // ==========================================
-// 3. Grid & Plot Layout
+// 3. Farm Capacity
 // ==========================================
-export const PLOT_SIZE = 1.4; // 1.4 x 1.4 world units
-export const PLOT_SPACING = 0.15; // 0.15 units visual separation
-export const PLOT_TOTAL_SIZE = PLOT_SIZE + PLOT_SPACING; // 1.55 units per cell
-
-export const STARTING_GRID_SIZE = 4; // 4x4
-export const EXPANSION_1_GRID_SIZE = 6; // 6x6
-export const EXPANSION_1_COST = 750; // 750 coins
-export const EXPANSION_2_GRID_SIZE = 8; // 8x8
-export const EXPANSION_2_COST = 3500; // 3,500 coins
+// 64 logical crop slots; visual layout lives in src/game/world/farmLayout.ts.
 export const MAX_GRID_SIZE = 8;
-
-export const GRID_EXPANSIONS = {
-  4: { nextSize: 6, cost: 750 },
-  6: { nextSize: 8, cost: 3500 },
-} as const;
 
 // ==========================================
 // 4. Player Movement & Physics
@@ -362,4 +349,4 @@ export const AUTOSAVE_INTERVAL_SEC = 10;
 export const AUTOSAVE_INTERVAL_MS = 10 * 1000;
 export const MAX_OFFLINE_PROGRESSION_HOURS = 24;
 export const MAX_OFFLINE_PROGRESSION_MS = 24 * 60 * 60 * 1000;
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;

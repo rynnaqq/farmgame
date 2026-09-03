@@ -12,12 +12,12 @@ import type { SaveEnvelope } from '../state/storeTypes';
 describe('saveSchema (Zod Persistence Validation)', () => {
   it('validates a default generated save envelope successfully', () => {
     const defaultSave = createDefaultSaveEnvelope(1700000000000, 42);
-    expect(defaultSave.schemaVersion).toBe(1);
+    expect(defaultSave.schemaVersion).toBe(2);
     expect(defaultSave.savedAtUtcMs).toBe(1700000000000);
     expect(defaultSave.rngState).toBe(42);
     expect(defaultSave.player.coins).toBe(100);
-    expect(defaultSave.farm.gridSize).toBe(4);
-    expect(defaultSave.farm.plots.length).toBe(16);
+    expect(defaultSave.farm.gridSize).toBe(8);
+    expect(defaultSave.farm.plots.length).toBe(64);
 
     const parseResult = safeParseSaveEnvelope(defaultSave);
     expect(parseResult.success).toBe(true);
@@ -68,32 +68,41 @@ describe('saveSchema (Zod Persistence Validation)', () => {
     expect(safeParseSaveEnvelope(nanPosition).success).toBe(false);
   });
 
-  it('rejects invalid farm grid sizes (only 4, 6, 8 allowed)', () => {
+  it('rejects farm grid sizes other than 8', () => {
     const defaultSave = createDefaultSaveEnvelope();
 
     const invalidGrid5 = {
       ...defaultSave,
-      farm: { ...defaultSave.farm, gridSize: 5 as unknown as 4 },
+      farm: { ...defaultSave.farm, gridSize: 5 as unknown as 8 },
     };
     expect(safeParseSaveEnvelope(invalidGrid5).success).toBe(false);
 
-    const invalidGrid10 = {
+    const invalidGrid4 = {
       ...defaultSave,
-      farm: { ...defaultSave.farm, gridSize: 10 as unknown as 4 },
+      farm: { ...defaultSave.farm, gridSize: 4 as unknown as 8 },
     };
-    expect(safeParseSaveEnvelope(invalidGrid10).success).toBe(false);
+    expect(safeParseSaveEnvelope(invalidGrid4).success).toBe(false);
+  });
 
-    const validGrid6 = {
-      ...defaultSave,
-      farm: { ...defaultSave.farm, gridSize: 6 as const },
-    };
-    expect(safeParseSaveEnvelope(validGrid6).success).toBe(true);
+  it('requires exactly 64 plots with row/col within 0..7', () => {
+    const defaultSave = createDefaultSaveEnvelope();
 
-    const validGrid8 = {
+    const shortFarm = {
       ...defaultSave,
-      farm: { ...defaultSave.farm, gridSize: 8 as const },
+      farm: { ...defaultSave.farm, plots: defaultSave.farm.plots.slice(0, 32) },
     };
-    expect(safeParseSaveEnvelope(validGrid8).success).toBe(true);
+    expect(safeParseSaveEnvelope(shortFarm).success).toBe(false);
+
+    const badRow = {
+      ...defaultSave,
+      farm: {
+        ...defaultSave.farm,
+        plots: defaultSave.farm.plots.map((p, i) =>
+          i === 0 ? { ...p, row: 9 } : p
+        ),
+      },
+    };
+    expect(safeParseSaveEnvelope(badRow).success).toBe(false);
   });
 
   it('rejects unknown crop IDs, weather types, mutation types, pet types, and egg types', () => {
@@ -125,13 +134,13 @@ describe('saveSchema (Zod Persistence Validation)', () => {
             id: 'plot-0-0',
             row: 0,
             col: 0,
-            tilled: true,
             hydratedUntilUtcMs: 1000,
             crop: {
               cropId: 'carrot' as const,
               plantedAtUtcMs: 1000,
               growthProgressSec: 10,
               mutation: 'nuclear' as unknown as 'gold',
+              placement: { bedId: 'north-west' as const, localX: 0, localZ: 0 },
             },
           },
         ],
@@ -188,6 +197,71 @@ describe('saveSchema (Zod Persistence Validation)', () => {
       },
     };
     expect(safeParseSaveEnvelope(negativeProduce).success).toBe(false);
+  });
+
+  it('requires placement on every active crop and enforces bed-local bounds', () => {
+    const defaultSave = createDefaultSaveEnvelope();
+
+    const missingPlacement = {
+      ...defaultSave,
+      farm: {
+        ...defaultSave.farm,
+        plots: defaultSave.farm.plots.map((p, i) =>
+          i === 0
+            ? {
+                ...p,
+                crop: {
+                  cropId: 'carrot' as const,
+                  plantedAtUtcMs: 1000,
+                  growthProgressSec: 0,
+                  mutation: 'none' as const,
+                },
+              }
+            : p
+        ),
+      },
+    };
+    expect(safeParseSaveEnvelope(missingPlacement).success).toBe(false);
+
+    const outOfBounds = {
+      ...defaultSave,
+      farm: {
+        ...defaultSave.farm,
+        plots: defaultSave.farm.plots.map((p, i) =>
+          i === 0
+            ? {
+                ...p,
+                crop: {
+                  cropId: 'carrot' as const,
+                  plantedAtUtcMs: 1000,
+                  growthProgressSec: 0,
+                  mutation: 'none' as const,
+                  placement: { bedId: 'north-west' as const, localX: 3.1, localZ: 0 },
+                },
+              }
+            : p
+        ),
+      },
+    };
+    expect(safeParseSaveEnvelope(outOfBounds).success).toBe(false);
+  });
+
+  it('rounds persisted free placement to three decimals', () => {
+    const save = createDefaultSaveEnvelope(1000, 7);
+    save.farm.plots[0].crop = {
+      cropId: 'carrot',
+      plantedAtUtcMs: 1000,
+      growthProgressSec: 0,
+      mutation: 'none',
+      placement: { bedId: 'south-east', localX: 0.12349, localZ: -0.98751 },
+    };
+    const parsed = parseSaveEnvelope(save);
+    expect(parsed.farm.plots[0].crop?.placement).toEqual({
+      bedId: 'south-east',
+      localX: 0.123,
+      localZ: -0.988,
+    });
+    expect('tilled' in parsed.farm.plots[0]).toBe(false);
   });
 
   it('strips or ignores unknown extra top-level and nested properties gracefully', () => {
