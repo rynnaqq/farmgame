@@ -1,8 +1,11 @@
 import React from 'react';
 import type { PlotId } from '../state/storeTypes';
+import { useGameStore } from '../state/gameStore';
+import { useUiStore } from '../state/uiStore';
 import { WeatherRenderer } from './weather/WeatherRenderer';
 import { GardenIsland } from './world/GardenIsland';
-import { SoilGrid } from './world/SoilGrid';
+import { FarmBeds } from './world/FarmBeds';
+import { PlacedCrop } from './world/PlacedCrop';
 import { Boundaries } from './world/Boundaries';
 import { Decorations } from './world/Decorations';
 import { Merchant } from './world/Merchant';
@@ -15,44 +18,47 @@ import { DiagnosticsPanel } from './effects/DiagnosticsPanel';
 import { PetRenderer } from './pets/PetRenderer';
 import { RemotePlayerRenderer } from './multiplayer/RemotePlayerRenderer';
 import type { InputManager } from './input/InputManager';
+import type { CropPlacement } from './world/farmLayout';
 
 export interface GameRuntimeProps {
-  onPlotClick?: (plotId: PlotId) => void;
+  onPlantAt?: (placement: CropPlacement) => void;
+  onCropInteract?: (plotId: PlotId) => void;
   onPlayerFall?: () => void;
   inputManager?: InputManager;
   children?: React.ReactNode;
 }
 
 /**
- * GameRuntime coordinates the 3D scene elements inside the R3F Canvas and Physics world:
- * - Dynamic atmospheric lighting & 2-second weather crossfades
- * - 28x28 floating Garden Island base mesh and landmark props
- * - Dynamic Soil Grid with active plot tiles and locked slot indicators
- * - Invisible boundary barriers and respawn killzone
- * - Low-poly environmental decorations (trees, rocks, flowers, grass)
- * - Procedural Player character with kinematic Rapier capsule controller & animation
- * - Third-Person Isometric Follow Camera with collision avoidance
- * - GPU Instanced Particle Pool for rain, heat haze, blood motes, and gameplay bursts
- * - Quality-aware PostProcessing bloom
- * - Auto Quality Manager & Three.js telemetry monitoring
- * - Extension slot for pet systems and custom dynamic entities
+ * GameRuntime coordinates the 3D scene elements inside the R3F Canvas and Physics world.
+ * All farm geometry (beds, fences, crop placement) is derived from farmLayout.ts;
+ * this component only composes renderers and forwards interaction callbacks.
  */
 export const GameRuntime: React.FC<GameRuntimeProps> = ({
-  onPlotClick,
+  onPlantAt,
+  onCropInteract,
   onPlayerFall,
   inputManager,
   children,
 }) => {
+  const plots = useGameStore((state) => state.farm.plots);
+  const selectedTool = useUiStore((state) => state.selectedTool);
+  const plantingEnabled = selectedTool === 'seed_bag';
+
   return (
     <group name="GameRuntime">
       {/* 1. Atmospheric & Sun/Moon Lighting with 2s Crossfades */}
       <WeatherRenderer />
 
-      {/* 2. Floating Island Geometry & Landmarks */}
+      {/* 2. Floating Island Geometry, Fences & Landmarks */}
       <GardenIsland />
 
-      {/* 3. Soil Farm Grid & Plots */}
-      <SoilGrid onPlotClick={onPlotClick} />
+      {/* 3. Four raised farm beds (free-placement soil surfaces) */}
+      <FarmBeds plantingEnabled={plantingEnabled} onPlantAt={onPlantAt} />
+
+      {/* 3.1 Crops rendered at their saved free placements */}
+      {Object.values(plots).map((plot) => (
+        <PlacedCrop key={plot.id} plot={plot} onCropInteract={onCropInteract} />
+      ))}
 
       {/* 4. Island Boundaries & Respawn Sensor */}
       <Boundaries onPlayerFall={onPlayerFall} />

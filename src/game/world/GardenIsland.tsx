@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { RigidBody, CuboidCollider, CylinderCollider } from '@react-three/rapier';
 import { ISLAND_SIZE } from '../core/constants';
+import { FARM_FENCE, isInsideFarmStudExclusion } from './farmLayout';
 
 // Shared geometries and materials for grass studs
 const STUD_GEO = new THREE.CylinderGeometry(0.18, 0.18, 0.04, 8);
@@ -26,10 +27,8 @@ const GrassStuds: React.FC = () => {
     const half = ISLAND_SIZE / 2 - 0.7;
     for (let x = -half; x <= half; x += step) {
       for (let z = -half; z <= half; z += step) {
-        // Exclude Left Planter Bed
-        if (x >= -7.6 && x <= -1.4 && Math.abs(z) <= 6.5) continue;
-        // Exclude Right Planter Bed
-        if (x >= 1.4 && x <= 7.6 && Math.abs(z) <= 6.5) continue;
+        // Exclude the whole fenced farm area (single geometry source)
+        if (isInsideFarmStudExclusion(x, z)) continue;
         // Exclude merchant platform
         if (x > 8.0 && z > 5.0) continue;
         // Exclude water barrel platform
@@ -351,15 +350,25 @@ export const GardenIsland: React.FC = () => {
       {/* ========================================== */}
       <group name="GardenEnclosureFences">
         <RigidBody type="fixed" colliders={false}>
-          {/* North Garden Fence (Z = -6.8) */}
-          <CuboidCollider args={[6.8, 0.5, 0.15]} position={[0, 0.5, -6.8]} />
-          <FenceSection startX={-6.8} endX={6.8} z={-6.8} />
-
-          {/* South Garden Fence with Center Gate (Z = 6.8) */}
-          <CuboidCollider args={[2.5, 0.5, 0.15]} position={[-4.2, 0.5, 6.8]} />
-          <FenceSection startX={-6.8} endX={-1.6} z={6.8} />
-          <CuboidCollider args={[2.5, 0.5, 0.15]} position={[4.2, 0.5, 6.8]} />
-          <FenceSection startX={1.6} endX={6.8} z={6.8} />
+          {/* Farm perimeter fence: geometry & colliders from farmLayout.ts */}
+          {FARM_FENCE.segments.map((segment) => {
+            const [sx, sy, sz] = segment.position;
+            const [hx, hy, hz] = segment.size;
+            return (
+              <React.Fragment key={segment.id}>
+                <CuboidCollider
+                  args={[hx / 2, hy / 2, hz / 2]}
+                  position={[sx, sy, sz]}
+                />
+                <FenceSegment
+                  centerX={sx}
+                  centerZ={sz}
+                  spanX={hx}
+                  spanZ={hz}
+                />
+              </React.Fragment>
+            );
+          })}
 
           {/* 3D Garden Gate Wooden Signs */}
           <GardenEntranceSign />
@@ -378,16 +387,6 @@ export const GardenIsland: React.FC = () => {
               <meshStandardMaterial color="#6B4123" roughness={0.8} flatShading />
             </mesh>
           </group>
-
-          {/* West Garden Fence (X = -6.8) */}
-          <CuboidCollider args={[0.15, 0.5, 6.8]} position={[-6.8, 0.5, 0]} />
-          <FenceSection startZ={-6.8} endZ={6.8} x={-6.8} isVertical />
-
-          {/* East Garden Fence with Exit to Merchant (X = 6.8) */}
-          <CuboidCollider args={[0.15, 0.5, 4.0]} position={[6.8, 0.5, -2.8]} />
-          <FenceSection startZ={-6.8} endZ={1.2} x={6.8} isVertical />
-          <CuboidCollider args={[0.15, 0.5, 1.4]} position={[6.8, 0.5, 5.4]} />
-          <FenceSection startZ={4.0} endZ={6.8} x={6.8} isVertical />
 
           {/* Outer Island Edge Safety Barriers */}
           <CuboidCollider args={[3.2, 0.5, 0.15]} position={[8.5, 0.5, -13.0]} />
@@ -462,6 +461,60 @@ const QuickActionSign: React.FC = () => {
         <octahedronGeometry args={[0.12, 0]} />
         <meshStandardMaterial color="#E879F9" roughness={0.3} metalness={0.2} flatShading />
       </mesh>
+    </group>
+  );
+};
+
+/**
+ * Farm perimeter fence segment rendered from farmLayout footprint:
+ * rails plus evenly spaced chunky posts across the segment span.
+ */
+interface FenceSegmentProps {
+  centerX: number;
+  centerZ: number;
+  spanX: number;
+  spanZ: number;
+}
+
+const FenceSegment: React.FC<FenceSegmentProps> = ({ centerX, centerZ, spanX, spanZ }) => {
+  const span = Math.max(spanX, spanZ);
+  const isVertical = spanZ > spanX;
+  const postCount = Math.max(2, Math.round(span / 1.8) + 1);
+  const step = span / (postCount - 1);
+
+  const postPositions = Array.from({ length: postCount }, (_, idx) =>
+    isVertical ? [centerX, centerZ - span / 2 + idx * step] : [centerX - span / 2 + idx * step, centerZ]
+  );
+
+  return (
+    <group>
+      {/* Horizontal Rounded Log Rails */}
+      {[0.35, 0.65].map((y) => (
+        <mesh
+          key={y}
+          position={[centerX, y, centerZ]}
+          rotation={isVertical ? [Math.PI / 2, 0, 0] : [0, 0, Math.PI / 2]}
+          castShadow
+          receiveShadow
+        >
+          <cylinderGeometry args={[0.065, 0.065, span + 0.15, 8]} />
+          <meshStandardMaterial color="#6E4424" roughness={0.82} metalness={0.04} flatShading />
+        </mesh>
+      ))}
+
+      {/* Chunky Vertical Posts */}
+      {postPositions.map(([px, pz], idx) => (
+        <group key={idx} position={[px, 0, pz]}>
+          <mesh position={[0, 0.48, 0]} castShadow receiveShadow>
+            <cylinderGeometry args={[0.1, 0.11, 0.96, 8]} />
+            <meshStandardMaterial color="#523218" roughness={0.85} metalness={0.05} flatShading />
+          </mesh>
+          <mesh position={[0, 0.98, 0]} castShadow>
+            <coneGeometry args={[0.13, 0.1, 4]} />
+            <meshStandardMaterial color="#422510" roughness={0.88} flatShading />
+          </mesh>
+        </group>
+      ))}
     </group>
   );
 };
