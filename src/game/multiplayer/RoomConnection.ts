@@ -2,6 +2,7 @@ import type { SupabaseClient, RealtimeChannel } from '@supabase/supabase-js';
 import { getSupabaseClient } from '../../lib/supabase/client';
 import { useAuthStore } from '../../features/auth/authStore';
 import { useNetStore } from './netStore';
+import { parseFarmPatch } from './farmPatchProtocol';
 import {
   MOVEMENT_RATE_HZ,
   IDLE_KEEPALIVE_HZ,
@@ -17,7 +18,7 @@ import {
  * - join_or_create_room() + lease renewal every 10 s
  * - private Presence channel for join/leave liveness
  * - private movement Broadcast capped at 20 Hz outbound (2 Hz idle keepalive)
- * - private farm channel for authoritative plot patches
+ * - private farm channel for authoritative plot patches (with crop placements)
  * - reconnect with exponential backoff 1, 2, 4, 8, 15 s + jitter
  *
  * Presence is never the allocator authority; database leases are (PRD §7.13).
@@ -29,14 +30,7 @@ const BACKOFF_SCHEDULE_MS = [1000, 2000, 4000, 8000, 15_000];
 export type FarmPatchListener = (patch: {
   ownerId: string;
   plotVersion: number;
-  tiles: Array<{
-    i: number;
-    state: number;
-    crop: string | null;
-    plantedAt: string | null;
-    readyAt: string | null;
-    mutation: number;
-  }>;
+  tiles: ReturnType<typeof parseFarmPatch>['tiles'];
 }) => void;
 
 export interface RoomConnectionOptions {
@@ -128,12 +122,28 @@ export class RoomConnection {
       if (!snapshot.error) {
         const snap = snapshot.data as {
           members: Array<{ userId: string; username: string; slot: 0 | 1 | 2 | 3 }>;
+          plots?: Array<{ ownerId: string; version: number; tiles: unknown[] }> | null;
         };
         // Authoritative membership for movement validation (PRD §7.13):
         // database leases, not Presence.
         this.memberIds = new Set((snap.members ?? []).map((m) => m.userId));
         this.memberIds.add(this.getUserId() ?? 'unknown');
         useNetStore.getState().setMembers(snap.members ?? []);
+
+        // Initial farm snapshots carry crop placements for every member plot.
+        for (const rawPlot of snap.plots ?? []) {
+          try {
+            this.onFarmPatch?.(
+              parseFarmPatch({
+                ownerId: rawPlot.ownerId,
+                plotVersion: rawPlot.version,
+                tiles: rawPlot.tiles,
+              })
+            );
+          } catch {
+            useNetStore.getState().setError('INVALID_FARM_PATCH');
+          }
+        }
       }
     } catch (error) {
       useNetStore
@@ -302,8 +312,13 @@ export class RoomConnection {
         config: { private: true },
       })
       .on('broadcast', { event: 'patch' }, (payload) => {
-        const patch = payload.payload as Parameters<FarmPatchListener>[0];
-        this.onFarmPatch?.(patch);
+        try {
+          const patch = parseFarmPatch(payload.payload);
+          this.onFarmPatch?.(patch);
+        } catch {
+          // A malformed patch is never applied partially.
+          useNetStore.getState().setError('INVALID_FARM_PATCH');
+        }
       });
 
     // Subscribe all channels, then track presence once the presence channel is live.
