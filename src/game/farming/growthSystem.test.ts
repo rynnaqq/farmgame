@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { SeededRNG } from '../core/rng';
 import type { PlotData, PlotId, WeatherType } from '../../state/storeTypes';
+import { DEFAULT_TEST_PLACEMENT } from '../../test/farmFixtures';
 import {
   getWeatherGrowthMultiplier,
   getPetGrowthMultiplier,
@@ -19,12 +20,12 @@ describe('Task 12: Growth Simulation System', () => {
     id: 'plot_0_0',
     row: 0,
     col: 0,
-    tilled: true,
     crop: {
       cropId: 'carrot', // 45s base growth
       plantedAtUtcMs: baseTime,
       growthProgressSec: 0,
       mutation: 'none',
+      placement: DEFAULT_TEST_PLACEMENT,
     },
     hydratedUntilUtcMs: baseTime + 120000,
     ...overrides,
@@ -66,27 +67,27 @@ describe('Task 12: Growth Simulation System', () => {
   });
 
   describe('Hydration During Growth', () => {
-    it('considers tilled plot hydrated when hydratedUntilUtcMs > nowMs in sunny weather', () => {
-      const plot = createMockPlot({ tilled: true, hydratedUntilUtcMs: baseTime + 10000 });
+    it('considers planted plot hydrated when hydratedUntilUtcMs > nowMs in sunny weather', () => {
+      const plot = createMockPlot({ hydratedUntilUtcMs: baseTime + 10000 });
       expect(isPlotHydratedForGrowth(plot, 'sunny', baseTime)).toBe(true);
     });
 
-    it('considers tilled plot not hydrated when hydratedUntilUtcMs <= nowMs in sunny weather', () => {
-      const plotExpired = createMockPlot({ tilled: true, hydratedUntilUtcMs: baseTime - 1000 });
-      const plotEqual = createMockPlot({ tilled: true, hydratedUntilUtcMs: baseTime });
+    it('considers planted plot not hydrated when hydratedUntilUtcMs <= nowMs in sunny weather', () => {
+      const plotExpired = createMockPlot({ hydratedUntilUtcMs: baseTime - 1000 });
+      const plotEqual = createMockPlot({ hydratedUntilUtcMs: baseTime });
       expect(isPlotHydratedForGrowth(plotExpired, 'sunny', baseTime)).toBe(false);
       expect(isPlotHydratedForGrowth(plotEqual, 'sunny', baseTime)).toBe(false);
     });
 
-    it('considers all tilled plots hydrated during heavy_rain even if hydratedUntilUtcMs is in the past', () => {
-      const dryPlot = createMockPlot({ tilled: true, hydratedUntilUtcMs: 0 });
+    it('considers all planted plots hydrated during heavy_rain even if hydratedUntilUtcMs is in the past', () => {
+      const dryPlot = createMockPlot({ hydratedUntilUtcMs: 0 });
       expect(isPlotHydratedForGrowth(dryPlot, 'heavy_rain', baseTime)).toBe(true);
     });
 
-    it('considers untilled plots never hydrated even in heavy_rain', () => {
-      const untilledPlot = createMockPlot({ tilled: false, hydratedUntilUtcMs: baseTime + 60000 });
-      expect(isPlotHydratedForGrowth(untilledPlot, 'heavy_rain', baseTime)).toBe(false);
-      expect(isPlotHydratedForGrowth(untilledPlot, 'sunny', baseTime)).toBe(false);
+    it('considers empty slots never hydrated even in heavy_rain', () => {
+      const emptyPlot = createMockPlot({ crop: null, hydratedUntilUtcMs: baseTime + 60000 });
+      expect(isPlotHydratedForGrowth(emptyPlot, 'heavy_rain', baseTime)).toBe(false);
+      expect(isPlotHydratedForGrowth(emptyPlot, 'sunny', baseTime)).toBe(false);
     });
 
     it('does not advance growth on dry plots in sunny or heatwave weather', () => {
@@ -98,7 +99,8 @@ describe('Task 12: Growth Simulation System', () => {
           plantedAtUtcMs: baseTime,
           growthProgressSec: 10,
           mutation: 'none',
-        },
+          placement: DEFAULT_TEST_PLACEMENT,
+      },
       });
 
       const resultSunny = advancePlotGrowth(dryPlot, 5, 'sunny', null, rng, baseTime);
@@ -110,17 +112,17 @@ describe('Task 12: Growth Simulation System', () => {
       expect(resultHeatwave.matured).toBe(false);
     });
 
-    it('advances growth on dry tilled plots when weather is heavy_rain', () => {
+    it('advances growth on dry planted plots when weather is heavy_rain', () => {
       const rng = new SeededRNG(42);
       const dryPlot = createMockPlot({
-        tilled: true,
         hydratedUntilUtcMs: baseTime - 5000,
         crop: {
           cropId: 'carrot',
           plantedAtUtcMs: baseTime,
           growthProgressSec: 10,
           mutation: 'none',
-        },
+          placement: DEFAULT_TEST_PLACEMENT,
+      },
       });
 
       const result = advancePlotGrowth(dryPlot, 10, 'heavy_rain', null, rng, baseTime);
@@ -224,7 +226,8 @@ describe('Task 12: Growth Simulation System', () => {
           plantedAtUtcMs: baseTime,
           growthProgressSec: 10,
           mutation: 'none',
-        },
+          placement: DEFAULT_TEST_PLACEMENT,
+      },
       });
 
       // Sunny (1.0) + Bee (1.15) for 10 seconds -> +11.5s
@@ -243,7 +246,8 @@ describe('Task 12: Growth Simulation System', () => {
           plantedAtUtcMs: baseTime,
           growthProgressSec: 40,
           mutation: 'none',
-        },
+          placement: DEFAULT_TEST_PLACEMENT,
+      },
       });
 
       // Advance by 10s -> total 50s, clamped to 45s
@@ -270,7 +274,8 @@ describe('Task 12: Growth Simulation System', () => {
           plantedAtUtcMs: baseTime,
           growthProgressSec: 85,
           mutation: 'none',
-        },
+          placement: DEFAULT_TEST_PLACEMENT,
+      },
       });
 
       // Advance by 100 seconds
@@ -279,17 +284,11 @@ describe('Task 12: Growth Simulation System', () => {
       expect(result.matured).toBe(true);
     });
 
-    it('returns unmodified plot and matured=false for empty or untilled plots', () => {
+    it('returns unmodified plot and matured=false for empty plots', () => {
       const rng = new SeededRNG(1);
       const emptyPlot = createMockPlot({ crop: null });
       expect(advancePlotGrowth(emptyPlot, 10, 'sunny', null, rng, baseTime)).toEqual({
         plot: emptyPlot,
-        matured: false,
-      });
-
-      const untilledPlot = createMockPlot({ tilled: false, crop: null });
-      expect(advancePlotGrowth(untilledPlot, 10, 'sunny', null, rng, baseTime)).toEqual({
-        plot: untilledPlot,
         matured: false,
       });
     });
@@ -315,7 +314,8 @@ describe('Task 12: Growth Simulation System', () => {
           plantedAtUtcMs: baseTime,
           growthProgressSec: 50,
           mutation: 'none',
-        },
+          placement: DEFAULT_TEST_PLACEMENT,
+      },
       });
 
       const result = advancePlotGrowth(plot, 10, 'sunny', null, rng, baseTime);
@@ -337,7 +337,8 @@ describe('Task 12: Growth Simulation System', () => {
             plantedAtUtcMs: baseTime,
             growthProgressSec: 40,
             mutation: 'none',
-          },
+          placement: DEFAULT_TEST_PLACEMENT,
+      },
         }),
         plot_0_1: createMockPlot({
           id: 'plot_0_1',
@@ -346,7 +347,8 @@ describe('Task 12: Growth Simulation System', () => {
             plantedAtUtcMs: baseTime,
             growthProgressSec: 20,
             mutation: 'none',
-          },
+          placement: DEFAULT_TEST_PLACEMENT,
+      },
         }),
         plot_0_2: createMockPlot({
           id: 'plot_0_2',
@@ -360,7 +362,8 @@ describe('Task 12: Growth Simulation System', () => {
             plantedAtUtcMs: baseTime,
             growthProgressSec: 30,
             mutation: 'none',
-          },
+          placement: DEFAULT_TEST_PLACEMENT,
+      },
         }),
       };
 
@@ -402,7 +405,8 @@ describe('Task 12: Growth Simulation System', () => {
             plantedAtUtcMs: baseTime,
             growthProgressSec: 44,
             mutation: 'none',
-          },
+          placement: DEFAULT_TEST_PLACEMENT,
+      },
         }),
         plot_0_1: createMockPlot({
           id: 'plot_0_1',
@@ -411,7 +415,8 @@ describe('Task 12: Growth Simulation System', () => {
             plantedAtUtcMs: baseTime,
             growthProgressSec: 44,
             mutation: 'none',
-          },
+          placement: DEFAULT_TEST_PLACEMENT,
+      },
         }),
       });
 
@@ -439,7 +444,8 @@ describe('Task 12: Growth Simulation System', () => {
             plantedAtUtcMs: baseTime,
             growthProgressSec: 10,
             mutation: 'none',
-          },
+          placement: DEFAULT_TEST_PLACEMENT,
+      },
         }),
       };
 

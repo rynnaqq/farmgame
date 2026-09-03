@@ -43,8 +43,8 @@ export function getEffectiveGrowthMultiplier(
 
 /**
  * Evaluates whether a plot is hydrated and eligible to advance growth.
- * - Untilled soil cannot hold hydration.
- * - Heavy rain automatically hydrates all tilled plots.
+ * - Only plots with an active crop can hold hydration.
+ * - Heavy rain automatically hydrates all planted plots.
  * - Otherwise, plot must have active hydration (hydratedUntilUtcMs > nowMs).
  */
 export function isPlotHydratedForGrowth(
@@ -52,7 +52,7 @@ export function isPlotHydratedForGrowth(
   weather: WeatherType,
   nowMs: number
 ): boolean {
-  if (!plot.tilled) {
+  if (!plot.crop) {
     return false;
   }
   return weather === 'heavy_rain' || plot.hydratedUntilUtcMs > nowMs;
@@ -113,7 +113,7 @@ export function advancePlotGrowth(
   rng: SeededRNG,
   nowMs: number
 ): AdvancePlotGrowthResult {
-  if (!plot.crop || !plot.tilled || deltaSeconds <= 0) {
+  if (!plot.crop || deltaSeconds <= 0) {
     return { plot, matured: false };
   }
 

@@ -7,220 +7,64 @@ import {
   type MutationType,
   type WeatherType,
 } from '../core/constants';
-import type { PlotId, PlotData, ToolType, CommandResult } from '../../state/storeTypes';
-import {
-  getPlotPosition,
-  getPlotDistance,
-  isPlotUnlocked,
-  getPlotId,
-} from '../world/gridCoordinates';
+import type { PlotId, ToolType, CommandResult } from '../../state/storeTypes';
 import { getCropDefinition, calculateSaleValue } from './cropDefinitions';
 import { isPlotHarvestable } from './plotMachine';
+import {
+  findFirstEmptySlot,
+  findNearestPlacedSlots,
+  validatePlantPlacement,
+  type PlacementSlot,
+} from './plantPlacement';
+import { placementToWorldPoint, type CropPlacement } from '../world/farmLayout';
 import { audioManager } from '../audio/AudioManager';
 
-/**
- * Validates that a target plot exists and is within physical interaction reach if playerPos is provided.
- * All plots are unlocked per user specification.
- */
-function getPlotAndValidateRange(
-  plotId: PlotId,
-  playerPos?: [number, number, number]
-): { ok: true; plot: PlotData; gridSize: 4 | 6 | 8 } | { ok: false; result: CommandResult<never> } {
-  const store = useGameStore.getState();
-  const plot = store.farm.plots[plotId];
-  const gridSize = store.farm.gridSize;
+const PLACEMENT_MESSAGES = {
+  invalid_placement: 'Posisi tanam tidak valid',
+  outside_planting_area: 'Tanam di area tanah',
+  occupied_position: 'Terlalu dekat dengan tanaman lain',
+  farm_full: 'Kebun penuh (64/64)',
+} as const;
 
-  if (!plot || !isPlotUnlocked(plot.row, plot.col, gridSize)) {
-    return {
-      ok: false,
-      result: {
-        ok: false,
-        reason: 'plot_locked',
-        message: 'Plot is locked or does not exist',
-      },
-    };
-  }
-
-  if (playerPos) {
-    const plotPos = getPlotPosition(plot.row, plot.col, gridSize);
-    const distance = getPlotDistance(playerPos, plotPos);
-    if (distance > FARMING_REACH) {
-      return {
-        ok: false,
-        result: {
-          ok: false,
-          reason: 'out_of_range',
-          message: 'Move closer to the plot',
-        },
-      };
-    }
-  }
-
-  return { ok: true, plot, gridSize };
+function getSlots(): PlacementSlot[] {
+  return Object.values(useGameStore.getState().farm.plots);
 }
 
 /**
- * Tills an untilled plot if empty and in reach.
+ * Plants a seed directly at the exact validated free position within a farm bed.
+ * Validation (bounds, capacity, spacing, seeds) runs entirely before any state
+ * change so failed attempts never consume seeds.
  */
-export function tillPlot(
-  plotId: PlotId,
-  playerPos?: [number, number, number]
-): CommandResult<{ plotId: PlotId }> {
-  const validation = getPlotAndValidateRange(plotId, playerPos);
-  if (!validation.ok) {
-    return validation.result;
-  }
-
-  const { plot } = validation;
-
-  if (plot.crop !== null) {
-    return {
-      ok: false,
-      reason: 'invalid_plot_state',
-      message: 'Plot already has a crop',
-    };
-  }
-
-  if (plot.tilled) {
-    return {
-      ok: false,
-      reason: 'invalid_plot_state',
-      message: 'Plot is already tilled',
-    };
-  }
-
-  useGameStore.getState().setPlot({
-    ...plot,
-    tilled: true,
-  });
-
-  audioManager.playSfx('till');
-
-  return {
-    ok: true,
-    value: { plotId },
-    message: 'Soil tilled',
-  };
-}
-
-/**
- * Waters a tilled plot.
- * Supports Golden Watering Can (3x3 grid hydration of unlocked tilled neighbor plots)
- * and adjusts hydration duration based on current weather (60s in Heatwave, 120s basic).
- * Rewatering resets expiry without stacking.
- */
-export function waterPlot(
-  plotId: PlotId,
-  playerPos?: [number, number, number],
-  isGoldenCan?: boolean,
-  weather?: WeatherType,
-  nowMs: number = Date.now()
-): CommandResult<{ hydratedPlotIds: PlotId[] }> {
-  const validation = getPlotAndValidateRange(plotId, playerPos);
-  if (!validation.ok) {
-    return validation.result;
-  }
-
-  const { plot, gridSize } = validation;
-  const store = useGameStore.getState();
-
-  if (!plot.tilled) {
-    return {
-      ok: false,
-      reason: 'invalid_plot_state',
-      message: 'Till soil first before watering',
-    };
-  }
-
-  const effectiveWeather = weather ?? store.weather.current;
-  const durationMs =
-    effectiveWeather === 'heatwave' ? HYDRATION_DURATION_HEATWAVE_MS : HYDRATION_DURATION_BASIC_MS;
-  const targetHydratedUntil = nowMs + durationMs;
-
-  const effectiveGoldenCan = isGoldenCan ?? store.farm.goldenWateringCanOwned;
-  const hydratedPlotIds: PlotId[] = [];
-  const plotUpdates: Record<PlotId, Partial<PlotData>> = {};
-
-  if (effectiveGoldenCan) {
-    for (let dr = -1; dr <= 1; dr++) {
-      for (let dc = -1; dc <= 1; dc++) {
-        const r = plot.row + dr;
-        const c = plot.col + dc;
-
-        if (isPlotUnlocked(r, c, gridSize)) {
-          const neighborId = getPlotId(r, c);
-          const neighborPlot = store.farm.plots[neighborId];
-          if (neighborPlot && neighborPlot.tilled) {
-            hydratedPlotIds.push(neighborId);
-            plotUpdates[neighborId] = {
-              hydratedUntilUtcMs: targetHydratedUntil,
-            };
-          }
-        }
-      }
-    }
-  } else {
-    hydratedPlotIds.push(plot.id);
-    plotUpdates[plot.id] = {
-      hydratedUntilUtcMs: targetHydratedUntil,
-    };
-  }
-
-  store.updatePlots(plotUpdates);
-  audioManager.playSfx('water');
-
-  return {
-    ok: true,
-    value: { hydratedPlotIds },
-    message: 'Plot watered',
-  };
-}
-
-/**
- * Plants a seed on a tilled, unoccupied plot.
- * Atomically deducts 1 seed from inventory and creates a 0-progress sprout crop.
- */
-export function plantCrop(
-  plotId: PlotId,
+export function plantCropAt(
+  placement: CropPlacement,
   cropId: CropId,
   playerPos?: [number, number, number],
   nowMs: number = Date.now()
-): CommandResult<{ cropId: CropId }> {
-  const validation = getPlotAndValidateRange(plotId, playerPos);
+): CommandResult<{ cropId: CropId; slotId: PlotId }> {
+  const store = useGameStore.getState();
+  const slots = Object.values(store.farm.plots);
+  const validation = validatePlantPlacement(placement, slots);
   if (!validation.ok) {
-    return validation.result;
+    return {
+      ok: false,
+      reason: validation.reason,
+      message: PLACEMENT_MESSAGES[validation.reason],
+    };
   }
 
-  const { plot } = validation;
-  const store = useGameStore.getState();
+  const world = placementToWorldPoint(placement);
+  if (playerPos && Math.hypot(playerPos[0] - world.x, playerPos[2] - world.z) > FARMING_REACH) {
+    return { ok: false, reason: 'out_of_range', message: 'Move closer to the crop' };
+  }
+
+  const slot = findFirstEmptySlot(slots);
+  if (!slot) return { ok: false, reason: 'farm_full', message: PLACEMENT_MESSAGES.farm_full };
 
   const cropDef = getCropDefinition(cropId);
   if (!cropDef) {
-    return {
-      ok: false,
-      reason: 'unknown',
-      message: `Unknown crop type: ${cropId}`,
-    };
+    return { ok: false, reason: 'unknown', message: 'Unknown crop type: ' + cropId };
   }
-
-  if (!plot.tilled) {
-    return {
-      ok: false,
-      reason: 'invalid_plot_state',
-      message: 'Till soil first before planting',
-    };
-  }
-
-  if (plot.crop !== null) {
-    return {
-      ok: false,
-      reason: 'invalid_plot_state',
-      message: 'Plot already has a crop',
-    };
-  }
-
-  const seedCount = store.inventory.seeds[cropId] ?? 0;
-  if (seedCount < 1) {
+  if ((store.inventory.seeds[cropId] ?? 0) < 1) {
     return {
       ok: false,
       reason: 'insufficient_seeds',
@@ -228,50 +72,122 @@ export function plantCrop(
     };
   }
 
-  const deducted = store.deductSeed(cropId, 1);
-  if (!deducted) {
+  if (!store.deductSeed(cropId, 1)) {
     return {
       ok: false,
       reason: 'insufficient_seeds',
-      message: `Failed to deduct ${cropDef.name} seed`,
+      message: `No ${cropDef.name} seeds in inventory`,
     };
   }
 
   store.setPlot({
-    ...plot,
-    tilled: true,
+    id: slot.id,
+    row: slot.row,
+    col: slot.col,
     crop: {
       cropId,
       plantedAtUtcMs: nowMs,
       growthProgressSec: 0,
       mutation: 'none',
+      placement,
     },
+    hydratedUntilUtcMs: 0,
   });
 
   audioManager.playSfx('plant');
 
   return {
     ok: true,
-    value: { cropId },
-    message: `Planted ${cropDef.name}`,
+    value: { cropId, slotId: slot.id },
+    message: `${cropDef.name} ditanam`,
+  };
+}
+
+/**
+ * Waters a planted crop slot.
+ * The Golden Watering Can hydrates the source crop plus up to eight more of the
+ * closest crops within a 2.4 world-unit radius.
+ */
+export function waterCrop(
+  plotId: PlotId,
+  options: {
+    playerPos?: [number, number, number];
+    isGoldenCan?: boolean;
+    weather?: WeatherType;
+    nowMs?: number;
+  } = {}
+): CommandResult<{ hydratedPlotIds: PlotId[] }> {
+  const store = useGameStore.getState();
+  const source = store.farm.plots[plotId];
+  if (!source) {
+    return { ok: false, reason: 'plot_locked', message: 'Plot is locked or does not exist' };
+  }
+  if (!source.crop) {
+    return {
+      ok: false,
+      reason: 'invalid_plot_state',
+      message: 'Tidak ada tanaman untuk disiram',
+    };
+  }
+
+  if (options.playerPos) {
+    const world = placementToWorldPoint(source.crop.placement);
+    const distance = Math.hypot(
+      options.playerPos[0] - world.x,
+      options.playerPos[2] - world.z
+    );
+    if (distance > FARMING_REACH) {
+      return { ok: false, reason: 'out_of_range', message: 'Move closer to the crop' };
+    }
+  }
+
+  const nowMs = options.nowMs ?? Date.now();
+  const duration =
+    (options.weather ?? store.weather.current) === 'heatwave'
+      ? HYDRATION_DURATION_HEATWAVE_MS
+      : HYDRATION_DURATION_BASIC_MS;
+  const targetHydratedUntil = nowMs + duration;
+
+  const effectiveGoldenCan = options.isGoldenCan ?? store.farm.goldenWateringCanOwned;
+  const targets = effectiveGoldenCan
+    ? [
+        source,
+        ...findNearestPlacedSlots(
+          source.crop.placement,
+          getSlots(),
+          8,
+          2.4,
+          source.id
+        ).map((slot) => useGameStore.getState().farm.plots[slot.id]),
+      ]
+    : [source];
+
+  const updates = Object.fromEntries(
+    targets.map((target) => [target.id, { hydratedUntilUtcMs: targetHydratedUntil }])
+  );
+  store.updatePlots(updates);
+  audioManager.playSfx('water');
+
+  return {
+    ok: true,
+    value: { hydratedPlotIds: targets.map((target) => target.id) },
+    message: 'Tanaman disiram',
   };
 }
 
 /**
  * Harvests a mature crop from a plot.
- * Atomically removes the crop from the plot and credits produce to player inventory.
+ * Atomically removes the crop (and its placement) and credits produce to inventory.
  */
 export function harvestCrop(
   plotId: PlotId,
   playerPos?: [number, number, number]
 ): CommandResult<{ cropId: CropId; mutation: MutationType; saleValue: number }> {
-  const validation = getPlotAndValidateRange(plotId, playerPos);
-  if (!validation.ok) {
-    return validation.result;
-  }
-
-  const { plot } = validation;
   const store = useGameStore.getState();
+  const plot = store.farm.plots[plotId];
+  if (!plot) {
+    return { ok: false, reason: 'plot_locked', message: 'Plot is locked or does not exist' };
+  }
 
   if (!plot.crop) {
     return {
@@ -279,6 +195,14 @@ export function harvestCrop(
       reason: 'invalid_plot_state',
       message: 'No crop to harvest on this plot',
     };
+  }
+
+  if (playerPos) {
+    const world = placementToWorldPoint(plot.crop.placement);
+    const distance = Math.hypot(playerPos[0] - world.x, playerPos[2] - world.z);
+    if (distance > FARMING_REACH) {
+      return { ok: false, reason: 'out_of_range', message: 'Move closer to the crop' };
+    }
   }
 
   if (!isPlotHarvestable(plot)) {
@@ -296,6 +220,7 @@ export function harvestCrop(
   store.setPlot({
     ...plot,
     crop: null,
+    hydratedUntilUtcMs: 0,
   });
 
   audioManager.playSfx('harvest');
@@ -311,40 +236,35 @@ export function harvestCrop(
 }
 
 /**
- * Unified action dispatcher based on the equipped tool.
+ * Unified plant dispatcher used when the player taps/clicks farm soil with the
+ * seed bag equipped.
  */
-export function executeToolAction(
+export function executePlantAction(
+  placement: CropPlacement,
+  cropId: CropId,
+  options: { playerPos?: [number, number, number]; nowMs?: number } = {}
+) {
+  return plantCropAt(placement, cropId, options.playerPos, options.nowMs);
+}
+
+/**
+ * Unified crop interaction dispatcher (Water / Harvest) based on the equipped tool.
+ */
+export function executeCropAction(
   plotId: PlotId,
   tool: ToolType,
-  selectedSeedId: CropId,
-  playerPos?: [number, number, number],
-  options?: {
+  options: {
+    playerPos?: [number, number, number];
     isGoldenCan?: boolean;
     weather?: WeatherType;
     nowMs?: number;
-  }
+  } = {}
 ): CommandResult<unknown> {
-  switch (tool) {
-    case 'trowel':
-      return tillPlot(plotId, playerPos);
-    case 'watering_can':
-      return waterPlot(plotId, playerPos, options?.isGoldenCan, options?.weather, options?.nowMs);
-    case 'seed_bag': {
-      const store = useGameStore.getState();
-      const currentPlot = store.farm.plots[plotId];
-      if (currentPlot && !currentPlot.tilled) {
-        store.setPlot({ ...currentPlot, tilled: true });
-      }
-      return plantCrop(plotId, selectedSeedId, playerPos, options?.nowMs);
-    }
-    case 'scythe':
-    case 'hand':
-      return harvestCrop(plotId, playerPos);
-    default:
-      return {
-        ok: false,
-        reason: 'wrong_tool',
-        message: `Unknown or invalid tool: ${tool}`,
-      };
+  if (tool === 'watering_can') {
+    return waterCrop(plotId, options);
   }
+  if (tool === 'hand' || tool === 'scythe') {
+    return harvestCrop(plotId, options.playerPos);
+  }
+  return { ok: false, reason: 'wrong_tool', message: 'Pilih Water atau Harvest' };
 }

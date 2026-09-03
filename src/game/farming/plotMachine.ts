@@ -32,10 +32,10 @@ export function evaluateCropStage(progressSeconds: number, requiredSeconds: numb
 
 /**
  * Determines whether a plot currently has active hydration.
- * Untilled soil cannot hold hydration.
+ * Only plots with an active crop can hold hydration.
  */
 export function isPlotHydrated(plot: PlotData, nowMs: number): boolean {
-  return plot.tilled && plot.hydratedUntilUtcMs > nowMs;
+  return plot.crop !== null && plot.hydratedUntilUtcMs > nowMs;
 }
 
 /**
@@ -55,65 +55,33 @@ export function isPlotHarvestable(plot: PlotData): boolean {
 }
 
 /**
- * Computes the discrete high-level plot state based on soil preparation, crop status,
- * and hydration expiry.
+ * Computes the discrete high-level plot state based on crop status and hydration expiry.
  *
- * 1. Untilled: soil is not prepared and no crop exists.
- * 2. Tilled: soil is prepared, empty, and not hydrated.
- * 3. Planted: a crop exists but the plot is not currently hydrated.
- * 4. Watered: prepared soil is hydrated; a planted crop can progress.
- * 5. Harvestable: crop progress is 100%.
+ * 1. Empty: no crop exists.
+ * 2. Planted: a crop exists but the plot is not currently hydrated.
+ * 3. Watered: a crop exists and the plot is currently hydrated.
+ * 4. Harvestable: crop progress is 100%.
  */
-export function evaluatePlotState(plot: PlotData, nowMs: number): PlotState {
-  if (isPlotHarvestable(plot)) {
-    return 'harvestable';
-  }
-
-  const hydrated = isPlotHydrated(plot, nowMs);
-
-  if (hydrated) {
-    return 'watered';
-  }
-
-  if (plot.crop !== null) {
-    return 'planted';
-  }
-
-  if (plot.tilled) {
-    return 'tilled';
-  }
-
-  return 'untilled';
+export function getPlotState(plot: PlotData, nowMs: number = Date.now()): PlotState {
+  if (!plot.crop) return 'empty';
+  if (isPlotHarvestable(plot)) return 'harvestable';
+  if (plot.hydratedUntilUtcMs > nowMs) return 'watered';
+  return 'planted';
 }
 
 /**
  * Determines valid tool interactions and the primary recommended action for the plot.
  */
 export function getValidToolActions(plot: PlotData, nowMs: number): ValidToolActionResult {
-  const plotState = evaluatePlotState(plot, nowMs);
+  const plotState = getPlotState(plot, nowMs);
 
   switch (plotState) {
-    case 'untilled':
+    case 'empty':
       return {
-        validTools: ['trowel'],
-        primaryAction: 'Till Soil',
-      };
-    case 'tilled':
-      return {
-        validTools: ['seed_bag', 'watering_can'],
+        validTools: ['seed_bag'],
         primaryAction: 'Plant Seed',
       };
     case 'watered':
-      if (!plot.crop) {
-        return {
-          validTools: ['seed_bag', 'watering_can'],
-          primaryAction: 'Plant Seed',
-        };
-      }
-      return {
-        validTools: ['watering_can'],
-        primaryAction: 'Water Crop',
-      };
     case 'planted':
       return {
         validTools: ['watering_can'],
@@ -135,31 +103,16 @@ export function describeNextAction(plot: PlotData, _nowMs: number, selectedTool:
   const hasCrop = plot.crop !== null;
 
   switch (selectedTool) {
-    case 'trowel':
-      if (!plot.tilled && !hasCrop) {
-        return 'Till soil';
-      }
-      if (hasCrop) {
-        return 'Plot already has a crop';
-      }
-      return 'Plot is already tilled';
-
     case 'watering_can':
-      if (!plot.tilled) {
-        return 'Till soil first';
+      if (!hasCrop) {
+        return 'Plant a seed first';
       }
       if (isMature) {
         return 'Crop is ready to harvest';
       }
-      if (hasCrop) {
-        return 'Water crop';
-      }
-      return 'Water plot';
+      return 'Water crop';
 
     case 'seed_bag':
-      if (!plot.tilled) {
-        return 'Till soil first';
-      }
       if (hasCrop) {
         return 'Plot already has a crop';
       }

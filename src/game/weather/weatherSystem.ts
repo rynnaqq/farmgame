@@ -109,9 +109,9 @@ export function advanceWeather(
 
 /**
  * Applies weather-induced hydration to farm plots.
- * Heavy Rain continuously hydrates all tilled plots and guarantees hydration
+ * Heavy Rain continuously hydrates all planted plots and guarantees hydration
  * persists until 20 seconds after the rain ends (weatherEndMs + 20s buffer).
- * Untilled plots do not hold hydration.
+ * Empty slots do not hold hydration.
  */
 export function applyWeatherHydration(
   plots: Record<PlotId, PlotData>,
@@ -129,7 +129,7 @@ export function applyWeatherHydration(
 
   for (const plotId of Object.keys(plots)) {
     const plot = plots[plotId];
-    if (plot.tilled && plot.hydratedUntilUtcMs < targetHydrationExpiry) {
+    if (plot.crop && plot.hydratedUntilUtcMs < targetHydrationExpiry) {
       hasChanges = true;
       updatedPlots[plotId] = {
         ...plot,

@@ -1,626 +1,419 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useGameStore, resetGameStore } from '../../state/gameStore';
-import { tillPlot, waterPlot, plantCrop, harvestCrop, executeToolAction } from './farmingCommands';
+import { plantCropAt, waterCrop, harvestCrop, executeCropAction } from './farmingCommands';
+import { createPlacedPlot, createMaturePlot } from '../../test/farmFixtures';
+import { worldPointToPlacement, placementToWorldPoint } from '../world/farmLayout';
 import {
-  FARMING_REACH,
   HYDRATION_DURATION_BASIC_MS,
   HYDRATION_DURATION_HEATWAVE_MS,
   CROPS,
   MUTATION_MULTIPLIERS,
 } from '../core/constants';
-import { getPlotPosition } from '../world/gridCoordinates';
-import type { PlotId, ToolType, CropId } from '../../state/storeTypes';
+import type { CropPlacement } from '../world/farmLayout';
+import type { CropId } from '../../state/storeTypes';
 
-describe('Task 11: Farming Commands & Atomic Validation', () => {
-  const baseNow = 1700000000000;
+const BASE_NOW = 1700000000000;
 
+function seedCropAt(placement: CropPlacement, cropId: CropId = 'carrot') {
+  const result = plantCropAt(placement, cropId, undefined, BASE_NOW);
+  expect(result.ok).toBe(true);
+  return result;
+}
+
+function seedMatureCropAt(placement: CropPlacement, cropId: CropId = 'carrot') {
+  const result = seedCropAt(placement, cropId);
+  const store = useGameStore.getState();
+  const plot = store.farm.plots[result.ok ? result.value.slotId : 'plot-0-0'];
+  store.setPlot({
+    ...plot,
+    crop: { ...plot.crop!, growthProgressSec: CROPS[cropId].baseGrowthSec },
+  });
+  return result;
+}
+
+describe('plantCropAt', () => {
   beforeEach(() => {
     resetGameStore(12345);
   });
 
-  describe('tillPlot()', () => {
-    it('successfully tills an untilled empty plot within reach', () => {
-      const plotId: PlotId = 'plot-0-0';
-      const plotPos = getPlotPosition(0, 0, 4);
-      const playerPos: [number, number, number] = [plotPos[0], plotPos[1], plotPos[2]];
-
-      const res = tillPlot(plotId, playerPos);
-      expect(res.ok).toBe(true);
-
-      const plot = useGameStore.getState().farm.plots[plotId];
-      expect(plot.tilled).toBe(true);
-      expect(plot.crop).toBeNull();
+  it('plants directly at the exact valid point without Till or Water', () => {
+    const before = useGameStore.getState().inventory.seeds.carrot;
+    const placement = { bedId: 'south-west' as const, localX: 0.347, localZ: -1.284 };
+    const result = plantCropAt(placement, 'carrot', undefined, 4000);
+    expect(result).toEqual({
+      ok: true,
+      value: { cropId: 'carrot', slotId: 'plot-0-0' },
+      message: 'Carrot ditanam',
     });
-
-    it('successfully tills when playerPos is omitted (e.g. internal / debug call)', () => {
-      const plotId: PlotId = 'plot-1-1';
-      const res = tillPlot(plotId);
-      expect(res.ok).toBe(true);
-
-      const plot = useGameStore.getState().farm.plots[plotId];
-      expect(plot.tilled).toBe(true);
-    });
-
-    it('fails with out_of_range when player is too far (> FARMING_REACH)', () => {
-      const plotId: PlotId = 'plot-0-0';
-      const plotPos = getPlotPosition(0, 0, 4);
-      const playerPos: [number, number, number] = [
-        plotPos[0] + FARMING_REACH + 1.0,
-        plotPos[1],
-        plotPos[2],
-      ];
-
-      const res = tillPlot(plotId, playerPos);
-      expect(res.ok).toBe(false);
-      if (!res.ok) {
-        expect(res.reason).toBe('out_of_range');
-        expect(res.message).toMatch(/closer/i);
-      }
-
-      const plot = useGameStore.getState().farm.plots[plotId];
-      expect(plot.tilled).toBe(false);
-    });
-
-    it('fails when plot is already tilled', () => {
-      const plotId: PlotId = 'plot-0-0';
-      tillPlot(plotId); // First till
-
-      const res2 = tillPlot(plotId); // Second till
-      expect(res2.ok).toBe(false);
-      if (!res2.ok) {
-        expect(res2.reason).toBe('invalid_plot_state');
-        expect(res2.message).toMatch(/already tilled/i);
-      }
-    });
-
-    it('fails when plot already contains a crop', () => {
-      const plotId: PlotId = 'plot-0-0';
-      tillPlot(plotId);
-      plantCrop(plotId, 'carrot');
-
-      const res = tillPlot(plotId);
-      expect(res.ok).toBe(false);
-      if (!res.ok) {
-        expect(res.reason).toBe('invalid_plot_state');
-        expect(res.message).toMatch(/crop/i);
-      }
-    });
-
-    it('fails with plot_locked for out-of-bounds or non-existent plots', () => {
-      const lockedPlotId: PlotId = 'plot-5-5'; // Default grid size is 4
-      const res = tillPlot(lockedPlotId);
-      expect(res.ok).toBe(false);
-      if (!res.ok) {
-        expect(res.reason).toBe('plot_locked');
-      }
-
-      const invalidId: PlotId = 'plot-nonexistent';
-      const resInvalid = tillPlot(invalidId);
-      expect(resInvalid.ok).toBe(false);
-      if (!resInvalid.ok) {
-        expect(resInvalid.reason).toBe('plot_locked');
-      }
-    });
+    expect(useGameStore.getState().farm.plots['plot-0-0'].crop?.placement).toEqual(placement);
+    expect(useGameStore.getState().inventory.seeds.carrot).toBe(before - 1);
   });
 
-  describe('waterPlot()', () => {
-    it('successfully waters a tilled plot with standard watering can (120s duration)', () => {
-      const plotId: PlotId = 'plot-0-0';
-      tillPlot(plotId);
+  it.each([
+    [
+      { bedId: 'north-west' as const, localX: 2.7, localZ: 0 },
+      'outside_planting_area',
+      'Tanam di area tanah',
+    ],
+    [
+      { bedId: 'north-west' as const, localX: 0.5, localZ: 0 },
+      'occupied_position',
+      'Terlalu dekat dengan tanaman lain',
+    ],
+  ])('does not deduct seeds on %s rejection', (placement, reason, message) => {
+    seedCropAt({ bedId: 'north-west', localX: 0, localZ: 0 });
+    const before = useGameStore.getState();
+    const result = plantCropAt(placement as CropPlacement, 'carrot');
+    expect(result).toEqual({ ok: false, reason, message });
+    expect(useGameStore.getState().inventory.seeds).toEqual(before.inventory.seeds);
+    expect(useGameStore.getState().farm.plots).toEqual(before.farm.plots);
+  });
 
-      const res = waterPlot(plotId, undefined, false, 'sunny', baseNow);
-      expect(res.ok).toBe(true);
-      if (res.ok) {
-        expect(res.value.hydratedPlotIds).toEqual(['plot-0-0']);
-      }
+  it('rejects the sixty-fifth active crop with farm_full and keeps seeds', () => {
+    const store = useGameStore.getState();
+    store.setCoins(100000);
+    store.addSeeds('carrot', 200);
 
-      const plot = useGameStore.getState().farm.plots[plotId];
-      expect(plot.hydratedUntilUtcMs).toBe(baseNow + HYDRATION_DURATION_BASIC_MS);
-    });
-
-    it('uses 60s hydration during heatwave weather', () => {
-      const plotId: PlotId = 'plot-0-0';
-      tillPlot(plotId);
-
-      const res = waterPlot(plotId, undefined, false, 'heatwave', baseNow);
-      expect(res.ok).toBe(true);
-
-      const plot = useGameStore.getState().farm.plots[plotId];
-      expect(plot.hydratedUntilUtcMs).toBe(baseNow + HYDRATION_DURATION_HEATWAVE_MS);
-    });
-
-    it('resets hydration expiry without stacking time when rewatered', () => {
-      const plotId: PlotId = 'plot-0-0';
-      tillPlot(plotId);
-
-      waterPlot(plotId, undefined, false, 'sunny', baseNow);
-      const firstExpiry = useGameStore.getState().farm.plots[plotId].hydratedUntilUtcMs;
-      expect(firstExpiry).toBe(baseNow + HYDRATION_DURATION_BASIC_MS);
-
-      // Re-water 30 seconds later
-      const laterNow = baseNow + 30000;
-      waterPlot(plotId, undefined, false, 'sunny', laterNow);
-      const secondExpiry = useGameStore.getState().farm.plots[plotId].hydratedUntilUtcMs;
-      expect(secondExpiry).toBe(laterNow + HYDRATION_DURATION_BASIC_MS);
-    });
-
-    it('fails when target plot is untilled', () => {
-      const plotId: PlotId = 'plot-0-0';
-      const res = waterPlot(plotId, undefined, false, 'sunny', baseNow);
-      expect(res.ok).toBe(false);
-      if (!res.ok) {
-        expect(res.reason).toBe('invalid_plot_state');
-        expect(res.message).toMatch(/till/i);
-      }
-    });
-
-    it('fails when player is out of range', () => {
-      const plotId: PlotId = 'plot-0-0';
-      tillPlot(plotId);
-      const plotPos = getPlotPosition(0, 0, 4);
-      const playerPos: [number, number, number] = [plotPos[0] + 5.0, plotPos[1], plotPos[2]];
-
-      const res = waterPlot(plotId, playerPos, false, 'sunny', baseNow);
-      expect(res.ok).toBe(false);
-      if (!res.ok) {
-        expect(res.reason).toBe('out_of_range');
-      }
-    });
-
-    it('Golden Watering Can: hydrates 3x3 surrounding unlocked tilled plots', () => {
-      // Till 3x3 grid around center plot (1,1) in 4x4 grid:
-      // (0,0), (0,1), (0,2), (1,0), (1,1), (1,2), (2,0), (2,1), (2,2)
-      for (let r = 0; r <= 2; r++) {
-        for (let c = 0; c <= 2; c++) {
-          tillPlot(`plot-${r}-${c}`);
+    // Place 64 crops spread across beds at safe spacing (>= 1.1 apart).
+    const xs = [-2.2, -1.1, 0, 1.1, 2.2];
+    const zs = [-2.2, -1.1, 0, 1.1, 2.2];
+    let placed = 0;
+    outer: for (const bedId of ['north-west', 'north-east', 'south-west', 'south-east'] as const) {
+      for (const x of xs) {
+        for (const z of zs) {
+          if (placed >= 64) break outer;
+          const result = plantCropAt({ bedId, localX: x, localZ: z }, 'carrot');
+          if (result.ok) placed += 1;
         }
       }
+    }
+    expect(placed).toBe(64);
 
-      const res = waterPlot('plot-1-1', undefined, true, 'sunny', baseNow);
-      expect(res.ok).toBe(true);
-      if (res.ok) {
-        expect(res.value.hydratedPlotIds.length).toBe(9);
-        expect(res.value.hydratedPlotIds).toContain('plot-0-0');
-        expect(res.value.hydratedPlotIds).toContain('plot-1-1');
-        expect(res.value.hydratedPlotIds).toContain('plot-2-2');
-      }
-
-      for (let r = 0; r <= 2; r++) {
-        for (let c = 0; c <= 2; c++) {
-          const plot = useGameStore.getState().farm.plots[`plot-${r}-${c}`];
-          expect(plot.hydratedUntilUtcMs).toBe(baseNow + HYDRATION_DURATION_BASIC_MS);
-        }
-      }
+    const seedsBefore = useGameStore.getState().inventory.seeds.carrot;
+    const result = plantCropAt({ bedId: 'south-east', localX: 2, localZ: 2 }, 'carrot');
+    expect(result).toEqual({
+      ok: false,
+      reason: 'farm_full',
+      message: 'Kebun penuh (64/64)',
     });
-
-    it('Golden Watering Can: skips untilled plots in the 3x3 radius', () => {
-      // Only till center (1,1) and top neighbor (0,1)
-      tillPlot('plot-1-1');
-      tillPlot('plot-0-1');
-
-      const res = waterPlot('plot-1-1', undefined, true, 'sunny', baseNow);
-      expect(res.ok).toBe(true);
-      if (res.ok) {
-        expect(res.value.hydratedPlotIds).toEqual(expect.arrayContaining(['plot-1-1', 'plot-0-1']));
-        expect(res.value.hydratedPlotIds.length).toBe(2);
-      }
-
-      // Untilled neighbor remains 0
-      const untilledPlot = useGameStore.getState().farm.plots['plot-0-0'];
-      expect(untilledPlot.hydratedUntilUtcMs).toBe(0);
-      expect(untilledPlot.tilled).toBe(false);
-    });
-
-    it('Golden Watering Can: respects grid bounds on corner plot (0,0)', () => {
-      // Corner (0,0) in 4x4 grid: neighbors within 1 offset are (0,0), (0,1), (1,0), (1,1) -> 4 plots max
-      tillPlot('plot-0-0');
-      tillPlot('plot-0-1');
-      tillPlot('plot-1-0');
-      tillPlot('plot-1-1');
-
-      const res = waterPlot('plot-0-0', undefined, true, 'sunny', baseNow);
-      expect(res.ok).toBe(true);
-      if (res.ok) {
-        expect(res.value.hydratedPlotIds.length).toBe(4);
-        expect(res.value.hydratedPlotIds).toEqual(
-          expect.arrayContaining(['plot-0-0', 'plot-0-1', 'plot-1-0', 'plot-1-1'])
-        );
-      }
-    });
-
-    it('Golden Watering Can: never hydrates locked plots outside current gridSize', () => {
-      // In 4x4 grid, plot (3,3) is bottom right. Neighbor (4,3) would be row 4 which is locked.
-      tillPlot('plot-3-3');
-      tillPlot('plot-2-3');
-      tillPlot('plot-3-2');
-      tillPlot('plot-2-2');
-
-      const res = waterPlot('plot-3-3', undefined, true, 'sunny', baseNow);
-      expect(res.ok).toBe(true);
-      if (res.ok) {
-        expect(res.value.hydratedPlotIds.length).toBe(4);
-        expect(res.value.hydratedPlotIds).not.toContain('plot-4-3');
-        expect(res.value.hydratedPlotIds).not.toContain('plot-3-4');
-      }
-    });
-
-    it('automatically uses golden watering can when owned in store', () => {
-      useGameStore.getState().setGoldenWateringCan(true);
-      tillPlot('plot-1-1');
-      tillPlot('plot-1-2');
-
-      // isGoldenCan parameter omitted
-      const res = waterPlot('plot-1-1', undefined, undefined, 'sunny', baseNow);
-      expect(res.ok).toBe(true);
-      if (res.ok) {
-        expect(res.value.hydratedPlotIds).toEqual(expect.arrayContaining(['plot-1-1', 'plot-1-2']));
-      }
-    });
+    expect(useGameStore.getState().inventory.seeds.carrot).toBe(seedsBefore);
   });
 
-  describe('plantCrop()', () => {
-    it('successfully plants seed on tilled empty plot and deducts 1 seed', () => {
-      const plotId: PlotId = 'plot-0-0';
-      tillPlot(plotId);
+  it('rejects invalid placements and unknown crop ids', () => {
+    const invalid = plantCropAt(
+      { bedId: 'north-west', localX: NaN, localZ: 0 },
+      'carrot'
+    );
+    expect(invalid.ok).toBe(false);
+    if (!invalid.ok) {
+      expect(invalid.reason).toBe('invalid_placement');
+      expect(invalid.message).toBe('Posisi tanam tidak valid');
+    }
 
-      const initialCarrotSeeds = useGameStore.getState().inventory.seeds.carrot; // 5
-      expect(initialCarrotSeeds).toBeGreaterThan(0);
-
-      const res = plantCrop(plotId, 'carrot', undefined, baseNow);
-      expect(res.ok).toBe(true);
-      if (res.ok) {
-        expect(res.value.cropId).toBe('carrot');
-      }
-
-      // Check plot state
-      const plot = useGameStore.getState().farm.plots[plotId];
-      expect(plot.crop).not.toBeNull();
-      expect(plot.crop?.cropId).toBe('carrot');
-      expect(plot.crop?.plantedAtUtcMs).toBe(baseNow);
-      expect(plot.crop?.growthProgressSec).toBe(0);
-      expect(plot.crop?.mutation).toBe('none');
-
-      // Check seed deducted
-      expect(useGameStore.getState().inventory.seeds.carrot).toBe(initialCarrotSeeds - 1);
-    });
-
-    it('fails when plot is untilled', () => {
-      const plotId: PlotId = 'plot-0-0';
-      const res = plantCrop(plotId, 'carrot', undefined, baseNow);
-      expect(res.ok).toBe(false);
-      if (!res.ok) {
-        expect(res.reason).toBe('invalid_plot_state');
-        expect(res.message).toMatch(/till/i);
-      }
-    });
-
-    it('fails when plot is already planted', () => {
-      const plotId: PlotId = 'plot-0-0';
-      tillPlot(plotId);
-      plantCrop(plotId, 'carrot', undefined, baseNow);
-
-      const initialSeeds = useGameStore.getState().inventory.seeds.carrot;
-      const res2 = plantCrop(plotId, 'carrot', undefined, baseNow);
-      expect(res2.ok).toBe(false);
-      if (!res2.ok) {
-        expect(res2.reason).toBe('invalid_plot_state');
-        expect(res2.message).toMatch(/already/i);
-      }
-      // Seed was not deducted for failed action
-      expect(useGameStore.getState().inventory.seeds.carrot).toBe(initialSeeds);
-    });
-
-    it('fails when player has insufficient seeds', () => {
-      const plotId: PlotId = 'plot-0-0';
-      tillPlot(plotId);
-
-      // Tomato starts with 0 seeds
-      expect(useGameStore.getState().inventory.seeds.tomato).toBe(0);
-
-      const res = plantCrop(plotId, 'tomato', undefined, baseNow);
-      expect(res.ok).toBe(false);
-      if (!res.ok) {
-        expect(res.reason).toBe('insufficient_seeds');
-      }
-
-      const plot = useGameStore.getState().farm.plots[plotId];
-      expect(plot.crop).toBeNull();
-    });
-
-    it('fails when player is out of reach (> 3.0 units)', () => {
-      const plotId: PlotId = 'plot-0-0';
-      tillPlot(plotId);
-      const plotPos = getPlotPosition(0, 0, 4);
-      const playerPos: [number, number, number] = [plotPos[0] + 4.0, plotPos[1], plotPos[2]];
-
-      const res = plantCrop(plotId, 'carrot', playerPos, baseNow);
-      expect(res.ok).toBe(false);
-      if (!res.ok) {
-        expect(res.reason).toBe('out_of_range');
-      }
-    });
+    const unknown = plantCropAt(
+      { bedId: 'north-west', localX: 0, localZ: 0 },
+      'dragonfruit' as unknown as CropId
+    );
+    expect(unknown.ok).toBe(false);
+    if (!unknown.ok) {
+      expect(unknown.reason).toBe('unknown');
+    }
   });
 
-  describe('harvestCrop()', () => {
-    it('successfully harvests mature crop, adds produce stack, and empties plot crop', () => {
-      const plotId: PlotId = 'plot-0-0';
-      tillPlot(plotId);
-      plantCrop(plotId, 'carrot', undefined, baseNow);
+  it('fails with out_of_range when the player is too far', () => {
+    const result = plantCropAt(
+      { bedId: 'north-west', localX: 0, localZ: 0 },
+      'carrot',
+      [50, 0, 50]
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe('out_of_range');
+    }
+  });
 
-      // Mature the carrot (45s base growth)
-      const currentPlot = useGameStore.getState().farm.plots[plotId];
-      useGameStore.getState().setPlot({
-        ...currentPlot,
-        crop: {
-          ...currentPlot.crop!,
-          growthProgressSec: CROPS.carrot.baseGrowthSec,
-          mutation: 'none',
-        },
-      });
-
-      const res = harvestCrop(plotId);
-      expect(res.ok).toBe(true);
-      if (res.ok) {
-        expect(res.value.cropId).toBe('carrot');
-        expect(res.value.mutation).toBe('none');
-        expect(res.value.saleValue).toBe(CROPS.carrot.baseSalePrice);
-      }
-
-      // Plot remains tilled but crop is null
-      const afterPlot = useGameStore.getState().farm.plots[plotId];
-      expect(afterPlot.tilled).toBe(true);
-      expect(afterPlot.crop).toBeNull();
-
-      // Produce added to inventory
-      const produce = useGameStore.getState().inventory.produce;
-      expect(produce).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            cropId: 'carrot',
-            mutation: 'none',
-            quantity: 1,
-          }),
-        ])
+  it('fails with insufficient_seeds when the seed bag is empty', () => {
+    const store = useGameStore.getState();
+    store.setPlot({
+      ...store.farm.plots['plot-0-0'],
+      crop: null,
+    });
+    const seeds = { ...store.inventory.seeds, carrot: 0 };
+    useGameStore.getState().resetGame();
+    const fresh = useGameStore.getState();
+    fresh.setCoins(100);
+    // Drain carrots
+    for (let i = 0; i < 5; i += 1) {
+      plantCropAt(
+        { bedId: 'north-west', localX: -2.4 + i * 1.2, localZ: -2.1 },
+        'carrot'
       );
-    });
+    }
+    expect(useGameStore.getState().inventory.seeds.carrot).toBe(0);
+    void seeds;
 
-    it('correctly computes sale value for mutated crops (e.g. Cosmic Starfruit 15x)', () => {
-      const plotId: PlotId = 'plot-0-0';
-      tillPlot(plotId);
-      useGameStore.getState().addSeeds('starfruit', 1);
-      plantCrop(plotId, 'starfruit', undefined, baseNow);
+    const result = plantCropAt({ bedId: 'south-east', localX: 0, localZ: 0 }, 'carrot');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe('insufficient_seeds');
+    }
+  });
+});
 
-      const currentPlot = useGameStore.getState().farm.plots[plotId];
-      useGameStore.getState().setPlot({
-        ...currentPlot,
-        crop: {
-          ...currentPlot.crop!,
-          growthProgressSec: CROPS.starfruit.baseGrowthSec,
-          mutation: 'cosmic',
-        },
-      });
-
-      const res = harvestCrop(plotId);
-      expect(res.ok).toBe(true);
-      if (res.ok) {
-        expect(res.value.cropId).toBe('starfruit');
-        expect(res.value.mutation).toBe('cosmic');
-        expect(res.value.saleValue).toBe(
-          CROPS.starfruit.baseSalePrice * MUTATION_MULTIPLIERS.cosmic
-        );
-      }
-    });
-
-    it('fails when crop is not mature (< required growth time)', () => {
-      const plotId: PlotId = 'plot-0-0';
-      tillPlot(plotId);
-      plantCrop(plotId, 'carrot', undefined, baseNow);
-
-      const currentPlot = useGameStore.getState().farm.plots[plotId];
-      useGameStore.getState().setPlot({
-        ...currentPlot,
-        crop: {
-          ...currentPlot.crop!,
-          growthProgressSec: 20, // Carrot needs 45s
-        },
-      });
-
-      const res = harvestCrop(plotId);
-      expect(res.ok).toBe(false);
-      if (!res.ok) {
-        expect(res.reason).toBe('not_mature');
-        expect(res.message).toMatch(/not ready/i);
-      }
-
-      // Crop remains on plot
-      expect(useGameStore.getState().farm.plots[plotId].crop).not.toBeNull();
-      // No produce added
-      expect(useGameStore.getState().inventory.produce.length).toBe(0);
-    });
-
-    it('fails when plot has no crop', () => {
-      const plotId: PlotId = 'plot-0-0';
-      tillPlot(plotId);
-
-      const res = harvestCrop(plotId);
-      expect(res.ok).toBe(false);
-      if (!res.ok) {
-        expect(res.reason).toBe('invalid_plot_state');
-        expect(res.message).toMatch(/no crop/i);
-      }
-    });
-
-    it('fails when player is out of range', () => {
-      const plotId: PlotId = 'plot-0-0';
-      tillPlot(plotId);
-      plantCrop(plotId, 'carrot', undefined, baseNow);
-      const currentPlot = useGameStore.getState().farm.plots[plotId];
-      useGameStore.getState().setPlot({
-        ...currentPlot,
-        crop: { ...currentPlot.crop!, growthProgressSec: 45 },
-      });
-
-      const plotPos = getPlotPosition(0, 0, 4);
-      const playerPos: [number, number, number] = [plotPos[0] + 5.0, plotPos[1], plotPos[2]];
-
-      const res = harvestCrop(plotId, playerPos);
-      expect(res.ok).toBe(false);
-      if (!res.ok) {
-        expect(res.reason).toBe('out_of_range');
-      }
-    });
+describe('waterCrop', () => {
+  beforeEach(() => {
+    resetGameStore(12345);
   });
 
-  describe('executeToolAction() dispatcher', () => {
-    it('dispatches trowel to tillPlot', () => {
-      const res = executeToolAction('plot-0-0', 'trowel', 'carrot');
+  it('waters a planted crop for 120s under sunny weather', () => {
+    const slotId = seedCropAt({ bedId: 'north-west', localX: 0, localZ: 0 }).ok
+      ? useGameStore.getState().farm.plots['plot-0-0'].id
+      : 'plot-0-0';
+
+    const result = waterCrop(slotId, { isGoldenCan: false, weather: 'sunny', nowMs: BASE_NOW });
+    expect(result).toEqual({
+      ok: true,
+      value: { hydratedPlotIds: [slotId] },
+      message: 'Tanaman disiram',
+    });
+    expect(useGameStore.getState().farm.plots[slotId].hydratedUntilUtcMs).toBe(
+      BASE_NOW + HYDRATION_DURATION_BASIC_MS
+    );
+  });
+
+  it('uses 60s hydration during heatwave weather', () => {
+    const slotId = 'plot-0-0';
+    seedCropAt({ bedId: 'north-west', localX: 0, localZ: 0 });
+
+    const result = waterCrop(slotId, { isGoldenCan: false, weather: 'heatwave', nowMs: BASE_NOW });
+    expect(result.ok).toBe(true);
+    expect(useGameStore.getState().farm.plots[slotId].hydratedUntilUtcMs).toBe(
+      BASE_NOW + HYDRATION_DURATION_HEATWAVE_MS
+    );
+  });
+
+  it('fails when the target has no crop', () => {
+    const result = waterCrop('plot-0-0', { nowMs: BASE_NOW });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe('invalid_plot_state');
+      expect(result.message).toBe('Tidak ada tanaman untuk disiram');
+    }
+  });
+
+  it('golden water selects source plus no more than eight closest crops within 2.4', () => {
+    useGameStore.getState().addSeeds('carrot', 20);
+    // Source at the center; ring of 8 crops at 1.2 spacing (all >= 1.1 apart),
+    // plus one farther crop at exactly 2.4 that must be excluded by the limit of 8.
+    seedCropAt({ bedId: 'north-west', localX: 0, localZ: 0 });
+    const ring: Array<[number, number]> = [
+      [-1.2, -1.2],
+      [0, -1.2],
+      [1.2, -1.2],
+      [-1.2, 0],
+      [1.2, 0],
+      [-1.2, 1.2],
+      [0, 1.2],
+      [1.2, 1.2],
+    ];
+    for (const [x, z] of ring) {
+      const res = plantCropAt({ bedId: 'north-west', localX: x, localZ: z }, 'carrot');
       expect(res.ok).toBe(true);
-      expect(useGameStore.getState().farm.plots['plot-0-0'].tilled).toBe(true);
+    }
+    const far = plantCropAt({ bedId: 'north-west', localX: 2.4, localZ: 0 }, 'carrot');
+    expect(far.ok).toBe(true);
+
+    const result = waterCrop('plot-0-0', { isGoldenCan: true, weather: 'sunny', nowMs: BASE_NOW });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.hydratedPlotIds).toHaveLength(9);
+      expect(result.value.hydratedPlotIds[0]).toBe('plot-0-0');
+      const farSlot = far.ok ? far.value.slotId : 'plot-x';
+      expect(result.value.hydratedPlotIds).not.toContain(farSlot);
+    }
+  });
+
+  it('fails with out_of_range when the player is too far', () => {
+    seedCropAt({ bedId: 'north-west', localX: 0, localZ: 0 });
+    const result = waterCrop('plot-0-0', { playerPos: [50, 0, 50], nowMs: BASE_NOW });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe('out_of_range');
+    }
+  });
+});
+
+describe('harvestCrop', () => {
+  beforeEach(() => {
+    resetGameStore(12345);
+  });
+
+  it('clears crop placement and permits replanting at the same point', () => {
+    const placement = { bedId: 'north-east' as const, localX: 0, localZ: 0 };
+    const result = seedMatureCropAt(placement);
+    const slotId = result.ok ? result.value.slotId : 'plot-0-0';
+
+    expect(harvestCrop(slotId).ok).toBe(true);
+    expect(useGameStore.getState().farm.plots[slotId].crop).toBeNull();
+    expect(useGameStore.getState().farm.plots[slotId].hydratedUntilUtcMs).toBe(0);
+
+    const replant = plantCropAt(placement, 'carrot');
+    expect(replant.ok).toBe(true);
+  });
+
+  it('credits produce and sale value on harvest', () => {
+    seedMatureCropAt({ bedId: 'south-west', localX: 1, localZ: 1 });
+    const result = harvestCrop('plot-0-0');
+    expect(result).toMatchObject({
+      ok: true,
+      value: { cropId: 'carrot', mutation: 'none', saleValue: CROPS.carrot.baseSalePrice },
+    });
+    expect(useGameStore.getState().inventory.produce).toEqual([
+      { cropId: 'carrot', mutation: 'none', quantity: 1 },
+    ]);
+  });
+
+  it('computes mutation sale value (cosmic starfruit 15x)', () => {
+    resetGameStore(12345);
+    useGameStore.getState().addSeeds('starfruit', 1);
+    const planted = plantCropAt({ bedId: 'south-east', localX: 0, localZ: 0 }, 'starfruit');
+    expect(planted.ok).toBe(true);
+    const slotId = planted.ok ? planted.value.slotId : 'plot-0-0';
+    const plot = useGameStore.getState().farm.plots[slotId];
+    useGameStore.getState().setPlot({
+      ...plot,
+      crop: {
+        ...plot.crop!,
+        growthProgressSec: CROPS.starfruit.baseGrowthSec,
+        mutation: 'cosmic',
+      },
     });
 
-    it('dispatches watering_can to waterPlot with options', () => {
-      tillPlot('plot-0-0');
-      const res = executeToolAction('plot-0-0', 'watering_can', 'carrot', undefined, {
-        weather: 'heatwave',
-        nowMs: baseNow,
-      });
-      expect(res.ok).toBe(true);
-      expect(useGameStore.getState().farm.plots['plot-0-0'].hydratedUntilUtcMs).toBe(
-        baseNow + HYDRATION_DURATION_HEATWAVE_MS
+    const result = harvestCrop(slotId);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.saleValue).toBe(
+        CROPS.starfruit.baseSalePrice * MUTATION_MULTIPLIERS.cosmic
       );
-    });
-
-    it('dispatches seed_bag to plantCrop', () => {
-      tillPlot('plot-0-0');
-      const res = executeToolAction('plot-0-0', 'seed_bag', 'carrot', undefined, {
-        nowMs: baseNow,
-      });
-      expect(res.ok).toBe(true);
-      expect(useGameStore.getState().farm.plots['plot-0-0'].crop?.cropId).toBe('carrot');
-    });
-
-    it('dispatches scythe and hand to harvestCrop', () => {
-      tillPlot('plot-0-0');
-      plantCrop('plot-0-0', 'carrot', undefined, baseNow);
-      const currentPlot = useGameStore.getState().farm.plots['plot-0-0'];
-      useGameStore.getState().setPlot({
-        ...currentPlot,
-        crop: { ...currentPlot.crop!, growthProgressSec: 45 },
-      });
-
-      const resScythe = executeToolAction('plot-0-0', 'scythe', 'carrot');
-      expect(resScythe.ok).toBe(true);
-      expect(useGameStore.getState().inventory.produce.length).toBe(1);
-    });
-
-    it('returns wrong_tool for unrecognized tool', () => {
-      const res = executeToolAction('plot-0-0', 'invalid_tool' as unknown as ToolType, 'carrot');
-      expect(res.ok).toBe(false);
-      if (!res.ok) {
-        expect(res.reason).toBe('wrong_tool');
-      }
-    });
+    }
   });
 
-  describe('Rapid Click Deduplication & Idempotency', () => {
-    it('rapid click double-harvest yields exactly one crop', () => {
-      const plotId: PlotId = 'plot-0-0';
-      tillPlot(plotId);
-      plantCrop(plotId, 'carrot', undefined, baseNow);
-      const plot = useGameStore.getState().farm.plots[plotId];
-      useGameStore.getState().setPlot({
-        ...plot,
-        crop: { ...plot.crop!, growthProgressSec: 45 },
-      });
+  it('fails when crop is not mature', () => {
+    seedCropAt({ bedId: 'north-west', localX: 0, localZ: 0 });
+    const result = harvestCrop('plot-0-0');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe('not_mature');
+      expect(result.message).toMatch(/not ready/i);
+    }
+    expect(useGameStore.getState().farm.plots['plot-0-0'].crop).not.toBeNull();
+  });
 
-      const firstClick = harvestCrop(plotId);
-      const secondClick = harvestCrop(plotId);
+  it('rapid double-harvest yields exactly one crop', () => {
+    seedMatureCropAt({ bedId: 'north-west', localX: 0, localZ: 0 });
+    const first = harvestCrop('plot-0-0');
+    const second = harvestCrop('plot-0-0');
+    expect(first.ok).toBe(true);
+    expect(second.ok).toBe(false);
 
-      expect(firstClick.ok).toBe(true);
-      expect(secondClick.ok).toBe(false);
+    const produce = useGameStore.getState().inventory.produce;
+    expect(produce).toHaveLength(1);
+    expect(produce[0].quantity).toBe(1);
+  });
+});
 
-      const produce = useGameStore.getState().inventory.produce;
-      expect(produce.length).toBe(1);
-      expect(produce[0].quantity).toBe(1);
+describe('executeCropAction dispatcher', () => {
+  beforeEach(() => {
+    resetGameStore(12345);
+  });
+
+  it('dispatches watering_can to waterCrop', () => {
+    seedCropAt({ bedId: 'north-west', localX: 0, localZ: 0 });
+    const result = executeCropAction('plot-0-0', 'watering_can', {
+      weather: 'heatwave',
+      nowMs: BASE_NOW,
     });
+    expect(result.ok).toBe(true);
+    expect(useGameStore.getState().farm.plots['plot-0-0'].hydratedUntilUtcMs).toBe(
+      BASE_NOW + HYDRATION_DURATION_HEATWAVE_MS
+    );
+  });
 
-    it('rapid click double-plant only consumes one seed', () => {
-      const plotId: PlotId = 'plot-0-0';
-      tillPlot(plotId);
-      const seedsBefore = useGameStore.getState().inventory.seeds.carrot;
+  it('dispatches hand and scythe to harvestCrop', () => {
+    seedMatureCropAt({ bedId: 'north-west', localX: 0, localZ: 0 });
+    const result = executeCropAction('plot-0-0', 'hand');
+    expect(result.ok).toBe(true);
+    expect(useGameStore.getState().farm.plots['plot-0-0'].crop).toBeNull();
+  });
 
-      const firstClick = plantCrop(plotId, 'carrot', undefined, baseNow);
-      const secondClick = plantCrop(plotId, 'carrot', undefined, baseNow);
+  it('returns wrong_tool for seed_bag on a crop slot', () => {
+    seedMatureCropAt({ bedId: 'north-west', localX: 0, localZ: 0 });
+    const result = executeCropAction('plot-0-0', 'seed_bag');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe('wrong_tool');
+      expect(result.message).toBe('Pilih Water atau Harvest');
+    }
+  });
 
-      expect(firstClick.ok).toBe(true);
-      expect(secondClick.ok).toBe(false);
+  it('returns plot_locked for unknown slots', () => {
+    const result = executeCropAction('plot-nonexistent', 'watering_can');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.reason).toBe('plot_locked');
+    }
+  });
+});
 
-      const seedsAfter = useGameStore.getState().inventory.seeds.carrot;
-      expect(seedsAfter).toBe(seedsBefore - 1);
+describe('farmFixtures contract', () => {
+  it('builds placed and mature plots with valid placements', () => {
+    const placed = createPlacedPlot('plot-3-3', {
+      bedId: 'south-east',
+      localX: 1,
+      localZ: -1,
     });
+    expect(placed.crop?.placement).toEqual({ bedId: 'south-east', localX: 1, localZ: -1 });
 
-    it('Golden Watering Can fails on untilled target plot and does not water neighbor plots', () => {
-      // Till neighbor (0,1) but leave center (0,0) untilled
-      tillPlot('plot-0-1');
+    const mature = createMaturePlot('plot-2-2', { bedId: 'north-east', localX: 0, localZ: 0 });
+    expect(mature.crop?.growthProgressSec).toBe(45);
+    expect(() => createPlacedPlot('bad-id', { bedId: 'north-east', localX: 0, localZ: 0 })).toThrow();
+  });
+});
 
-      const res = waterPlot('plot-0-0', undefined, true, 'sunny', baseNow);
-      expect(res.ok).toBe(false);
-      if (!res.ok) {
-        expect(res.reason).toBe('invalid_plot_state');
-      }
+describe('click-to-render regression', () => {
+  beforeEach(() => {
+    resetGameStore(12345);
+  });
 
-      // Neighbor remains unhydrated
-      const neighbor = useGameStore.getState().farm.plots['plot-0-1'];
-      expect(neighbor.hydratedUntilUtcMs).toBe(0);
-    });
+  it('renders a successful plant within 0.01 world unit of the click', () => {
+    const clicked = { x: 4.314, z: 2.111 };
+    const placement = worldPointToPlacement(clicked);
+    expect(placement).not.toBeNull();
+    const result = plantCropAt(placement!, 'carrot', undefined, 1000);
+    expect(result.ok).toBe(true);
+    const crop = useGameStore.getState().farm.plots['plot-0-0'].crop!;
+    const rendered = placementToWorldPoint(crop.placement);
+    expect(Math.hypot(rendered.x - clicked.x, rendered.z - clicked.z)).toBeLessThanOrEqual(0.01);
+  });
 
-    it('works seamlessly across 6x6 expanded grid', () => {
-      useGameStore.getState().setGridSize(6);
+  it('persists placement exactly through toSaveEnvelope and loadSaveEnvelope round-trip', () => {
+    const placement: CropPlacement = {
+      bedId: 'south-west',
+      localX: -2.534,
+      localZ: 2.247,
+    };
+    const planted = plantCropAt(placement, 'carrot', undefined, 1000);
+    expect(planted.ok).toBe(true);
 
-      // (5,5) is now unlocked in 6x6 grid
-      const resTill = tillPlot('plot-5-5');
-      expect(resTill.ok).toBe(true);
+    const envelope = useGameStore.getState().toSaveEnvelope(2000);
+    const restoredPlot = envelope.farm.plots.find((p) => p.crop !== null);
+    expect(restoredPlot?.crop?.placement).toEqual(placement);
 
-      const resWater = waterPlot('plot-5-5', undefined, false, 'sunny', baseNow);
-      expect(resWater.ok).toBe(true);
-
-      // (6,6) is still locked in 6x6 grid
-      const resLocked = tillPlot('plot-6-6');
-      expect(resLocked.ok).toBe(false);
-      if (!resLocked.ok) {
-        expect(resLocked.reason).toBe('plot_locked');
-      }
-    });
-
-    it('plantCrop fails when given an invalid crop ID', () => {
-      tillPlot('plot-0-0');
-      const res = plantCrop('plot-0-0', 'dragonfruit' as unknown as CropId, undefined, baseNow);
-      expect(res.ok).toBe(false);
-      if (!res.ok) {
-        expect(res.reason).toBe('unknown');
-      }
-    });
-
-    it('harvestCrop handles over-mature crops (progress > required baseGrowthSec)', () => {
-      tillPlot('plot-0-0');
-      useGameStore.getState().addSeeds('pumpkin', 1);
-      plantCrop('plot-0-0', 'pumpkin', undefined, baseNow);
-
-      const plot = useGameStore.getState().farm.plots['plot-0-0'];
-      useGameStore.getState().setPlot({
-        ...plot,
-        crop: {
-          ...plot.crop!,
-          growthProgressSec: 9999, // Way past 180s
-          mutation: 'giant',
-        },
-      });
-
-      const res = harvestCrop('plot-0-0');
-      expect(res.ok).toBe(true);
-      if (res.ok) {
-        expect(res.value.saleValue).toBe(CROPS.pumpkin.baseSalePrice * MUTATION_MULTIPLIERS.giant);
-      }
-    });
+    resetGameStore();
+    useGameStore.getState().loadSaveEnvelope(envelope);
+    const restored = useGameStore
+      .getState()
+      .farm.plots[planted.ok ? planted.value.slotId : 'plot-0-0'];
+    expect(restored.crop?.placement).toEqual(placement);
   });
 });

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { SeededRNG } from '../core/rng';
+import { DEFAULT_TEST_PLACEMENT } from '../../test/farmFixtures';
 import type { PlotData, PlotId, WeatherState, WeatherType } from '../../state/storeTypes';
 import {
   WEATHER_DURATION_MIN_SEC,
@@ -285,31 +286,42 @@ describe('Weather System', () => {
   });
 
   describe('applyWeatherHydration', () => {
-    const createPlot = (id: PlotId, tilled: boolean, hydratedUntil: number): PlotData => ({
+    const createPlot = (
+      id: PlotId,
+      hasCrop: boolean,
+      hydratedUntil: number
+    ): PlotData => ({
       id,
       row: 0,
       col: 0,
-      tilled,
-      crop: null,
+      crop: hasCrop
+        ? {
+            cropId: 'carrot',
+            plantedAtUtcMs: 0,
+            growthProgressSec: 0,
+            mutation: 'none',
+            placement: DEFAULT_TEST_PLACEMENT,
+          }
+        : null,
       hydratedUntilUtcMs: hydratedUntil,
     });
 
-    it('extends hydration on all tilled plots to weatherEndMs + 20s buffer during heavy_rain', () => {
+    it('extends hydration on all planted plots to weatherEndMs + 20s buffer during heavy_rain', () => {
       const nowMs = 100_000;
       const weatherEndMs = 280_000;
       const expectedHydration = weatherEndMs + 20_000; // 300_000
 
       const plots: Record<PlotId, PlotData> = {
-        plot1: createPlot('plot1', true, 0), // dry tilled plot
-        plot2: createPlot('plot2', true, 150_000), // partially hydrated tilled plot
-        plot3: createPlot('plot3', false, 0), // untilled plot
+        plot1: createPlot('plot1', true, 0), // dry planted plot
+        plot2: createPlot('plot2', true, 150_000), // partially hydrated planted plot
+        plot3: createPlot('plot3', false, 0), // empty slot
       };
 
       const updated = applyWeatherHydration(plots, 'heavy_rain', weatherEndMs, nowMs);
 
       expect(updated.plot1.hydratedUntilUtcMs).toBe(expectedHydration);
       expect(updated.plot2.hydratedUntilUtcMs).toBe(expectedHydration);
-      expect(updated.plot3.hydratedUntilUtcMs).toBe(0); // untilled remains dry
+      expect(updated.plot3.hydratedUntilUtcMs).toBe(0); // empty slot remains dry
     });
 
     it('does not reduce existing hydration if already beyond the rain buffer', () => {
@@ -342,6 +354,14 @@ describe('Weather System', () => {
 
       const updatedBloodMoon = applyWeatherHydration(plots, 'blood_moon', weatherEndMs, nowMs);
       expect(updatedBloodMoon.plot1.hydratedUntilUtcMs).toBe(110_000);
+    });
+
+    it('never hydrates empty slots during heavy_rain even with stale timestamps', () => {
+      const plots: Record<PlotId, PlotData> = {
+        empty: createPlot('empty', false, 0),
+      };
+      const updated = applyWeatherHydration(plots, 'heavy_rain', 280_000, 100_000);
+      expect(updated.empty.hydratedUntilUtcMs).toBe(0);
     });
   });
 

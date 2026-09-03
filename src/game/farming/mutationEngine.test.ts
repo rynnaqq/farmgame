@@ -26,6 +26,7 @@ import {
   GOLD_SHADER_FRAGMENT,
 } from './mutationShaders';
 import type { PlotData, PlotId } from '../../state/storeTypes';
+import { DEFAULT_TEST_PLACEMENT } from '../../test/farmFixtures';
 
 describe('Task 22: Procedural Mutation Engine & Custom Shaders', () => {
   const baseTime = 1700000000000;
@@ -34,12 +35,12 @@ describe('Task 22: Procedural Mutation Engine & Custom Shaders', () => {
     id: 'plot_0_0',
     row: 0,
     col: 0,
-    tilled: true,
     crop: {
       cropId: 'carrot',
       plantedAtUtcMs: baseTime,
       growthProgressSec: 0,
       mutation: 'none',
+      placement: DEFAULT_TEST_PLACEMENT,
     },
     hydratedUntilUtcMs: baseTime + 120000,
     ...overrides,
@@ -176,6 +177,7 @@ describe('Task 22: Procedural Mutation Engine & Custom Shaders', () => {
           plantedAtUtcMs: baseTime,
           growthProgressSec: 44,
           mutation: 'none',
+          placement: DEFAULT_TEST_PLACEMENT,
         },
       });
 
@@ -209,7 +211,8 @@ describe('Task 22: Procedural Mutation Engine & Custom Shaders', () => {
             plantedAtUtcMs: baseTime,
             growthProgressSec: 44,
             mutation: 'none',
-          },
+          placement: DEFAULT_TEST_PLACEMENT,
+        },
         }),
         plot_0_0: createMockPlot({
           id: 'plot_0_0',
@@ -218,7 +221,8 @@ describe('Task 22: Procedural Mutation Engine & Custom Shaders', () => {
             plantedAtUtcMs: baseTime,
             growthProgressSec: 44,
             mutation: 'none',
-          },
+          placement: DEFAULT_TEST_PLACEMENT,
+        },
         }),
         plot_0_1: createMockPlot({
           id: 'plot_0_1',
@@ -227,7 +231,8 @@ describe('Task 22: Procedural Mutation Engine & Custom Shaders', () => {
             plantedAtUtcMs: baseTime,
             growthProgressSec: 44,
             mutation: 'none',
-          },
+          placement: DEFAULT_TEST_PLACEMENT,
+        },
         }),
       };
 
