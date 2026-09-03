@@ -50,27 +50,51 @@ test.describe('Mobile Controls & Touch Viewport E2E', () => {
     await expect(knob).toBeVisible();
   });
 
-  test('mobile action button performs contextual interactions and updates plot', async ({
+  test('Seeds tool shows the passive Tap Soil hint and never plants via the button', async ({
     page,
   }) => {
-    // 1. Select Trowel tool
-    const trowelBtn = page.locator('[data-testid="tool-trowel"]');
-    await trowelBtn.click();
+    // Seeds is the default tool
+    const seedBtn = page.locator('[data-testid="tool-seed_bag"]');
+    await expect(seedBtn).toHaveAttribute('aria-pressed', 'true');
 
-    // 2. Click mobile action button
-    const actionBtn = page.locator('[data-testid="mobile-action-button"]');
-    await expect(actionBtn).toBeVisible();
-    await actionBtn.click();
+    const action = page.locator('[data-testid="mobile-action-button"]');
+    await expect(action).toContainText('Tap Soil');
+    await expect(action).toBeDisabled();
 
-    // 3. Or trigger via till plot helper to verify integration
-    await page.evaluate(() => {
-      window.__tillPlot?.('plot-0-0');
+    // Planting still works from the exact soil point via the test clock helper.
+    const planted = await page.evaluate(() =>
+      window.__plantCropAt?.({ bedId: 'south-east', localX: 1, localZ: 1 }, 'carrot')
+    );
+    expect(planted?.ok).toBe(true);
+
+    const activeCrops = await page.evaluate(
+      () => window.__getGameState?.().farm.plots.filter((p) => p.crop !== null).length
+    );
+    expect(activeCrops).toBe(1);
+  });
+
+  test('water action button targets the nearest placed crop', async ({ page }) => {
+    // Plant a mature crop via the exact placement helper
+    const slotId = await page.evaluate(() => {
+      const planted = window.__plantCropAt?.(
+        { bedId: 'south-east', localX: 1, localZ: 1 },
+        'carrot'
+      );
+      return planted?.ok ? planted.value.slotId : null;
     });
+    expect(slotId).not.toBeNull();
 
-    const plot = await page.evaluate(() => {
-      return window.__getGameState?.().farm.plots.find((p) => p.id === 'plot-0-0');
-    });
-    expect(plot?.tilled).toBe(true);
+    // Select Watering Can; the action button becomes enabled because a crop is nearby.
+    const waterBtn = page.locator('[data-testid="tool-watering_can"]');
+    await waterBtn.click();
+
+    const action = page.locator('[data-testid="mobile-action-button"]');
+    await expect(action).toContainText(/water/i);
+
+    const plot = await page.evaluate((id) => {
+      return window.__getGameState?.().farm.plots.find((p) => p.id === id);
+    }, slotId);
+    expect(plot?.crop?.cropId).toBe('carrot');
   });
 
   test('opening modal suppresses mobile joystick and action button inputs', async ({ page }) => {

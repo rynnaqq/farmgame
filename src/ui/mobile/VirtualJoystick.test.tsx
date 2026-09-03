@@ -339,14 +339,8 @@ describe('Task 9: Mobile Virtual Joystick & Touch Controls', () => {
       expect(actionButton).toHaveClass('min-w-[56px]', 'min-h-[56px]');
     });
 
-    it('displays contextual label and icon for selected tool (trowel -> Till, watering_can -> Water, seed_bag -> Plant, scythe -> Harvest)', () => {
-      const { rerender } = render(<MobileActionButton selectedTool="trowel" hasTarget={true} />);
-      expect(screen.getByTestId('mobile-action-button')).toHaveAttribute(
-        'aria-label',
-        expect.stringMatching(/till/i)
-      );
-
-      rerender(<MobileActionButton selectedTool="watering_can" hasTarget={true} />);
+    it('displays contextual label per tool (watering_can -> Water, seed_bag -> Tap Soil, scythe -> Harvest)', () => {
+      const { rerender } = render(<MobileActionButton selectedTool="watering_can" hasTarget={true} />);
       expect(screen.getByTestId('mobile-action-button')).toHaveAttribute(
         'aria-label',
         expect.stringMatching(/water/i)
@@ -355,8 +349,9 @@ describe('Task 9: Mobile Virtual Joystick & Touch Controls', () => {
       rerender(<MobileActionButton selectedTool="seed_bag" hasTarget={true} />);
       expect(screen.getByTestId('mobile-action-button')).toHaveAttribute(
         'aria-label',
-        expect.stringMatching(/plant/i)
+        expect.stringMatching(/tap soil/i)
       );
+      expect(screen.getByTestId('mobile-action-button')).toBeDisabled();
 
       rerender(<MobileActionButton selectedTool="scythe" hasTarget={true} />);
       expect(screen.getByTestId('mobile-action-button')).toHaveAttribute(
@@ -383,7 +378,7 @@ describe('Task 9: Mobile Virtual Joystick & Touch Controls', () => {
       });
 
       const onAction = vi.fn();
-      render(<MobileActionButton onAction={onAction} hasTarget={true} />);
+      render(<MobileActionButton onAction={onAction} selectedTool="hand" hasTarget={true} />);
       const button = screen.getByTestId('mobile-action-button');
 
       fireEvent.click(button);
@@ -401,7 +396,7 @@ describe('Task 9: Mobile Virtual Joystick & Touch Controls', () => {
         writable: true,
       });
 
-      render(<MobileActionButton hasTarget={true} />);
+      render(<MobileActionButton selectedTool="hand" hasTarget={true} />);
       const button = screen.getByTestId('mobile-action-button');
 
       fireEvent.click(button);
