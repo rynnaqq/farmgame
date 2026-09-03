@@ -23,7 +23,6 @@ import {
   PET_TELEPORT_DISTANCE,
 } from './petSteeringMath';
 import { findDogHarvestTarget, tickDogAutoHarvest } from './petSystem';
-import { getPlotPosition } from '../world/gridCoordinates';
 import type { PlotId } from '../../state/storeTypes';
 
 export interface PetRendererProps {
@@ -123,29 +122,17 @@ export const PetRenderer: React.FC<PetRendererProps> = ({ forcePetType, forcePla
 
       // 1.2 Dog Auto-Harvest Steering Behavior
       if (equippedPetType === 'dog') {
-        const targetPlotId = findDogHarvestTarget(
-          petPosRef.current,
-          store.farm.plots,
-          store.farm.gridSize
-        );
+        const target = findDogHarvestTarget(petPosRef.current, store.farm.plots);
 
-        if (targetPlotId) {
-          activeHarvestTargetRef.current = targetPlotId;
-          const targetPlot = store.farm.plots[targetPlotId];
-          if (targetPlot) {
-            const plotWorldPos = getPlotPosition(
-              targetPlot.row,
-              targetPlot.col,
-              store.farm.gridSize
-            );
-            targetPos = [plotWorldPos[0], playerPos[1], plotWorldPos[2]];
-            isAutoHarvesting = true;
+        if (target) {
+          activeHarvestTargetRef.current = target.plotId;
+          targetPos = [target.worldPosition[0], playerPos[1], target.worldPosition[2]];
+          isAutoHarvesting = true;
 
-            // If close enough to harvest plot, trigger atomic harvest tick
-            const distToPlot = distance2D(petPosRef.current, targetPos);
-            if (distToPlot < 0.6) {
-              tickDogAutoHarvest(petPosRef.current, nowMs, lastHarvestTimeRef);
-            }
+          // If close enough to harvest plot, trigger atomic harvest tick
+          const distToPlot = distance2D(petPosRef.current, targetPos);
+          if (distToPlot < 0.6) {
+            tickDogAutoHarvest(petPosRef.current, nowMs, lastHarvestTimeRef);
           }
         } else {
           activeHarvestTargetRef.current = null;

@@ -22,19 +22,21 @@ import { simulateOfflineProgression } from '../persistence/offlineSimulation';
 import { useGameStore } from '../state/gameStore';
 import { useUiStore } from '../state/uiStore';
 import { AUTOSAVE_INTERVAL_MS } from '../game/core/constants';
-import { executeToolAction } from '../game/farming/farmingCommands';
+import { executePlantAction, executeCropAction } from '../game/farming/farmingCommands';
 import { installTestClock } from '../test/testClock';
 import { AuthModal } from '../features/auth/AuthModal';
 import { useAuthStore } from '../features/auth/authStore';
 import { useRoomSession } from '../game/multiplayer/useRoomSession';
 import { useNetStore } from '../game/multiplayer/netStore';
 import { getRoomConnection } from '../game/multiplayer/RoomConnection';
-import type { PlotId } from '../state/storeTypes';
+import type { CommandResult, PlotId } from '../state/storeTypes';
+import type { CropPlacement } from '../game/world/farmLayout';
 
 export interface AppProps {
   children?: React.ReactNode;
   forceWebGLSupported?: boolean;
-  onPlotClick?: (plotId: PlotId) => void;
+  onPlantAt?: (placement: CropPlacement) => void;
+  onCropInteract?: (plotId: PlotId) => void;
   onPlayerFall?: () => void;
   inputManager?: InputManager;
 }
@@ -47,7 +49,8 @@ export interface AppProps {
 export const App: React.FC<AppProps> = ({
   children,
   forceWebGLSupported,
-  onPlotClick,
+  onPlantAt,
+  onCropInteract,
   onPlayerFall,
   inputManager,
 }) => {
@@ -88,8 +91,6 @@ export const App: React.FC<AppProps> = ({
           if (!isMounted) return;
 
           const { updatedEnvelope, summary } = simulateOfflineProgression(envelope, Date.now());
-          // Ensure all farm land is unlocked (8x8) immediately per user overhaul
-          updatedEnvelope.farm.gridSize = 8;
           useGameStore.getState().loadSaveEnvelope(updatedEnvelope);
           await saveService.saveImmediate(updatedEnvelope);
 
@@ -119,39 +120,50 @@ export const App: React.FC<AppProps> = ({
     }
   }, [activeInputManager, isAuthenticated]);
 
-  const handlePlotClick = React.useCallback(
-    (plotId: PlotId) => {
-      if (onPlotClick) {
-        onPlotClick(plotId);
+  const reportCommand = React.useCallback((result: CommandResult<unknown>) => {
+    if (result.ok) {
+      if (useNetStore.getState().roomId) {
+        getRoomConnection().playToolAnimation();
+      }
+      return;
+    }
+    useUiStore.getState().showToast(result.message, 'warning', 2000);
+  }, []);
+
+  const handlePlantAt = React.useCallback(
+    (placement: CropPlacement) => {
+      if (onPlantAt) {
+        onPlantAt(placement);
         return;
       }
-      const uiState = useUiStore.getState();
-      const gameState = useGameStore.getState();
-      const result = executeToolAction(
-        plotId,
-        uiState.selectedTool,
-        uiState.selectedSeed,
-        undefined, // User requested removal of "move closer to the plot" constraint
-        {
-          isGoldenCan: gameState.farm.goldenWateringCanOwned,
-          weather: gameState.weather.current,
-          nowMs: Date.now(),
-        }
-      );
+      const ui = useUiStore.getState();
+      const result = executePlantAction(placement, ui.selectedSeed, { nowMs: Date.now() });
+      reportCommand(result);
+      if (result.ok) audioManager.playSfx('plant');
+    },
+    [onPlantAt, reportCommand]
+  );
+
+  const handleCropInteract = React.useCallback(
+    (plotId: PlotId) => {
+      if (onCropInteract) {
+        onCropInteract(plotId);
+        return;
+      }
+      const ui = useUiStore.getState();
+      const game = useGameStore.getState();
+      const result = executeCropAction(plotId, ui.selectedTool, {
+        isGoldenCan: game.farm.goldenWateringCanOwned,
+        weather: game.weather.current,
+        nowMs: Date.now(),
+      });
+      reportCommand(result);
       if (result.ok) {
-        if (useNetStore.getState().roomId) {
-          getRoomConnection().playToolAnimation();
-        }
-        if (uiState.selectedTool === 'trowel') audioManager.playSfx('till');
-        else if (uiState.selectedTool === 'watering_can') audioManager.playSfx('water');
-        else if (uiState.selectedTool === 'seed_bag') audioManager.playSfx('plant');
-        else if (uiState.selectedTool === 'hand' || uiState.selectedTool === 'scythe')
-          audioManager.playSfx('harvest');
-      } else if (result.message && !result.message.toLowerCase().includes('closer')) {
-        uiState.showToast(result.message, 'warning', 2000);
+        if (ui.selectedTool === 'watering_can') audioManager.playSfx('water');
+        else audioManager.playSfx('harvest');
       }
     },
-    [onPlotClick]
+    [onCropInteract, reportCommand]
   );
 
   return (
@@ -169,7 +181,8 @@ export const App: React.FC<AppProps> = ({
               {/* 3D WebGL Canvas Layer */}
               <GameCanvas>
                 <GameRuntime
-                  onPlotClick={handlePlotClick}
+                  onPlantAt={handlePlantAt}
+                  onCropInteract={handleCropInteract}
                   onPlayerFall={onPlayerFall}
                   inputManager={activeInputManager}
                 >
@@ -184,7 +197,7 @@ export const App: React.FC<AppProps> = ({
                 data-testid="ui-overlay-container"
               >
                 <HUD />
-                <MobileHUD inputManager={activeInputManager} onPlotInteract={handlePlotClick} />
+                <MobileHUD inputManager={activeInputManager} onCropInteract={handleCropInteract} />
                 <Toolbelt inputManager={activeInputManager} />
                 <ShopModal />
                 <InventoryPanel />

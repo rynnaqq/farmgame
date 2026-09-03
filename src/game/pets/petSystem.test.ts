@@ -22,7 +22,8 @@ import {
 import type { EggData, PetData, PlotData, PlotId } from '../../state/storeTypes';
 import { buyEgg } from '../economy/economyCommands';
 import { rollEggOutcome } from '../economy/economyDefinitions';
-import { getPlotPosition } from '../world/gridCoordinates';
+import { placementToWorldPoint, type CropPlacement } from '../world/farmLayout';
+import { DEFAULT_TEST_PLACEMENT } from '../../test/farmFixtures';
 
 describe('Pet & Egg Domain Logic', () => {
   beforeEach(() => {
@@ -439,7 +440,7 @@ describe('Pet & Egg Domain Logic', () => {
     const setupPlot = (
       plotId: PlotId,
       options: {
-        tilled?: boolean;
+        placement?: CropPlacement;
         cropId?: 'carrot' | 'tomato' | 'pumpkin';
         progress?: number;
         mutation?: 'none' | 'gold';
@@ -450,91 +451,77 @@ describe('Pet & Egg Domain Logic', () => {
 
       const plot: PlotData = {
         ...current,
-        tilled: options.tilled ?? true,
         crop: options.cropId
           ? {
               cropId: options.cropId,
               plantedAtUtcMs: 1000,
               growthProgressSec: options.progress ?? 45,
               mutation: options.mutation ?? 'none',
+              placement: options.placement ?? DEFAULT_TEST_PLACEMENT,
             }
           : null,
       };
       useGameStore.getState().setPlot(plot);
     };
 
-    it('finds mature plot within 1.75 units and ignores plots farther away', () => {
-      const gridSize = 4;
-      // Plot (1, 1) position
-      const plot11Pos = getPlotPosition(1, 1, gridSize);
-      // Mature carrot on plot-1-1 (Carrot needs 45s)
-      setupPlot('plot-1-1', { cropId: 'carrot', progress: 45 });
+    const PLACEMENT_11: CropPlacement = { bedId: 'north-west', localX: 0, localZ: 0 };
+    const PLACEMENT_12: CropPlacement = { bedId: 'north-west', localX: 1.2, localZ: 0 };
+    const PLACEMENT_55: CropPlacement = { bedId: 'south-east', localX: 1, localZ: 1 };
 
-      // Dog position 1.0 unit away from plot-1-1
-      const dogPosNear: [number, number, number] = [plot11Pos[0] + 1.0, plot11Pos[1], plot11Pos[2]];
+    const worldOf = (p: CropPlacement): [number, number, number] => {
+      const w = placementToWorldPoint(p);
+      return [w.x, w.y, w.z];
+    };
+
+    it('sends the dog toward the mature crop placement and ignores distance beyond 1.75', () => {
+      setupPlot('plot-1-1', { cropId: 'carrot', progress: 45, placement: PLACEMENT_11 });
+      const cropPos = worldOf(PLACEMENT_11);
+
       const targetNear = findDogHarvestTarget(
-        dogPosNear,
-        useGameStore.getState().farm.plots,
-        gridSize
+        [cropPos[0] + 1.0, cropPos[1], cropPos[2]],
+        useGameStore.getState().farm.plots
       );
-      expect(targetNear).toBe('plot-1-1');
+      expect(targetNear).not.toBeNull();
+      expect(targetNear?.plotId).toBe('plot-1-1');
+      expect(targetNear?.worldPosition).toEqual(cropPos);
 
-      // Dog position 2.5 units away from plot-1-1 (> 1.75 limit)
-      const dogPosFar: [number, number, number] = [plot11Pos[0] + 2.5, plot11Pos[1], plot11Pos[2]];
       const targetFar = findDogHarvestTarget(
-        dogPosFar,
-        useGameStore.getState().farm.plots,
-        gridSize
+        [cropPos[0] + 2.5, cropPos[1], cropPos[2]],
+        useGameStore.getState().farm.plots
       );
       expect(targetFar).toBeNull();
     });
 
-    it('ignores locked plots beyond current grid size', () => {
-      const gridSize = 4;
-      // Create a mature plot at (5, 5) which is locked on a 4x4 grid
-      const plot55Pos = getPlotPosition(5, 5, 8);
-      const plot: PlotData = {
-        id: 'plot-5-5',
-        row: 5,
-        col: 5,
-        tilled: true,
-        crop: {
-          cropId: 'carrot',
-          plantedAtUtcMs: 1000,
-          growthProgressSec: 45,
-          mutation: 'none',
-        },
-        hydratedUntilUtcMs: 0,
-      };
-      useGameStore.getState().setPlot(plot);
+    it('targets by placement even when row/col suggest another plot', () => {
+      // plot-5-5 (far identity) is physically close to the dog.
+      setupPlot('plot-5-5', { cropId: 'carrot', progress: 45, placement: PLACEMENT_11 });
+      const cropPos = worldOf(PLACEMENT_11);
 
-      // Place dog right on top of (5,5)
-      const target = findDogHarvestTarget(plot55Pos, useGameStore.getState().farm.plots, gridSize);
+      const target = findDogHarvestTarget(
+        [cropPos[0], cropPos[1], cropPos[2]],
+        useGameStore.getState().farm.plots
+      );
+      expect(target?.plotId).toBe('plot-5-5');
+      expect(target?.worldPosition).toEqual(cropPos);
+    });
+
+    it('ignores empty and immature crops within range', () => {
+      setupPlot('plot-1-1', { cropId: 'carrot', progress: 20, placement: PLACEMENT_11 });
+      const cropPos = worldOf(PLACEMENT_11);
+
+      const target = findDogHarvestTarget(cropPos, useGameStore.getState().farm.plots);
       expect(target).toBeNull();
     });
 
-    it('ignores immature crops within range', () => {
-      const gridSize = 4;
-      const plot11Pos = getPlotPosition(1, 1, gridSize);
-      // Immature carrot (only 20s of 45s)
-      setupPlot('plot-1-1', { cropId: 'carrot', progress: 20 });
+    it('selects the closest mature crop deterministically', () => {
+      setupPlot('plot-1-1', { cropId: 'carrot', progress: 45, placement: PLACEMENT_11 });
+      setupPlot('plot-1-2', { cropId: 'carrot', progress: 45, placement: PLACEMENT_12 });
+      const nearPos = worldOf(PLACEMENT_11);
+      // 0.2 from plot-1-1 and ~1.0 from plot-1-2
+      const dogPos: [number, number, number] = [nearPos[0] + 0.2, nearPos[1], nearPos[2]];
 
-      const dogPos: [number, number, number] = [plot11Pos[0], plot11Pos[1], plot11Pos[2]];
-      const target = findDogHarvestTarget(dogPos, useGameStore.getState().farm.plots, gridSize);
-      expect(target).toBeNull();
-    });
-
-    it('selects closest mature plot when multiple are in range', () => {
-      const gridSize = 4;
-      setupPlot('plot-1-1', { cropId: 'carrot', progress: 45 });
-      setupPlot('plot-1-2', { cropId: 'carrot', progress: 45 });
-
-      const plot11Pos = getPlotPosition(1, 1, gridSize);
-      // Dog placed 0.2 units from plot-1-1 and 1.35 units from plot-1-2 (both < 1.75)
-      const dogPos: [number, number, number] = [plot11Pos[0] + 0.2, plot11Pos[1], plot11Pos[2]];
-
-      const target = findDogHarvestTarget(dogPos, useGameStore.getState().farm.plots, gridSize);
-      expect(target).toBe('plot-1-1');
+      const target = findDogHarvestTarget(dogPos, useGameStore.getState().farm.plots);
+      expect(target?.plotId).toBe('plot-1-1');
     });
 
     it('ticks dog auto-harvest: rate limited to max 1 harvest per second', () => {
@@ -542,33 +529,25 @@ describe('Pet & Egg Domain Logic', () => {
       useGameStore.getState().addPet(dogPet);
       useGameStore.getState().setEquippedPet('dog-pet-1');
 
-      setupPlot('plot-1-1', { cropId: 'carrot', progress: 45 });
-      setupPlot('plot-1-2', { cropId: 'carrot', progress: 45 });
+      setupPlot('plot-1-1', { cropId: 'carrot', progress: 45, placement: PLACEMENT_11 });
+      setupPlot('plot-1-2', { cropId: 'carrot', progress: 45, placement: PLACEMENT_12 });
 
-      const plot11Pos = getPlotPosition(1, 1, 4);
-      const dogPos: [number, number, number] = [plot11Pos[0], plot11Pos[1], plot11Pos[2]];
-
+      const dogPos = worldOf(PLACEMENT_11);
       const lastHarvestTimeRef = { current: 0 };
       const nowMs = 10000;
 
-      // First harvest tick at 10,000ms
       const tick1 = tickDogAutoHarvest(dogPos, nowMs, lastHarvestTimeRef);
       expect(tick1).not.toBeNull();
       expect(tick1?.ok).toBe(true);
       expect(lastHarvestTimeRef.current).toBe(nowMs);
-
-      // Verify plot-1-1 harvested into produce
       expect(useGameStore.getState().farm.plots['plot-1-1'].crop).toBeNull();
       expect(useGameStore.getState().inventory.produce.length).toBe(1);
 
-      // Second harvest tick 500ms later (at 10,500ms) -> rate-limited, returns null
       const tick2 = tickDogAutoHarvest(dogPos, nowMs + 500, lastHarvestTimeRef);
       expect(tick2).toBeNull();
       expect(useGameStore.getState().farm.plots['plot-1-2'].crop).not.toBeNull();
 
-      // Third harvest tick 1000ms later (at 11,000ms) -> succeeds
-      const plot12Pos = getPlotPosition(1, 2, 4);
-      const dogPos2: [number, number, number] = [plot12Pos[0], plot12Pos[1], plot12Pos[2]];
+      const dogPos2 = worldOf(PLACEMENT_12);
       const tick3 = tickDogAutoHarvest(dogPos2, nowMs + 1000, lastHarvestTimeRef);
       expect(tick3).not.toBeNull();
       expect(tick3?.ok).toBe(true);
@@ -581,9 +560,8 @@ describe('Pet & Egg Domain Logic', () => {
       useGameStore.getState().addPet(beePet);
       useGameStore.getState().setEquippedPet('bee-pet-1');
 
-      setupPlot('plot-1-1', { cropId: 'carrot', progress: 45 });
-      const plot11Pos = getPlotPosition(1, 1, 4);
-      const dogPos: [number, number, number] = [plot11Pos[0], plot11Pos[1], plot11Pos[2]];
+      setupPlot('plot-1-1', { cropId: 'carrot', progress: 45, placement: PLACEMENT_11 });
+      const dogPos = worldOf(PLACEMENT_11);
 
       const lastHarvestTimeRef = { current: 0 };
       const tick = tickDogAutoHarvest(dogPos, 5000, lastHarvestTimeRef);
@@ -597,11 +575,9 @@ describe('Pet & Egg Domain Logic', () => {
       useGameStore.getState().addPet(dogPet);
       useGameStore.getState().setEquippedPet('dog-pet-1');
 
-      setupPlot('plot-1-1', { cropId: 'carrot', progress: 45 });
-      const plot11Pos = getPlotPosition(1, 1, 4);
-      const dogPos: [number, number, number] = [plot11Pos[0], plot11Pos[1], plot11Pos[2]];
+      setupPlot('plot-1-1', { cropId: 'carrot', progress: 45, placement: PLACEMENT_11 });
+      const dogPos = worldOf(PLACEMENT_11);
 
-      // Clear plot crop right before dog ticks (simulating player harvesting at the same moment)
       useGameStore.getState().setPlot({
         ...useGameStore.getState().farm.plots['plot-1-1'],
         crop: null,
@@ -612,6 +588,12 @@ describe('Pet & Egg Domain Logic', () => {
 
       expect(tick).toBeNull();
       expect(lastHarvestTimeRef.current).toBe(0);
+    });
+
+    it('dog placement mapping contract: PLACEMENT_55 sits inside south-east bed', () => {
+      const w = placementToWorldPoint(PLACEMENT_55);
+      expect(w.x).toBeCloseTo(4.8, 5);
+      expect(w.z).toBeCloseTo(4.5, 5);
     });
   });
 });

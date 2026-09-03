@@ -16,11 +16,13 @@ export interface MobileActionButtonProps {
  * Large contextual touch action button for mobile farming and interactions:
  * - Minimum 56x56 CSS pixel tap target
  * - Dynamic icon and label based on active tool or merchant proximity
+ * - Seed Bag shows a passive "Tap Soil" hint: planting happens by tapping the soil,
+ *   never via this button.
  * - Haptic feedback (15ms pulse) when enabled in settings
  * - Located in bottom-right safe area
  */
 export const MobileActionButton: React.FC<MobileActionButtonProps> = ({
-  selectedTool = 'trowel',
+  selectedTool = 'seed_bag',
   hasTarget = false,
   nearMerchant = false,
   onAction,
@@ -60,7 +62,7 @@ export const MobileActionButton: React.FC<MobileActionButtonProps> = ({
   let actionLabel = 'Action';
   let badgeText = '';
   let iconSvg: React.ReactNode = null;
-  const isActionReady = hasTarget || nearMerchant;
+  const isActionReady = (hasTarget || nearMerchant) && selectedTool !== 'seed_bag';
 
   if (nearMerchant) {
     actionLabel = 'Merchant Shop';
@@ -81,27 +83,8 @@ export const MobileActionButton: React.FC<MobileActionButtonProps> = ({
     );
   } else {
     switch (selectedTool) {
-      case 'trowel':
-        actionLabel = 'Till Soil';
-        badgeText = 'Till';
-        iconSvg = (
-          <svg
-            className="w-7 h-7 text-amber-200"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M14 2l6 6-9 9H5v-6l9-9z" />
-            <path d="M3 21l3-3" />
-          </svg>
-        );
-        break;
-
       case 'watering_can':
-        actionLabel = 'Water Plot';
+        actionLabel = 'Water Crop';
         badgeText = 'Water';
         iconSvg = (
           <svg
@@ -119,8 +102,8 @@ export const MobileActionButton: React.FC<MobileActionButtonProps> = ({
         break;
 
       case 'seed_bag':
-        actionLabel = 'Plant Seeds';
-        badgeText = 'Plant';
+        actionLabel = 'Tap Soil';
+        badgeText = 'Tap Soil';
         iconSvg = (
           <svg
             className="w-7 h-7 text-emerald-300"
@@ -159,8 +142,8 @@ export const MobileActionButton: React.FC<MobileActionButtonProps> = ({
 
       case 'hand':
       default:
-        actionLabel = 'Interact';
-        badgeText = 'Use';
+        actionLabel = 'Harvest Crop';
+        badgeText = 'Harvest';
         iconSvg = (
           <svg
             className="w-7 h-7 text-amber-100"
@@ -181,7 +164,8 @@ export const MobileActionButton: React.FC<MobileActionButtonProps> = ({
     }
   }
 
-  const isInteractive = !disabled && activeModal === null;
+  const isPassiveHint = selectedTool === 'seed_bag' && !nearMerchant;
+  const isInteractive = !disabled && activeModal === null && !isPassiveHint;
 
   return (
     <button

@@ -15,7 +15,7 @@ import {
   DOG_AUTO_HARVEST_RANGE,
   DOG_AUTO_HARVEST_INTERVAL_MS,
 } from './petDefinitions';
-import { getPlotPosition, getPlotDistance, isPlotUnlocked } from '../world/gridCoordinates';
+import { placementToWorldPoint } from '../world/farmLayout';
 import { isPlotHarvestable } from '../farming/plotMachine';
 import { harvestCrop } from '../farming/farmingCommands';
 import { audioManager } from '../audio/AudioManager';
@@ -202,37 +202,50 @@ export function setIncubatingEgg(eggId: string | null): CommandResult<undefined>
 }
 
 /**
- * Finds the closest unlocked mature harvestable crop within the Dog's 1.75 unit harvest radius.
+ * Finds the closest mature harvestable crop within the Dog's 1.75 unit radius,
+ * evaluated against the crop's actual saved placement (never row/col).
  */
+export interface DogHarvestTarget {
+  plotId: PlotId;
+  worldPosition: [number, number, number];
+}
+
 export function findDogHarvestTarget(
   dogPos: [number, number, number],
-  plots: Record<PlotId, PlotData>,
-  gridSize: 4 | 6 | 8
-): PlotId | null {
-  let closestPlotId: PlotId | null = null;
+  plots: Record<PlotId, PlotData>
+): DogHarvestTarget | null {
+  let closest: DogHarvestTarget | null = null;
   let closestDistance = Number.POSITIVE_INFINITY;
+  let closestRow = Number.POSITIVE_INFINITY;
+  let closestCol = Number.POSITIVE_INFINITY;
 
   for (const plot of Object.values(plots)) {
-    if (!isPlotUnlocked(plot.row, plot.col, gridSize)) {
-      continue;
-    }
-
     if (!plot.crop || !isPlotHarvestable(plot)) {
       continue;
     }
 
-    const plotPos = getPlotPosition(plot.row, plot.col, gridSize);
-    const distance = getPlotDistance(dogPos, plotPos);
+    const point = placementToWorldPoint(plot.crop.placement);
+    const distance = Math.hypot(point.x - dogPos[0], point.z - dogPos[2]);
 
     if (distance <= DOG_AUTO_HARVEST_RANGE) {
-      if (distance < closestDistance) {
+      // Deterministic tie-break: distance first, then slot identity.
+      if (
+        distance < closestDistance ||
+        (distance === closestDistance &&
+          (plot.row < closestRow || (plot.row === closestRow && plot.col < closestCol)))
+      ) {
         closestDistance = distance;
-        closestPlotId = plot.id;
+        closestRow = plot.row;
+        closestCol = plot.col;
+        closest = {
+          plotId: plot.id,
+          worldPosition: [point.x, point.y, point.z],
+        };
       }
     }
   }
 
-  return closestPlotId;
+  return closest;
 }
 
 /**
@@ -257,12 +270,12 @@ export function tickDogAutoHarvest(
     return null;
   }
 
-  const targetPlotId = findDogHarvestTarget(dogPos, store.farm.plots, store.farm.gridSize);
-  if (!targetPlotId) {
+  const target = findDogHarvestTarget(dogPos, store.farm.plots);
+  if (!target) {
     return null;
   }
 
-  const result = harvestCrop(targetPlotId);
+  const result = harvestCrop(target.plotId);
   if (result.ok) {
     lastHarvestTimeRef.current = nowMs;
     return result;

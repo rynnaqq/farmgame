@@ -3,10 +3,9 @@ import {
   MOBILE_ACTION_CONE_DEG,
   MERCHANT_INTERACTION_RANGE,
   MERCHANT_POSITION,
-  MAX_GRID_SIZE,
-  STARTING_GRID_SIZE,
 } from '../../game/core/constants';
-import { getPlotPosition, isPlotUnlocked } from '../../game/world/gridCoordinates';
+import { placementToWorldPoint } from '../../game/world/farmLayout';
+import { isPlotHarvestable } from '../../game/farming/plotMachine';
 import type { PlotData, ToolType, PlotId } from '../../state/storeTypes';
 
 export interface TargetPlotResult {
@@ -76,37 +75,31 @@ export function isTargetInCone(
 }
 
 /**
- * Checks whether a plot is valid/actionable for a given tool.
+ * Checks whether a planted crop is valid/actionable for a given tool.
+ * Targets are crops only: seed_bag planting happens by tapping soil, not via this finder.
  */
-export function isPlotValidForTool(
+export function isCropValidForTool(
   plot: PlotData,
   tool: ToolType,
   nowUtcMs: number = Date.now()
 ): boolean {
+  if (!plot.crop) return false;
+
   switch (tool) {
-    case 'trowel':
-      // Untilled soil can be tilled
-      return !plot.tilled;
-
     case 'watering_can':
-      // Tilled soil that is not hydrated (or hydration expired) can be watered
-      return plot.tilled && plot.hydratedUntilUtcMs <= nowUtcMs;
-
-    case 'seed_bag':
-      // Tilled soil without a crop can be planted
-      return plot.tilled && plot.crop === null;
+      return plot.hydratedUntilUtcMs <= nowUtcMs;
 
     case 'scythe':
-      // Plot with mature crop (growthProgressSec >= 1.0) can be harvested
-      return plot.crop !== null && plot.crop.growthProgressSec >= 1.0;
-
     case 'hand':
+      return isPlotHarvestable(plot);
+
+    case 'seed_bag':
     default:
-      return true;
+      return false;
   }
 }
 
-export interface FindTargetPlotOptions {
+export interface FindTargetCropOptions {
   maxDistance?: number;
   maxConeDeg?: number;
   nowUtcMs?: number;
@@ -114,68 +107,48 @@ export interface FindTargetPlotOptions {
 }
 
 /**
- * Finds the nearest valid unlocked plot within player reach and forward cone.
+ * Finds the nearest valid crop (by saved placement) within player reach and forward cone.
  */
-export function findNearestTargetPlot(
+export function findNearestTargetCrop(
   playerPosition: [number, number, number] | { x: number; z: number },
   playerYawRad: number,
   plots: Record<PlotId, PlotData> | PlotData[],
-  currentGridSize: number = STARTING_GRID_SIZE,
-  tool?: ToolType,
-  options?: FindTargetPlotOptions
+  tool: ToolType,
+  options: FindTargetCropOptions = {}
 ): TargetPlotResult | null {
   const px = Array.isArray(playerPosition) ? playerPosition[0] : playerPosition.x;
   const pz = Array.isArray(playerPosition) ? playerPosition[2] : playerPosition.z;
 
-  const maxDist = options?.maxDistance ?? MOBILE_ACTION_REACH;
-  const maxCone = options?.maxConeDeg ?? MOBILE_ACTION_CONE_DEG;
-  const now = options?.nowUtcMs ?? Date.now();
-  const filterByTool = options?.filterByTool ?? false;
+  const candidates = Array.isArray(plots) ? plots : Object.values(plots);
+  const nowUtcMs = options.nowUtcMs ?? Date.now();
+  const filterByTool = options.filterByTool ?? false;
 
-  const plotsList = Array.isArray(plots) ? plots : Object.values(plots);
-
-  let closestCandidate: TargetPlotResult | null = null;
-  let minDistance = Infinity;
-
-  for (const plot of plotsList) {
-    // Only check unlocked plots within current grid size
-    if (!isPlotUnlocked(plot.row, plot.col, currentGridSize)) {
-      continue;
-    }
-
-    if (filterByTool && tool && !isPlotValidForTool(plot, tool, now)) {
-      continue;
-    }
-
-    const worldPos = getPlotPosition(plot.row, plot.col, MAX_GRID_SIZE);
-    const plotX = worldPos[0];
-    const plotZ = worldPos[2];
-
-    const dx = plotX - px;
-    const dz = plotZ - pz;
-    const dist = Math.hypot(dx, dz);
-
-    if (dist > maxDist) {
-      continue;
-    }
-
-    const angleDeg = calculateAngleToTarget(px, pz, playerYawRad, plotX, plotZ);
-    if (angleDeg > maxCone / 2) {
-      continue;
-    }
-
-    if (dist < minDistance) {
-      minDistance = dist;
-      closestCandidate = {
-        plot,
-        distance: dist,
-        angleDeg,
-        worldPosition: worldPos,
-      };
-    }
-  }
-
-  return closestCandidate;
+  return (
+    candidates
+      .filter(
+        (plot) => plot.crop !== null && (!filterByTool || isCropValidForTool(plot, tool, nowUtcMs))
+      )
+      .map((plot) => {
+        const point = placementToWorldPoint(plot.crop!.placement);
+        const distance = Math.hypot(point.x - px, point.z - pz);
+        const angleDeg = calculateAngleToTarget(px, pz, playerYawRad, point.x, point.z);
+        return {
+          plot,
+          distance,
+          angleDeg,
+          worldPosition: [point.x, point.y, point.z] as [number, number, number],
+        };
+      })
+      .filter(
+        (target) =>
+          target.distance <= (options.maxDistance ?? MOBILE_ACTION_REACH) &&
+          target.angleDeg <= (options.maxConeDeg ?? MOBILE_ACTION_CONE_DEG) / 2
+      )
+      .sort(
+        (a, b) =>
+          a.distance - b.distance || a.plot.row - b.plot.row || a.plot.col - b.plot.col
+      )[0] ?? null
+  );
 }
 
 /**

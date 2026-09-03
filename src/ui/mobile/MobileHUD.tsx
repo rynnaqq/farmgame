@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { VirtualJoystick } from './VirtualJoystick';
 import { MobileActionButton } from './MobileActionButton';
-import { findNearestTargetPlot, isMerchantInRange } from './targetPlotFinder';
+import { findNearestTargetCrop, isMerchantInRange } from './targetPlotFinder';
 import { useSettingsStore } from '../../state/settingsStore';
 import { useGameStore } from '../../state/gameStore';
 import { useUiStore } from '../../state/uiStore';
 import { playerTransform } from '../../game/player/playerTransformStore';
 import type { InputManager } from '../../game/input/InputManager';
-import type { PlotId, ToolType } from '../../state/storeTypes';
+import type { PlotId } from '../../state/storeTypes';
 
 export interface MobileHUDProps {
   inputManager?: InputManager;
-  onPlotInteract?: (plotId: PlotId, tool: ToolType) => void;
+  onCropInteract?: (plotId: PlotId) => void;
   forceTouch?: boolean;
   className?: string;
 }
@@ -39,11 +39,11 @@ function checkIsTouchDevice(): boolean {
  * - Floating VirtualJoystick in bottom-left safe area
  * - Large Contextual Action Button in bottom-right safe area
  * - Non-blocking overlay container with pointer-events-none
- * - Continuous target plot & merchant proximity calculation
+ * - Continuous nearest-crop & merchant proximity calculation by saved placement
  */
 export const MobileHUD: React.FC<MobileHUDProps> = ({
   inputManager,
-  onPlotInteract,
+  onCropInteract,
   forceTouch,
   className = '',
 }) => {
@@ -53,7 +53,6 @@ export const MobileHUD: React.FC<MobileHUDProps> = ({
 
   const playerPosition = useGameStore((state) => state.player.position);
   const farmPlots = useGameStore((state) => state.farm.plots);
-  const gridSize = useGameStore((state) => state.farm.gridSize);
 
   const [isTouchEnvironment, setIsTouchEnvironment] = useState<boolean>(() => {
     return forceTouch !== undefined ? forceTouch : checkIsTouchDevice();
@@ -95,12 +94,16 @@ export const MobileHUD: React.FC<MobileHUDProps> = ({
     return () => clearInterval(timer);
   }, [characterYaw]);
 
-  // Calculate nearest target plot in player forward cone & reach using character yaw
-  const targetPlotResult = useMemo(() => {
-    return findNearestTargetPlot(playerPosition, characterYaw, farmPlots, gridSize, selectedTool, {
+  // Seeds tool has no action button target; planting happens by tapping soil.
+  const isSeedBag = selectedTool === 'seed_bag';
+
+  // Calculate nearest target crop in player forward cone & reach using character yaw
+  const targetCropResult = useMemo(() => {
+    if (isSeedBag) return null;
+    return findNearestTargetCrop(playerPosition, characterYaw, farmPlots, selectedTool, {
       filterByTool: false,
     });
-  }, [playerPosition, characterYaw, farmPlots, gridSize, selectedTool]);
+  }, [playerPosition, characterYaw, farmPlots, selectedTool, isSeedBag]);
 
   // Check merchant proximity
   const nearMerchant = useMemo(() => {
@@ -110,11 +113,11 @@ export const MobileHUD: React.FC<MobileHUDProps> = ({
   // Synchronize targeted plot ID with uiStore
   useEffect(() => {
     const currentTargeted = useUiStore.getState().targetedPlotId;
-    const nextTargeted = targetPlotResult?.plot.id ?? null;
+    const nextTargeted = targetCropResult?.plot.id ?? null;
     if (currentTargeted !== nextTargeted) {
       useUiStore.getState().setTargetedPlot(nextTargeted);
     }
-  }, [targetPlotResult]);
+  }, [targetCropResult]);
 
   const handleActionButton = useCallback(() => {
     if (nearMerchant) {
@@ -122,10 +125,10 @@ export const MobileHUD: React.FC<MobileHUDProps> = ({
       return;
     }
 
-    if (targetPlotResult) {
-      onPlotInteract?.(targetPlotResult.plot.id, selectedTool);
+    if (targetCropResult) {
+      onCropInteract?.(targetCropResult.plot.id);
     }
-  }, [nearMerchant, targetPlotResult, selectedTool, onPlotInteract]);
+  }, [nearMerchant, targetCropResult, onCropInteract]);
 
   if (!shouldRender) {
     return null;
@@ -156,7 +159,7 @@ export const MobileHUD: React.FC<MobileHUDProps> = ({
           {/* 1. Contextual Action Button */}
           <MobileActionButton
             selectedTool={selectedTool}
-            hasTarget={targetPlotResult !== null}
+            hasTarget={targetCropResult !== null}
             nearMerchant={nearMerchant}
             onAction={handleActionButton}
             disabled={isModalOpen}
