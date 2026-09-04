@@ -130,21 +130,21 @@ const FLOWERS: FlowerClusterItem[] = [
   { id: 'flower-5', x: -7.8, z: 6.8, color: '#FBBF24', minDensity: 0.5 },
   { id: 'flower-6', x: -6.8, z: 7.8, color: '#F87171', minDensity: 0.75 },
   { id: 'flower-7', x: 5.5, z: 6.5, color: '#A78BFA', minDensity: 0.6 },
-  { id: 'flower-8', x: 6.8, z: 7.2, color: '#34D399', minDensity: 0.85 },
+  { id: 'flower-8', x: 6.8, z: 7.9, color: '#34D399', minDensity: 0.85 },
   { id: 'flower-9', x: -4.0, z: 8.5, color: '#F87171', minDensity: 0.9 },
   { id: 'flower-10', x: 4.0, z: -8.5, color: '#FBBF24', minDensity: 0.9 },
 ];
 
 // Deterministic grass tufts
 const GRASS_TUFTS: GrassTuftItem[] = [
-  { id: 'grass-1', x: -7.0, z: -3.0, scale: 0.8, minDensity: 0.5 },
-  { id: 'grass-2', x: -7.2, z: 2.0, scale: 0.9, minDensity: 0.6 },
-  { id: 'grass-3', x: 7.0, z: -1.0, scale: 0.75, minDensity: 0.5 },
-  { id: 'grass-4', x: 7.2, z: 1.0, scale: 0.85, minDensity: 0.7 },
-  { id: 'grass-5', x: -3.0, z: -7.2, scale: 0.95, minDensity: 0.5 },
-  { id: 'grass-6', x: 3.0, z: -7.0, scale: 0.8, minDensity: 0.65 },
-  { id: 'grass-7', x: -3.0, z: 7.2, scale: 0.7, minDensity: 0.8 },
-  { id: 'grass-8', x: 3.0, z: 7.0, scale: 0.85, minDensity: 0.85 },
+  { id: 'grass-1', x: -8.8, z: -3.0, scale: 0.8, minDensity: 0.5 },
+  { id: 'grass-2', x: -9.0, z: 2.0, scale: 0.9, minDensity: 0.6 },
+  { id: 'grass-3', x: 8.8, z: -1.0, scale: 0.75, minDensity: 0.5 },
+  { id: 'grass-4', x: 9.0, z: 1.0, scale: 0.85, minDensity: 0.7 },
+  { id: 'grass-5', x: -3.0, z: -7.9, scale: 0.95, minDensity: 0.5 },
+  { id: 'grass-6', x: 3.0, z: -7.9, scale: 0.8, minDensity: 0.65 },
+  { id: 'grass-7', x: -3.0, z: 7.9, scale: 0.7, minDensity: 0.8 },
+  { id: 'grass-8', x: 3.0, z: 7.9, scale: 0.85, minDensity: 0.85 },
   { id: 'grass-9', x: -10.0, z: -5.0, scale: 1.0, minDensity: 0.9 },
   { id: 'grass-10', x: 10.0, z: 5.0, scale: 0.9, minDensity: 0.95 },
 ];

@@ -6,6 +6,7 @@ import { useGameStore } from '../../state/gameStore';
 export interface PlayerModelProps {
   rootRef?: React.RefObject<THREE.Group | null>;
   headRef?: React.RefObject<THREE.Group | null>;
+  torsoRef?: React.RefObject<THREE.Group | null>;
   leftArmRef?: React.RefObject<THREE.Group | null>;
   rightArmRef?: React.RefObject<THREE.Group | null>;
   leftLegRef?: React.RefObject<THREE.Group | null>;
@@ -33,6 +34,7 @@ export interface PlayerModelProps {
 export const PlayerModel: React.FC<PlayerModelProps> = ({
   rootRef,
   headRef,
+  torsoRef,
   leftArmRef,
   rightArmRef,
   leftLegRef,
@@ -63,7 +65,7 @@ export const PlayerModel: React.FC<PlayerModelProps> = ({
       {/* ========================================== */}
       {/* 1. Torso & Overalls                        */}
       {/* ========================================== */}
-      <group name="Torso">
+      <group ref={torsoRef} name="Torso">
         {/* Emerald Green Gardener Shirt */}
         <mesh position={[0, 0.08, 0]} castShadow receiveShadow>
           <boxGeometry args={[0.34, 0.32, 0.22]} />
@@ -217,19 +219,6 @@ export const PlayerModel: React.FC<PlayerModelProps> = ({
         </mesh>
 
         {/* Held Tool in Hand (Growden.io style) */}
-        {selectedTool === 'trowel' && (
-          <group position={[0, -0.28, 0.06]} rotation={[-0.3, 0, 0]}>
-            <mesh position={[0, -0.05, 0]} castShadow>
-              <cylinderGeometry args={[0.015, 0.015, 0.35, 6]} />
-              <meshStandardMaterial color="#78350F" roughness={0.8} flatShading />
-            </mesh>
-            <mesh position={[0, -0.24, 0]} castShadow>
-              <boxGeometry args={[0.09, 0.12, 0.015]} />
-              <meshStandardMaterial color="#94A3B8" roughness={0.4} metalness={0.8} flatShading />
-            </mesh>
-          </group>
-        )}
-
         {selectedTool === 'watering_can' && (
           <group position={[0, -0.26, 0.06]} rotation={[-0.2, 0, 0]}>
             <mesh castShadow>

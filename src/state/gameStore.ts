@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import {
   STARTING_COINS,
-  STARTING_GRID_SIZE,
   STARTING_SEEDS,
   PLAYER_SPAWN_POSITION,
   CURRENT_SCHEMA_VERSION,
@@ -23,29 +22,6 @@ import type {
   SaveEnvelope,
 } from './storeTypes';
 
-export function generateDefaultPlots(
-  gridSize: 4 | 6 | 8,
-  existingPlots: Record<PlotId, PlotData> = {}
-): Record<PlotId, PlotData> {
-  const plots: Record<PlotId, PlotData> = { ...existingPlots };
-  for (let r = 0; r < gridSize; r++) {
-    for (let c = 0; c < gridSize; c++) {
-      const id: PlotId = `plot-${r}-${c}`;
-      if (!plots[id]) {
-        plots[id] = {
-          id,
-          row: r,
-          col: c,
-          tilled: false,
-          crop: null,
-          hydratedUntilUtcMs: 0,
-        };
-      }
-    }
-  }
-  return plots;
-}
-
 export interface GameStoreState {
   player: PlayerState;
   farm: FarmState;
@@ -58,9 +34,10 @@ export interface GameStoreState {
 
   // Plot Actions
   setPlot: (plot: PlotData) => void;
+  addPlot: (x: number, z: number, crop: PlotData['crop'], hydratedUntilUtcMs?: number) => PlotData;
   updatePlots: (plots: PlotData[] | Record<PlotId, Partial<PlotData>>) => void;
   setPlotHydration: (plotId: PlotId, hydratedUntilUtcMs: number) => void;
-  setGridSize: (size: 4 | 6 | 8) => void;
+  removePlot: (plotId: PlotId) => void;
 
   // Economy Actions
   addCoins: (amount: number) => void;
@@ -108,8 +85,8 @@ function createInitialState(seed: number = 1) {
       totalDistance: 0,
     },
     farm: {
-      gridSize: STARTING_GRID_SIZE as 4 | 6 | 8,
-      plots: generateDefaultPlots(STARTING_GRID_SIZE as 4),
+      plots: {} as Record<PlotId, PlotData>,
+      nextPlotNumber: 1,
       goldenWateringCanOwned: false,
     },
     inventory: {
@@ -150,6 +127,33 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
       },
       isDirty: true,
     }));
+  },
+
+  addPlot: (x, z, crop, hydratedUntilUtcMs = 0) => {
+    const roundCoord = (value: number) => Math.round(value * 1000) / 1000;
+    let created: PlotData | null = null;
+    set((state) => {
+      const id: PlotId = `crop-${state.farm.nextPlotNumber}`;
+      created = {
+        id,
+        x: roundCoord(x),
+        z: roundCoord(z),
+        crop: { ...crop },
+        hydratedUntilUtcMs,
+      };
+      return {
+        farm: {
+          ...state.farm,
+          plots: {
+            ...state.farm.plots,
+            [id]: created,
+          },
+          nextPlotNumber: state.farm.nextPlotNumber + 1,
+        },
+        isDirty: true,
+      };
+    });
+    return created as unknown as PlotData;
   },
 
   updatePlots: (plotsInput) => {
@@ -196,15 +200,19 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
     });
   },
 
-  setGridSize: (size: 4 | 6 | 8) => {
-    set((state) => ({
-      farm: {
-        ...state.farm,
-        gridSize: size,
-        plots: generateDefaultPlots(size, state.farm.plots),
-      },
-      isDirty: true,
-    }));
+  removePlot: (plotId: PlotId) => {
+    set((state) => {
+      if (!state.farm.plots[plotId]) return state;
+      const plots = { ...state.farm.plots };
+      delete plots[plotId];
+      return {
+        farm: {
+          ...state.farm,
+          plots,
+        },
+        isDirty: true,
+      };
+    });
   },
 
   addCoins: (amount: number) => {
@@ -509,8 +517,8 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
         totalDistance: state.player.totalDistance,
       },
       farm: {
-        gridSize: state.farm.gridSize,
         plots: Object.values(state.farm.plots),
+        nextPlotNumber: state.farm.nextPlotNumber,
         goldenWateringCanOwned: state.farm.goldenWateringCanOwned,
       },
       inventory: {
@@ -548,8 +556,8 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
         totalDistance: envelope.player.totalDistance,
       },
       farm: {
-        gridSize: envelope.farm.gridSize,
         plots: plotsRecord,
+        nextPlotNumber: envelope.farm.nextPlotNumber,
         goldenWateringCanOwned: envelope.farm.goldenWateringCanOwned,
       },
       inventory: {

@@ -26,16 +26,12 @@ declare global {
     __getGameState?: () => import('./state/storeTypes').SaveEnvelope;
     __resetGame?: (seed?: number) => void;
     __advanceDistance?: (deltaUnits: number) => void;
-    __tillPlot?: (
-      plotId: import('./state/storeTypes').PlotId
-    ) => import('./state/storeTypes').CommandResult<{
-      plotId: import('./state/storeTypes').PlotId;
-    }>;
-    __plantCrop?: (
-      plotId: import('./state/storeTypes').PlotId,
+    __plantCropAt?: (
+      x: number,
+      z: number,
       cropId: import('./state/storeTypes').CropId
     ) => import('./state/storeTypes').CommandResult<{
-      cropId: import('./state/storeTypes').CropId;
+      plotId: import('./state/storeTypes').PlotId;
     }>;
     __waterPlot?: (
       plotId: import('./state/storeTypes').PlotId

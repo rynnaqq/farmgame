@@ -26,14 +26,12 @@ const GrassStuds: React.FC = () => {
     const half = ISLAND_SIZE / 2 - 0.7;
     for (let x = -half; x <= half; x += step) {
       for (let z = -half; z <= half; z += step) {
-        // Exclude Left Planter Bed
-        if (x >= -7.6 && x <= -1.4 && Math.abs(z) <= 6.5) continue;
-        // Exclude Right Planter Bed
-        if (x >= 1.4 && x <= 7.6 && Math.abs(z) <= 6.5) continue;
+        // Exclude farm land (continuous soil beds)
+        if (Math.abs(x) <= 7.5 && Math.abs(z) <= 6.5) continue;
         // Exclude merchant platform
         if (x > 8.0 && z > 5.0) continue;
         // Exclude water barrel platform
-        if (x > 5.8 && z < -1.8) continue;
+        if (x > 8.2 && z < -2.0) continue;
         // Exclude outer cliff edges
         if (Math.hypot(x, z) > 13.5) continue;
         positions.push([x, 0.02, z]);
@@ -53,11 +51,7 @@ const GrassStuds: React.FC = () => {
   }, [studPositions, dummy]);
 
   return (
-    <instancedMesh
-      ref={meshRef}
-      args={[STUD_GEO, STUD_MAT, studPositions.length]}
-      receiveShadow
-    />
+    <instancedMesh ref={meshRef} args={[STUD_GEO, STUD_MAT, studPositions.length]} receiveShadow />
   );
 };
 
@@ -180,13 +174,13 @@ export const GardenIsland: React.FC = () => {
       {/* ========================================== */}
       <group name="SteppingStones" position={[0, 0.015, 0]}>
         {[
-          // Path to Water Barrel (North-East)
-          { x: 3.8, z: -0.5, scale: 0.75, rot: 0.2 },
-          { x: 4.8, z: -1.4, scale: 0.8, rot: -0.3 },
-          { x: 5.8, z: -2.2, scale: 0.7, rot: 0.4 },
-          // Path to Merchant Stall (South-East)
-          { x: 6.8, z: 2.8, scale: 0.85, rot: 0.1 },
-          { x: 7.8, z: 3.8, scale: 0.8, rot: -0.2 },
+          // Path to Water Barrel (east of the farm fence)
+          { x: 8.8, z: -1.6, scale: 0.75, rot: 0.2 },
+          { x: 9.4, z: -2.4, scale: 0.8, rot: -0.3 },
+          { x: 9.8, z: -3.0, scale: 0.7, rot: 0.4 },
+          // Path to Merchant Stall (South-East, through the east gate)
+          { x: 8.6, z: 2.6, scale: 0.85, rot: 0.1 },
+          { x: 9.4, z: 3.4, scale: 0.8, rot: -0.2 },
           { x: 8.8, z: 4.9, scale: 0.75, rot: 0.3 },
           { x: 9.6, z: 5.9, scale: 0.8, rot: -0.1 },
           { x: 10.4, z: 6.8, scale: 0.85, rot: 0.2 },
@@ -210,7 +204,7 @@ export const GardenIsland: React.FC = () => {
       {/* ========================================== */}
       {/* 3. Water Well / Water Barrel Station      */}
       {/* ========================================== */}
-      <group name="WaterBarrelStation" position={[7.5, 0, -3.5]}>
+      <group name="WaterBarrelStation" position={[9.6, 0, -3.5]}>
         <RigidBody type="fixed" colliders={false}>
           <CylinderCollider args={[0.55, 0.6]} position={[0, 0.55, 0]} />
 
@@ -351,43 +345,43 @@ export const GardenIsland: React.FC = () => {
       {/* ========================================== */}
       <group name="GardenEnclosureFences">
         <RigidBody type="fixed" colliders={false}>
-          {/* North Garden Fence (Z = -6.8) */}
-          <CuboidCollider args={[6.8, 0.5, 0.15]} position={[0, 0.5, -6.8]} />
-          <FenceSection startX={-6.8} endX={6.8} z={-6.8} />
+          {/* North Garden Fence (Z = -7.2, clears the farm land) */}
+          <CuboidCollider args={[8.2, 0.5, 0.15]} position={[0, 0.5, -7.2]} />
+          <FenceSection startX={-8.2} endX={8.2} z={-7.2} />
 
-          {/* South Garden Fence with Center Gate (Z = 6.8) */}
-          <CuboidCollider args={[2.5, 0.5, 0.15]} position={[-4.2, 0.5, 6.8]} />
-          <FenceSection startX={-6.8} endX={-1.6} z={6.8} />
-          <CuboidCollider args={[2.5, 0.5, 0.15]} position={[4.2, 0.5, 6.8]} />
-          <FenceSection startX={1.6} endX={6.8} z={6.8} />
+          {/* South Garden Fence with Center Gate (Z = 7.2) */}
+          <CuboidCollider args={[3.3, 0.5, 0.15]} position={[-4.9, 0.5, 7.2]} />
+          <FenceSection startX={-8.2} endX={-1.6} z={7.2} />
+          <CuboidCollider args={[3.3, 0.5, 0.15]} position={[4.9, 0.5, 7.2]} />
+          <FenceSection startX={1.6} endX={8.2} z={7.2} />
 
           {/* 3D Garden Gate Wooden Signs */}
           <GardenEntranceSign />
           <QuickActionSign />
 
           {/* Entrance Flanking Wooden Ramps (Growden.io style) */}
-          <group position={[-2.6, 0.22, 7.3]} rotation={[0.25, 0, 0]}>
+          <group position={[-2.6, 0.22, 7.7]} rotation={[0.25, 0, 0]}>
             <mesh castShadow receiveShadow>
               <boxGeometry args={[1.8, 0.42, 1.4]} />
               <meshStandardMaterial color="#6B4123" roughness={0.8} flatShading />
             </mesh>
           </group>
-          <group position={[2.6, 0.22, 7.3]} rotation={[0.25, 0, 0]}>
+          <group position={[2.6, 0.22, 7.7]} rotation={[0.25, 0, 0]}>
             <mesh castShadow receiveShadow>
               <boxGeometry args={[1.8, 0.42, 1.4]} />
               <meshStandardMaterial color="#6B4123" roughness={0.8} flatShading />
             </mesh>
           </group>
 
-          {/* West Garden Fence (X = -6.8) */}
-          <CuboidCollider args={[0.15, 0.5, 6.8]} position={[-6.8, 0.5, 0]} />
-          <FenceSection startZ={-6.8} endZ={6.8} x={-6.8} isVertical />
+          {/* West Garden Fence (X = -8.2) */}
+          <CuboidCollider args={[0.15, 0.5, 7.2]} position={[-8.2, 0.5, 0]} />
+          <FenceSection startZ={-7.2} endZ={7.2} x={-8.2} isVertical />
 
-          {/* East Garden Fence with Exit to Merchant (X = 6.8) */}
-          <CuboidCollider args={[0.15, 0.5, 4.0]} position={[6.8, 0.5, -2.8]} />
-          <FenceSection startZ={-6.8} endZ={1.2} x={6.8} isVertical />
-          <CuboidCollider args={[0.15, 0.5, 1.4]} position={[6.8, 0.5, 5.4]} />
-          <FenceSection startZ={4.0} endZ={6.8} x={6.8} isVertical />
+          {/* East Garden Fence with Exit to Merchant (X = 8.2) */}
+          <CuboidCollider args={[0.15, 0.5, 4.2]} position={[8.2, 0.5, -3.0]} />
+          <FenceSection startZ={-7.2} endZ={1.2} x={8.2} isVertical />
+          <CuboidCollider args={[0.15, 0.5, 1.6]} position={[8.2, 0.5, 5.6]} />
+          <FenceSection startZ={4.0} endZ={7.2} x={8.2} isVertical />
 
           {/* Outer Island Edge Safety Barriers */}
           <CuboidCollider args={[3.2, 0.5, 0.15]} position={[8.5, 0.5, -13.0]} />
@@ -412,7 +406,7 @@ export const GardenIsland: React.FC = () => {
  */
 const GardenEntranceSign: React.FC = () => {
   return (
-    <group position={[2.4, 0, 7.1]} rotation={[0, Math.PI, 0]}>
+    <group position={[2.4, 0, 7.5]} rotation={[0, Math.PI, 0]}>
       {/* Two wooden posts */}
       <mesh position={[-0.7, 0.6, 0]} castShadow>
         <cylinderGeometry args={[0.07, 0.08, 1.2, 8]} />
@@ -446,7 +440,7 @@ const GardenEntranceSign: React.FC = () => {
  */
 const QuickActionSign: React.FC = () => {
   return (
-    <group position={[-2.4, 0, 7.1]} rotation={[0, Math.PI, 0]}>
+    <group position={[-2.4, 0, 7.5]} rotation={[0, Math.PI, 0]}>
       {/* Post */}
       <mesh position={[0, 0.55, 0]} castShadow>
         <cylinderGeometry args={[0.07, 0.08, 1.1, 8]} />
@@ -509,12 +503,7 @@ const FenceSection: React.FC<FenceSectionProps> = ({
           <group key={idx} position={[x, 0, startZ + idx * step]}>
             <mesh position={[0, 0.48, 0]} castShadow receiveShadow>
               <cylinderGeometry args={[0.1, 0.11, 0.96, 8]} />
-              <meshStandardMaterial
-                color="#523218"
-                roughness={0.85}
-                metalness={0.05}
-                flatShading
-              />
+              <meshStandardMaterial color="#523218" roughness={0.85} metalness={0.05} flatShading />
             </mesh>
             {/* Pyramidal post cap */}
             <mesh position={[0, 0.98, 0]} castShadow>

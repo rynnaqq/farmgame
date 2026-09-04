@@ -2,7 +2,7 @@ import React from 'react';
 import type { PlotId } from '../state/storeTypes';
 import { WeatherRenderer } from './weather/WeatherRenderer';
 import { GardenIsland } from './world/GardenIsland';
-import { SoilGrid } from './world/SoilGrid';
+import { FarmBeds, type FarmSoilPoint } from './world/FarmBeds';
 import { Boundaries } from './world/Boundaries';
 import { Decorations } from './world/Decorations';
 import { Merchant } from './world/Merchant';
@@ -17,6 +17,7 @@ import { RemotePlayerRenderer } from './multiplayer/RemotePlayerRenderer';
 import type { InputManager } from './input/InputManager';
 
 export interface GameRuntimeProps {
+  onSoilClick?: (point: FarmSoilPoint) => void;
   onPlotClick?: (plotId: PlotId) => void;
   onPlayerFall?: () => void;
   inputManager?: InputManager;
@@ -27,7 +28,7 @@ export interface GameRuntimeProps {
  * GameRuntime coordinates the 3D scene elements inside the R3F Canvas and Physics world:
  * - Dynamic atmospheric lighting & 2-second weather crossfades
  * - 28x28 floating Garden Island base mesh and landmark props
- * - Dynamic Soil Grid with active plot tiles and locked slot indicators
+ * - Free-placement farm beds with per-crop soil tiles (no tile grid)
  * - Invisible boundary barriers and respawn killzone
  * - Low-poly environmental decorations (trees, rocks, flowers, grass)
  * - Procedural Player character with kinematic Rapier capsule controller & animation
@@ -38,6 +39,7 @@ export interface GameRuntimeProps {
  * - Extension slot for pet systems and custom dynamic entities
  */
 export const GameRuntime: React.FC<GameRuntimeProps> = ({
+  onSoilClick,
   onPlotClick,
   onPlayerFall,
   inputManager,
@@ -51,8 +53,8 @@ export const GameRuntime: React.FC<GameRuntimeProps> = ({
       {/* 2. Floating Island Geometry & Landmarks */}
       <GardenIsland />
 
-      {/* 3. Soil Farm Grid & Plots */}
-      <SoilGrid onPlotClick={onPlotClick} />
+      {/* 3. Free-Placement Farm Beds & Crops */}
+      <FarmBeds onSoilClick={onSoilClick} onPlotClick={onPlotClick} />
 
       {/* 4. Island Boundaries & Respawn Sensor */}
       <Boundaries onPlayerFall={onPlayerFall} />

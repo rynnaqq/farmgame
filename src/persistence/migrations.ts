@@ -17,6 +17,56 @@ export interface MigrationResult {
  * Migration registry: keyed by source schema version N, mapping to transformation function N -> N + 1.
  */
 export const MIGRATIONS: Record<number, MigrationFn> = {
+  // 1 -> 2 (grid plots to free-placement plots)
+  // Old `plot-<row>-<col>` entries carrying a crop become free `crop-<n>`
+  // plots at their former rendered world position. Empty soil is dropped:
+  // plots only exist while a crop grows on them. Grid size and till flags
+  // are discarded.
+  1: (data: Record<string, unknown>) => {
+    const rawFarm = (data.farm as Record<string, unknown>) || {};
+    const rawPlots = Array.isArray(rawFarm.plots) ? rawFarm.plots : [];
+
+    const PLOT_TOTAL_SIZE = 1.55;
+    const plots: Record<string, unknown>[] = [];
+    let plotNumber = 1;
+    for (const raw of rawPlots) {
+      if (!raw || typeof raw !== 'object') continue;
+      const old = raw as Record<string, unknown>;
+      const crop = old.crop as Record<string, unknown> | null;
+      if (!crop || typeof crop !== 'object') continue;
+      const row = typeof old.row === 'number' ? old.row : 0;
+      const col = typeof old.col === 'number' ? old.col : 0;
+      const baseX = (col - 3.5) * PLOT_TOTAL_SIZE;
+      const baseZ = (row - 3.5) * PLOT_TOTAL_SIZE;
+      const bedShiftX = col < 4 ? -1.8 : 1.8;
+      plots.push({
+        id: `crop-${plotNumber}`,
+        x: Math.round((baseX + bedShiftX) * 1000) / 1000,
+        z: Math.round(baseZ * 1000) / 1000,
+        crop: {
+          cropId: crop.cropId,
+          plantedAtUtcMs: crop.plantedAtUtcMs,
+          growthProgressSec: crop.growthProgressSec,
+          mutation: crop.mutation ?? 'none',
+        },
+        hydratedUntilUtcMs:
+          typeof old.hydratedUntilUtcMs === 'number' && old.hydratedUntilUtcMs > 0
+            ? Math.floor(old.hydratedUntilUtcMs)
+            : 0,
+      });
+      plotNumber += 1;
+    }
+
+    return {
+      ...data,
+      schemaVersion: 2,
+      farm: {
+        plots,
+        nextPlotNumber: plotNumber,
+        goldenWateringCanOwned: rawFarm.goldenWateringCanOwned ?? false,
+      },
+    };
+  },
   // 0 -> 1 (Legacy / unversioned payload to Version 1)
   0: (data: Record<string, unknown>) => {
     const rawFarm = (data.farm as Record<string, unknown>) || {};

@@ -173,7 +173,7 @@ export function simulateOfflineProgression(
   for (const plot of saveEnvelope.farm.plots) {
     const clonedPlot: PlotData = {
       ...plot,
-      crop: plot.crop ? { ...plot.crop } : null,
+      crop: { ...plot.crop },
     };
     plots[plot.id] = clonedPlot;
 
@@ -253,7 +253,7 @@ export function simulateOfflineProgression(
     const plotIds = Object.keys(plots);
     for (const plotId of plotIds) {
       const plot = plots[plotId];
-      if (!plot.crop || !plot.tilled) continue;
+      if (!plot.crop) continue;
 
       const cropDef = getCropDefinition(plot.crop.cropId);
       if (!cropDef || plot.crop.growthProgressSec >= cropDef.baseGrowthSec) continue;
@@ -302,7 +302,7 @@ export function simulateOfflineProgression(
       // Advance plot growth
       for (const plotId of plotIds) {
         const plot = plots[plotId];
-        if (!plot.crop || !plot.tilled) continue;
+        if (!plot.crop) continue;
 
         const cropDef = getCropDefinition(plot.crop.cropId);
         if (!cropDef || plot.crop.growthProgressSec >= cropDef.baseGrowthSec) continue;
@@ -369,7 +369,7 @@ export function simulateOfflineProgression(
     const sortedPlotIds = Object.keys(plots).sort();
     for (const plotId of sortedPlotIds) {
       const plot = plots[plotId];
-      if (!plot.crop || !plot.tilled) continue;
+      if (!plot.crop) continue;
 
       const cropDef = getCropDefinition(plot.crop.cropId);
       if (!cropDef) continue;
@@ -408,7 +408,7 @@ export function simulateOfflineProgression(
 
       for (const [plotId, harvest] of readyHarvestEntries) {
         const plot = plots[plotId];
-        if (plot && plot.crop) {
+        if (plot) {
           const existingStack = inventory.produce.find(
             (p) => p.cropId === harvest.cropId && p.mutation === harvest.mutation
           );
@@ -422,7 +422,7 @@ export function simulateOfflineProgression(
             });
           }
 
-          plot.crop = null;
+          delete plots[plotId];
           dogHarvestsList.push({
             cropId: harvest.cropId,
             mutation: harvest.mutation,
@@ -447,7 +447,7 @@ export function simulateOfflineProgression(
         const rainExpiry = weather.endsAtUtcMs + RAIN_HYDRATION_BUFFER_MS;
         for (const plotId of Object.keys(plots)) {
           const plot = plots[plotId];
-          if (plot.tilled && plot.hydratedUntilUtcMs < rainExpiry) {
+          if (plot.hydratedUntilUtcMs < rainExpiry) {
             plot.hydratedUntilUtcMs = rainExpiry;
           }
         }
@@ -468,7 +468,9 @@ export function simulateOfflineProgression(
   }
 
   // 5. Construct updated SaveEnvelope
-  const updatedPlots = saveEnvelope.farm.plots.map((p) => plots[p.id] ?? p);
+  // Build from the mutated record (not the input array) so harvested
+  // (deleted) plots stay removed and progressed crops keep their updates.
+  const updatedPlots = Object.values(plots);
   const updatedEnvelope: SaveEnvelope = {
     ...saveEnvelope,
     savedAtUtcMs: nowUtcMs,

@@ -185,8 +185,10 @@ export class AutoQualityManager {
       };
     }
 
-    // Step-Down check: FPS < 45 for >= 5 consecutive seconds
-    if (this.currentFps < this.config.fpsStepDownThreshold) {
+    // Step-Down check: average FPS < 45 for >= 5 consecutive seconds.
+    // Uses the EMA (not the instantaneous frame) so single hitches from
+    // shader compiles or GC pauses cannot yank the quality down.
+    if (this.averageFps < this.config.fpsStepDownThreshold) {
       this.underThresholdSec += deltaSec;
       this.overThresholdSec = 0;
 
@@ -211,8 +213,8 @@ export class AutoQualityManager {
         };
       }
     }
-    // Step-Up check: FPS > 58 for >= 30 consecutive seconds
-    else if (this.currentFps > this.config.fpsStepUpThreshold) {
+    // Step-Up check: average FPS > 58 for >= 30 consecutive seconds
+    else if (this.averageFps > this.config.fpsStepUpThreshold) {
       this.overThresholdSec += deltaSec;
       this.underThresholdSec = 0;
 

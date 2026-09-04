@@ -14,18 +14,19 @@ test.describe('Persistence and Offline Simulation E2E', () => {
     // 1. Set specific game state: coins = 350, plant carrot, water plot, golden watering can
     await page.evaluate(async () => {
       window.__addCoins?.(250); // 100 + 250 = 350
-      window.__tillPlot?.('plot-1-1');
-      window.__plantCrop?.('plot-1-1', 'carrot');
-      window.__waterPlot?.('plot-1-1');
+      window.__plantCropAt?.(1, 1, 'carrot');
+      const plots = window.__getGameState?.().farm.plots ?? [];
+      const plotId = plots[0]?.id;
+      if (plotId) window.__waterPlot?.(plotId);
       window.__useGameStore?.getState().setGoldenWateringCan(true);
-      window.__useGameStore?.getState().setGridSize(6);
       await window.__saveGame?.();
     });
 
     const stateBeforeReload = await page.evaluate(() => window.__getGameState?.());
     expect(stateBeforeReload?.player.coins).toBe(350);
-    expect(stateBeforeReload?.farm.gridSize).toBe(6);
     expect(stateBeforeReload?.farm.goldenWateringCanOwned).toBe(true);
+    const plotIdBefore = stateBeforeReload?.farm.plots[0]?.id;
+    expect(plotIdBefore).toBeDefined();
 
     // 2. Reload page
     await page.reload();
@@ -39,22 +40,21 @@ test.describe('Persistence and Offline Simulation E2E', () => {
 
     const stateAfterReload = await page.evaluate(() => window.__getGameState?.());
     expect(stateAfterReload?.player.coins).toBe(350);
-    expect(stateAfterReload?.farm.gridSize).toBe(6);
     expect(stateAfterReload?.farm.goldenWateringCanOwned).toBe(true);
 
-    const plot11 = stateAfterReload?.farm.plots.find((p) => p.id === 'plot-1-1');
-    expect(plot11?.tilled).toBe(true);
+    const plot11 = stateAfterReload?.farm.plots.find((p) => p.id === plotIdBefore);
     expect(plot11?.crop?.cropId).toBe('carrot');
   });
 
   test('offline progression calculates crop maturity and displays OfflineSummary modal', async ({
     page,
   }) => {
-    // 1. Till, plant carrot, and water plot
-    await page.evaluate(() => {
-      window.__tillPlot?.('plot-0-0');
-      window.__plantCrop?.('plot-0-0', 'carrot');
-      window.__waterPlot?.('plot-0-0');
+    // 1. Plant carrot and water plot (no till step)
+    const plotId = await page.evaluate(() => {
+      const res = window.__plantCropAt?.(0, 0, 'carrot');
+      if (!res || !res.ok) throw new Error('planting failed');
+      window.__waterPlot?.(res.value.plotId);
+      return res.value.plotId;
     });
 
     // 2. Simulate offline elapsed time with modal trigger (60s offline > 45s carrot growth)
@@ -79,11 +79,11 @@ test.describe('Persistence and Offline Simulation E2E', () => {
 
     await expect(offlineModal).not.toBeVisible();
 
-    // 5. Verify crop on plot-0-0 is now mature (45s progress)
-    const plotState = await page.evaluate(() => {
+    // 5. Verify crop is now mature (45s progress)
+    const plotState = await page.evaluate((id) => {
       const plots = window.__getGameState?.().farm.plots;
-      return plots?.find((p) => p.id === 'plot-0-0');
-    });
+      return plots?.find((p) => p.id === id);
+    }, plotId);
     expect(plotState?.crop?.growthProgressSec).toBe(45);
   });
 
@@ -91,9 +91,8 @@ test.describe('Persistence and Offline Simulation E2E', () => {
     page,
   }) => {
     await page.evaluate(async () => {
-      window.__tillPlot?.('plot-0-0');
-      window.__plantCrop?.('plot-0-0', 'carrot');
-      window.__waterPlot?.('plot-0-0');
+      const res = window.__plantCropAt?.(0, 0, 'carrot');
+      if (res?.ok) window.__waterPlot?.(res.value.plotId);
       window.__advanceGameTime?.(50_000, false); // Mature the crop without opening modal
       await window.__saveGame?.();
     });

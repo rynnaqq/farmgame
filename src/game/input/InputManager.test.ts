@@ -217,20 +217,17 @@ describe('Task 6: Cross-Platform Input Pipeline', () => {
       expect(keyboard.isRunning()).toBe(false);
     });
 
-    it('triggers tool selection callbacks for keys 1-4', () => {
+    it('triggers tool selection callbacks for keys 1-3', () => {
       const toolSpy = vi.fn();
       keyboard.onToolSelect = toolSpy;
 
       window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit1', key: '1' }));
-      expect(toolSpy).toHaveBeenCalledWith('trowel');
-
-      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit2', key: '2' }));
       expect(toolSpy).toHaveBeenCalledWith('watering_can');
 
-      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit3', key: '3' }));
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit2', key: '2' }));
       expect(toolSpy).toHaveBeenCalledWith('seed_bag');
 
-      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit4', key: '4' }));
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit3', key: '3' }));
       expect(toolSpy).toHaveBeenCalledWith('hand');
     });
 
@@ -624,7 +621,7 @@ describe('Task 6: Cross-Platform Input Pipeline', () => {
 
       useUiStore.getState().closeModal();
       window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit1', key: '1' }));
-      expect(toolSpy).toHaveBeenCalledWith('trowel');
+      expect(toolSpy).toHaveBeenCalledWith('watering_can');
     });
 
     it('clears all input on window blur', () => {

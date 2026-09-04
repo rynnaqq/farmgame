@@ -2,6 +2,7 @@
  * Game Constants for Garden Island 3D
  * Defined in accordance with game design specifications (farm.md).
  */
+import { GOLDEN_WATERING_CAN_RADIUS_WORLD } from '../world/farmLayout';
 
 // ==========================================
 // 1. Simulation & Timestep
@@ -33,29 +34,21 @@ export const PLOT_SLOT_POSITIONS = [
 ] as const;
 
 // ==========================================
-// 3. Grid & Plot Layout
+// 3. Free-Placement Farm Layout
 // ==========================================
-export const PLOT_SIZE = 1.4; // 1.4 x 1.4 world units
-export const PLOT_SPACING = 0.15; // 0.15 units visual separation
-export const PLOT_TOTAL_SIZE = PLOT_SIZE + PLOT_SPACING; // 1.55 units per cell
-
-export const STARTING_GRID_SIZE = 4; // 4x4
-export const EXPANSION_1_GRID_SIZE = 6; // 6x6
-export const EXPANSION_1_COST = 750; // 750 coins
-export const EXPANSION_2_GRID_SIZE = 8; // 8x8
-export const EXPANSION_2_COST = 3500; // 3,500 coins
-export const MAX_GRID_SIZE = 8;
-
-export const GRID_EXPANSIONS = {
-  4: { nextSize: 6, cost: 750 },
-  6: { nextSize: 8, cost: 3500 },
-} as const;
+// No tile grid: crops grow at free world positions inside the farm land.
+// See src/game/world/farmLayout.ts for bounds and spacing rules.
+export const PLOT_SIZE = 1.4; // 1.4 x 1.4 world units soil tile visual
 
 // ==========================================
 // 4. Player Movement & Physics
 // ==========================================
 export const PLAYER_WALK_SPEED = 3.5; // units/sec
 export const PLAYER_RUN_SPEED = 5.25; // units/sec
+export const PLAYER_JUMP_VELOCITY = 4.6; // units/sec launch speed (~1.1m hop)
+export const PLAYER_FALL_EXTRA_GRAVITY = 22.0; // extra units/s² while falling (snappy landing)
+export const JUMP_BUFFER_MS = 150; // late jump presses still count shortly after landing approach
+export const COYOTE_MS = 120; // jumps still allowed shortly after leaving ground
 
 // ==========================================
 // 5. Camera Settings
@@ -72,11 +65,9 @@ export const CAMERA_EYE_HEIGHT_OFFSET = 1.35;
 export const FIRST_PERSON_DISTANCE_THRESHOLD = 0.8;
 
 // ==========================================
-// 6. Interaction Ranges & Reaches
+// 6. Interaction
 // ==========================================
-export const FARMING_REACH = 3.0; // Desktop click / general reach in world units
-export const MOBILE_ACTION_REACH = 2.8; // Mobile context button distance
-export const MOBILE_ACTION_CONE_DEG = 70; // 70-degree forward cone
+// No reach rule: taps and clicks always execute from anywhere.
 export const MERCHANT_INTERACTION_RANGE = MARKET_INTERACTION_RANGE; // Market 3m radius (PRD §7.11)
 export const MERCHANT_POSITION = MARKET_POSITION;
 
@@ -261,7 +252,7 @@ export const MUTATION_MULTIPLIERS: Record<MutationType, number> = {
 // 13. Upgrades & Tools
 // ==========================================
 export const GOLDEN_WATERING_CAN_COST = 1200;
-export const GOLDEN_WATERING_CAN_RADIUS = 1; // 3x3 grid around target plot (-1 to +1)
+export const GOLDEN_WATERING_CAN_RADIUS = GOLDEN_WATERING_CAN_RADIUS_WORLD; // world units, see farmLayout.ts
 
 // ==========================================
 // 14. Pets & Eggs
@@ -362,4 +353,4 @@ export const AUTOSAVE_INTERVAL_SEC = 10;
 export const AUTOSAVE_INTERVAL_MS = 10 * 1000;
 export const MAX_OFFLINE_PROGRESSION_HOURS = 24;
 export const MAX_OFFLINE_PROGRESSION_MS = 24 * 60 * 60 * 1000;
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;

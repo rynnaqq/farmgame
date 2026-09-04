@@ -2,12 +2,10 @@ import { z } from 'zod';
 import type { SaveEnvelope } from '../state/storeTypes';
 import {
   STARTING_COINS,
-  STARTING_GRID_SIZE,
   STARTING_SEEDS,
   PLAYER_SPAWN_POSITION,
   CURRENT_SCHEMA_VERSION,
 } from '../game/core/constants';
-import { generateDefaultPlots } from '../state/gameStore';
 
 export const cropIdSchema = z.enum(['carrot', 'tomato', 'pumpkin', 'golden_berry', 'starfruit']);
 export const weatherTypeSchema = z.enum(['sunny', 'heavy_rain', 'heatwave', 'blood_moon']);
@@ -24,10 +22,9 @@ export const cropDataSchema = z.object({
 
 export const plotDataSchema = z.object({
   id: z.string().min(1),
-  row: z.number().int().nonnegative().finite(),
-  col: z.number().int().nonnegative().finite(),
-  tilled: z.boolean(),
-  crop: cropDataSchema.nullable(),
+  x: z.number().finite(),
+  z: z.number().finite(),
+  crop: cropDataSchema,
   hydratedUntilUtcMs: z.number().int().nonnegative().finite(),
 });
 
@@ -60,8 +57,8 @@ export const playerSaveSchema = z.object({
 });
 
 export const farmSaveSchema = z.object({
-  gridSize: z.union([z.literal(4), z.literal(6), z.literal(8)]),
   plots: z.array(plotDataSchema),
+  nextPlotNumber: z.number().int().positive().finite(),
   goldenWateringCanOwned: z.boolean(),
 });
 
@@ -95,7 +92,7 @@ export const tutorialSaveSchema = z.object({
 });
 
 export const saveEnvelopeSchema = z.object({
-  schemaVersion: z.literal(1),
+  schemaVersion: z.literal(2),
   savedAtUtcMs: z.number().int().nonnegative().finite(),
   player: playerSaveSchema,
   farm: farmSaveSchema,
@@ -133,7 +130,6 @@ export function createDefaultSaveEnvelope(
   savedAtUtcMs: number = Date.now(),
   initialSeed: number = 1
 ): SaveEnvelope {
-  const defaultPlotsMap = generateDefaultPlots(STARTING_GRID_SIZE as 4);
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     savedAtUtcMs,
@@ -143,8 +139,8 @@ export function createDefaultSaveEnvelope(
       totalDistance: 0,
     },
     farm: {
-      gridSize: STARTING_GRID_SIZE as 4 | 6 | 8,
-      plots: Object.values(defaultPlotsMap),
+      plots: [],
+      nextPlotNumber: 1,
       goldenWateringCanOwned: false,
     },
     inventory: {

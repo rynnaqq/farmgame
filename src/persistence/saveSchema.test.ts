@@ -12,12 +12,12 @@ import type { SaveEnvelope } from '../state/storeTypes';
 describe('saveSchema (Zod Persistence Validation)', () => {
   it('validates a default generated save envelope successfully', () => {
     const defaultSave = createDefaultSaveEnvelope(1700000000000, 42);
-    expect(defaultSave.schemaVersion).toBe(1);
+    expect(defaultSave.schemaVersion).toBe(2);
     expect(defaultSave.savedAtUtcMs).toBe(1700000000000);
     expect(defaultSave.rngState).toBe(42);
     expect(defaultSave.player.coins).toBe(100);
-    expect(defaultSave.farm.gridSize).toBe(4);
-    expect(defaultSave.farm.plots.length).toBe(16);
+    expect(defaultSave.farm.plots.length).toBe(0);
+    expect(defaultSave.farm.nextPlotNumber).toBe(1);
 
     const parseResult = safeParseSaveEnvelope(defaultSave);
     expect(parseResult.success).toBe(true);
@@ -68,32 +68,26 @@ describe('saveSchema (Zod Persistence Validation)', () => {
     expect(safeParseSaveEnvelope(nanPosition).success).toBe(false);
   });
 
-  it('rejects invalid farm grid sizes (only 4, 6, 8 allowed)', () => {
+  it('rejects invalid nextPlotNumber values', () => {
     const defaultSave = createDefaultSaveEnvelope();
 
-    const invalidGrid5 = {
+    const invalidZero = {
       ...defaultSave,
-      farm: { ...defaultSave.farm, gridSize: 5 as unknown as 4 },
+      farm: { ...defaultSave.farm, nextPlotNumber: 0 },
     };
-    expect(safeParseSaveEnvelope(invalidGrid5).success).toBe(false);
+    expect(safeParseSaveEnvelope(invalidZero).success).toBe(false);
 
-    const invalidGrid10 = {
+    const invalidNegative = {
       ...defaultSave,
-      farm: { ...defaultSave.farm, gridSize: 10 as unknown as 4 },
+      farm: { ...defaultSave.farm, nextPlotNumber: -3 },
     };
-    expect(safeParseSaveEnvelope(invalidGrid10).success).toBe(false);
+    expect(safeParseSaveEnvelope(invalidNegative).success).toBe(false);
 
-    const validGrid6 = {
+    const valid = {
       ...defaultSave,
-      farm: { ...defaultSave.farm, gridSize: 6 as const },
+      farm: { ...defaultSave.farm, nextPlotNumber: 7 },
     };
-    expect(safeParseSaveEnvelope(validGrid6).success).toBe(true);
-
-    const validGrid8 = {
-      ...defaultSave,
-      farm: { ...defaultSave.farm, gridSize: 8 as const },
-    };
-    expect(safeParseSaveEnvelope(validGrid8).success).toBe(true);
+    expect(safeParseSaveEnvelope(valid).success).toBe(true);
   });
 
   it('rejects unknown crop IDs, weather types, mutation types, pet types, and egg types', () => {
@@ -122,10 +116,9 @@ describe('saveSchema (Zod Persistence Validation)', () => {
         ...defaultSave.farm,
         plots: [
           {
-            id: 'plot-0-0',
-            row: 0,
-            col: 0,
-            tilled: true,
+            id: 'crop-1',
+            x: 0,
+            z: 0,
             hydratedUntilUtcMs: 1000,
             crop: {
               cropId: 'carrot' as const,

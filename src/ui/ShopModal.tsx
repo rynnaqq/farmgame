@@ -8,7 +8,6 @@ import {
   sellProduce,
   sellAllProduce,
   buyGoldenWateringCan,
-  buyGridExpansion,
 } from '../game/economy/economyCommands';
 import { getSeedCatalog, getUpgradeCatalog } from '../game/economy/shopCatalog';
 import { calculateProduceSaleValue } from '../game/economy/economyDefinitions';
@@ -65,7 +64,7 @@ function CropIcon({ cropId }: { cropId: CropId }) {
  * Tabbed Shop Modal component:
  * - Tab 1: Seeds (1x & 5x buy buttons for all 5 crops with price, growth time, base sell value)
  * - Tab 2: Sell (Produce stacks with mutation multiplier badges, unit/stack prices, Sell & Sell All)
- * - Tab 3: Upgrades (Golden Watering Can, Plot Expansion 6x6 and 8x8)
+ * - Tab 3: Upgrades (Golden Watering Can)
  * - Tab 4: Eggs (Companion egg store with odds breakdown and slot capacity counter)
  * - Accessible focus trap, Escape dismissal, backdrop close, and atomic economy operations.
  */
@@ -82,7 +81,6 @@ export const ShopModal: React.FC<ShopModalProps> = ({
   const coins = useGameStore((state) => state.player.coins);
   const inventorySeeds = useGameStore((state) => state.inventory.seeds);
   const produceStacks = useGameStore((state) => state.inventory.produce);
-  const gridSize = useGameStore((state) => state.farm.gridSize);
   const goldenCanOwned = useGameStore((state) => state.farm.goldenWateringCanOwned);
 
   const modalData = useUiStore((state) => state.modalData) as { initialTab?: ShopTabId } | null;
@@ -200,17 +198,6 @@ export const ShopModal: React.FC<ShopModalProps> = ({
     }
   }, []);
 
-  const handleBuyExpansion = useCallback(() => {
-    const result = buyGridExpansion();
-    if (result.ok) {
-      audioManager.playSfx('coin');
-      useUiStore.getState().showToast(result.message ?? 'Expanded farm grid!', 'success', 3500);
-    } else {
-      audioManager.playSfx('error');
-      useUiStore.getState().showToast(result.message, 'error', 2500);
-    }
-  }, []);
-
   const totalProduceValue = useMemo(() => {
     return produceStacks.reduce(
       (sum, stack) => sum + calculateProduceSaleValue(stack.cropId, stack.mutation, stack.quantity),
@@ -223,7 +210,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({
   }
 
   const seedCatalog = getSeedCatalog();
-  const upgradeCatalog = getUpgradeCatalog(gridSize, goldenCanOwned);
+  const upgradeCatalog = getUpgradeCatalog(goldenCanOwned);
 
   return (
     <div
@@ -263,7 +250,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                 Merchant's Island Shop
               </h2>
               <p className="text-xs text-amber-300/70">
-                Seeds, produce trading, farm expansions & companion eggs
+                Seeds, produce trading, upgrades & companion eggs
               </p>
             </div>
           </div>
@@ -358,8 +345,8 @@ export const ShopModal: React.FC<ShopModalProps> = ({
               className="flex flex-col gap-3"
             >
               <div className="text-xs text-slate-400 mb-1">
-                Purchase seeds to plant in your tilled plots. Higher tier crops yield greater
-                profits and higher mutation rewards.
+                Purchase seeds to plant in your soil. Higher tier crops yield greater profits and
+                higher mutation rewards.
               </div>
 
               <div className="grid grid-cols-1 gap-3">
@@ -576,8 +563,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({
               className="flex flex-col gap-3"
             >
               <div className="text-xs text-slate-400 mb-1">
-                Permanent farm upgrades to accelerate crop watering and expand your island farming
-                territory.
+                Permanent farm upgrades to accelerate crop watering.
               </div>
 
               <div className="grid grid-cols-1 gap-3">
@@ -590,18 +576,11 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                     buttonText = 'Owned';
                     isInteractive = false;
                   } else if (!upgrade.isAvailable) {
-                    if (upgrade.id === 'expansion_8x8') {
-                      buttonText = 'Locked (Requires 6x6)';
-                    }
                     isInteractive = false;
                   }
 
                   const handleUpgradeClick = () => {
-                    if (upgrade.id === 'golden_can') {
-                      handleBuyGoldenCan();
-                    } else {
-                      handleBuyExpansion();
-                    }
+                    handleBuyGoldenCan();
                   };
 
                   return (
@@ -618,7 +597,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                     >
                       <div className="flex items-start gap-3.5">
                         <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center border border-white/5 text-2xl flex-shrink-0">
-                          {upgrade.id === 'golden_can' ? '✨🚰' : '🌾'}
+                          {upgrade.id === 'golden_can' ? '✨🚰' : '⭐'}
                         </div>
 
                         <div>

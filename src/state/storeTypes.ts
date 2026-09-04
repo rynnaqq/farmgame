@@ -13,13 +13,14 @@ export type PlotId = string;
 
 export type CropStage = 'sprout' | 'mid' | 'grown';
 
-export type PlotState = 'untilled' | 'tilled' | 'planted' | 'watered' | 'harvestable';
+export type PlotState = 'planted' | 'watered' | 'harvestable';
 
-export type ToolType = 'trowel' | 'watering_can' | 'seed_bag' | 'scythe' | 'hand';
+export type ToolType = 'watering_can' | 'seed_bag' | 'scythe' | 'hand';
 
 export type CommandFailureReason =
-  | 'out_of_range'
   | 'invalid_plot_state'
+  | 'outside_planting_area'
+  | 'too_close'
   | 'insufficient_seeds'
   | 'insufficient_coins'
   | 'inventory_full'
@@ -43,11 +44,14 @@ export interface CropData {
 }
 
 export interface PlotData {
+  /** Unique id, `crop-<n>` for free-placed crops. */
   id: PlotId;
-  row: number;
-  col: number;
-  tilled: boolean;
-  crop: CropData | null;
+  /** World X position in the farm area (3-decimal precision). */
+  x: number;
+  /** World Z position in the farm area (3-decimal precision). */
+  z: number;
+  /** The planted crop. Plots only exist while a crop grows on them. */
+  crop: CropData;
   hydratedUntilUtcMs: number;
 }
 
@@ -80,8 +84,10 @@ export interface PlayerState {
 }
 
 export interface FarmState {
-  gridSize: 4 | 6 | 8;
+  /** Free-placed crop plots keyed by id. No grid, no size limit. */
   plots: Record<PlotId, PlotData>;
+  /** Monotonic counter for deterministic `crop-<n>` ids. */
+  nextPlotNumber: number;
   goldenWateringCanOwned: boolean;
 }
 
@@ -115,8 +121,8 @@ export interface SaveEnvelope {
     totalDistance: number;
   };
   farm: {
-    gridSize: 4 | 6 | 8;
     plots: PlotData[];
+    nextPlotNumber: number;
     goldenWateringCanOwned: boolean;
   };
   inventory: {
@@ -155,7 +161,13 @@ export interface SettingsState {
 }
 
 export type ModalType =
-  'shop' | 'settings' | 'offline_summary' | 'tutorial' | 'reset_confirm' | 'inventory' | 'leaderboard';
+  | 'shop'
+  | 'settings'
+  | 'offline_summary'
+  | 'tutorial'
+  | 'reset_confirm'
+  | 'inventory'
+  | 'leaderboard';
 
 export type ToastType = 'info' | 'success' | 'warning' | 'error';
 

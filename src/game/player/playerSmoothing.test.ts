@@ -24,7 +24,12 @@ describe('dampAngle (frame-rate independent rotation smoothing)', () => {
     const dtBig = 1 / 30;
     const dtSmall = 1 / 60;
     const oneBig = dampAngle(0.3, 1.5, DEFAULT_ROTATION_DAMPING, dtBig);
-    const twoSmall = dampAngle(dampAngle(0.3, 1.5, DEFAULT_ROTATION_DAMPING, dtSmall), 1.5, DEFAULT_ROTATION_DAMPING, dtSmall);
+    const twoSmall = dampAngle(
+      dampAngle(0.3, 1.5, DEFAULT_ROTATION_DAMPING, dtSmall),
+      1.5,
+      DEFAULT_ROTATION_DAMPING,
+      dtSmall
+    );
     expect(twoSmall).toBeCloseTo(oneBig, 5);
   });
 
@@ -89,5 +94,43 @@ describe('calculateLimbSwings stride blend (continuous idle/walk transition)', (
   it('keeps the default (blend 1) identical to the legacy amplitude', () => {
     const legacy = calculateLimbSwings(PLAYER_WALK_SPEED, false, Math.PI / 2, 1.0);
     expect(Math.abs(legacy.leftLegPitch)).toBeCloseTo(WALK_LEG_SWING_MAX, 4);
+  });
+
+  it('rolls the body in quadrature with the leg swing (not synchronized)', () => {
+    // At phase 0 the legs are neutral but the roll peaks (cosine vs sine).
+    const atZero = calculateLimbSwings(PLAYER_WALK_SPEED, false, 0, 1.0);
+    expect(atZero.leftLegPitch).toBeCloseTo(0, 6);
+    expect(Math.abs(atZero.bodyRoll)).toBeGreaterThan(0.01);
+    // At phase PI/2 the legs peak while the roll crosses zero.
+    const atPeak = calculateLimbSwings(PLAYER_WALK_SPEED, false, Math.PI / 2, 1.0);
+    expect(Math.abs(atPeak.leftLegPitch)).toBeCloseTo(WALK_LEG_SWING_MAX, 4);
+    expect(Math.abs(atPeak.bodyRoll)).toBeLessThan(0.001);
+  });
+
+  it('offsets the arms from the legs with a phase lead', () => {
+    // With a +0.5 rad lead the arms never exactly mirror the legs.
+    const swings = calculateLimbSwings(PLAYER_WALK_SPEED, false, 0.3, 1.0);
+    const mirrored = -Math.sin(0.3);
+    expect(Math.abs(swings.leftArmPitch - mirrored)).toBeGreaterThan(0.01);
+    // Torso counter-rotates and feet lift mid-swing.
+    expect(Math.abs(swings.torsoYaw)).toBeGreaterThan(0);
+    expect(swings.legLift).toBeGreaterThanOrEqual(0);
+  });
+
+  it('tucks limbs into a jump pose when airborne and suppresses stepping', () => {
+    const air = calculateLimbSwings(PLAYER_WALK_SPEED, false, 1.2, 1.0, true);
+    expect(air.leftLegPitch).toBeCloseTo(0.45, 6);
+    expect(air.rightLegPitch).toBeCloseTo(-0.25, 6);
+    expect(air.stepBounce).toBe(0);
+    expect(air.bodyRoll).toBe(0);
+    expect(air.legLift).toBe(0);
+  });
+
+  it('damps secondary layers under reduced motion but keeps leg swings', () => {
+    const full = calculateLimbSwings(PLAYER_WALK_SPEED, false, 1.0, 1.0, false, false);
+    const calm = calculateLimbSwings(PLAYER_WALK_SPEED, false, 1.0, 1.0, false, true);
+    expect(calm.leftLegPitch).toBeCloseTo(full.leftLegPitch, 6);
+    expect(Math.abs(calm.stepBounce)).toBeLessThanOrEqual(Math.abs(full.stepBounce));
+    expect(Math.abs(calm.bodyRoll)).toBeLessThanOrEqual(Math.abs(full.bodyRoll));
   });
 });

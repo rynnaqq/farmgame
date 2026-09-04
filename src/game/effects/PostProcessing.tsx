@@ -40,8 +40,10 @@ export const PostProcessing: React.FC = () => {
     try {
       const composer = new EffectComposer(gl);
       const renderPass = new RenderPass(scene, camera);
+      // Half-resolution bloom: the blur is low-frequency by nature, so full
+      // resolution only burns fill-rate (up to 2x DPR) for no visible gain.
       const bloomPass = new UnrealBloomPass(
-        new THREE.Vector2(size.width, size.height),
+        new THREE.Vector2(Math.floor(size.width / 2), Math.floor(size.height / 2)),
         bloomConfig.strength,
         bloomConfig.radius,
         bloomConfig.threshold
@@ -63,13 +65,14 @@ export const PostProcessing: React.FC = () => {
       composerRef.current = null;
       bloomPassRef.current = null;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     bloomConfig.enabled,
     gl,
     scene,
     camera,
-    size.width,
-    size.height,
+    // NOTE: size intentionally excluded — the resize effect below updates the
+    // live composer without a full rebuild (rebuild = shader recompile hitch).
     bloomConfig.strength,
     bloomConfig.radius,
     bloomConfig.threshold,
@@ -89,7 +92,10 @@ export const PostProcessing: React.FC = () => {
     if (composerRef.current) {
       composerRef.current.setSize(size.width, size.height);
       if (bloomPassRef.current) {
-        bloomPassRef.current.resolution.set(size.width, size.height);
+        bloomPassRef.current.resolution.set(
+          Math.floor(size.width / 2),
+          Math.floor(size.height / 2)
+        );
       }
     }
   }, [size.width, size.height]);

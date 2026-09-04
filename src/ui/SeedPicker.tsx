@@ -171,7 +171,7 @@ export const SeedPicker: React.FC<SeedPickerProps> = ({
     if (onClose) {
       onClose();
     } else {
-      useUiStore.getState().setSelectedTool('trowel');
+      useUiStore.getState().setSelectedTool('watering_can');
     }
   }, [disabled, onClose]);
 

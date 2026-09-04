@@ -16,10 +16,9 @@ describe('Task 12: Growth Simulation System', () => {
   const baseTime = 1700000000000;
 
   const createMockPlot = (overrides?: Partial<PlotData>): PlotData => ({
-    id: 'plot_0_0',
-    row: 0,
-    col: 0,
-    tilled: true,
+    id: 'crop-1',
+    x: 0,
+    z: 0,
     crop: {
       cropId: 'carrot', // 45s base growth
       plantedAtUtcMs: baseTime,
@@ -29,6 +28,7 @@ describe('Task 12: Growth Simulation System', () => {
     hydratedUntilUtcMs: baseTime + 120000,
     ...overrides,
   });
+  const NULL_CROP = null as unknown as import('../../state/storeTypes').CropData;
 
   describe('Multiplicative Growth Multipliers', () => {
     it('returns correct weather growth multipliers', () => {
@@ -66,27 +66,27 @@ describe('Task 12: Growth Simulation System', () => {
   });
 
   describe('Hydration During Growth', () => {
-    it('considers tilled plot hydrated when hydratedUntilUtcMs > nowMs in sunny weather', () => {
-      const plot = createMockPlot({ tilled: true, hydratedUntilUtcMs: baseTime + 10000 });
+    it('considers plot hydrated when hydratedUntilUtcMs > nowMs in sunny weather', () => {
+      const plot = createMockPlot({ hydratedUntilUtcMs: baseTime + 10000 });
       expect(isPlotHydratedForGrowth(plot, 'sunny', baseTime)).toBe(true);
     });
 
-    it('considers tilled plot not hydrated when hydratedUntilUtcMs <= nowMs in sunny weather', () => {
-      const plotExpired = createMockPlot({ tilled: true, hydratedUntilUtcMs: baseTime - 1000 });
-      const plotEqual = createMockPlot({ tilled: true, hydratedUntilUtcMs: baseTime });
+    it('considers plot not hydrated when hydratedUntilUtcMs <= nowMs in sunny weather', () => {
+      const plotExpired = createMockPlot({ hydratedUntilUtcMs: baseTime - 1000 });
+      const plotEqual = createMockPlot({ hydratedUntilUtcMs: baseTime });
       expect(isPlotHydratedForGrowth(plotExpired, 'sunny', baseTime)).toBe(false);
       expect(isPlotHydratedForGrowth(plotEqual, 'sunny', baseTime)).toBe(false);
     });
 
-    it('considers all tilled plots hydrated during heavy_rain even if hydratedUntilUtcMs is in the past', () => {
-      const dryPlot = createMockPlot({ tilled: true, hydratedUntilUtcMs: 0 });
+    it('considers all plots hydrated during heavy_rain even if hydratedUntilUtcMs is in the past', () => {
+      const dryPlot = createMockPlot({ hydratedUntilUtcMs: 0 });
       expect(isPlotHydratedForGrowth(dryPlot, 'heavy_rain', baseTime)).toBe(true);
     });
 
-    it('considers untilled plots never hydrated even in heavy_rain', () => {
-      const untilledPlot = createMockPlot({ tilled: false, hydratedUntilUtcMs: baseTime + 60000 });
-      expect(isPlotHydratedForGrowth(untilledPlot, 'heavy_rain', baseTime)).toBe(false);
-      expect(isPlotHydratedForGrowth(untilledPlot, 'sunny', baseTime)).toBe(false);
+    it('considers plots hydrated in heavy_rain without any till step', () => {
+      const plot = createMockPlot({ hydratedUntilUtcMs: baseTime + 60000 });
+      expect(isPlotHydratedForGrowth(plot, 'heavy_rain', baseTime)).toBe(true);
+      expect(isPlotHydratedForGrowth(plot, 'sunny', baseTime)).toBe(true);
     });
 
     it('does not advance growth on dry plots in sunny or heatwave weather', () => {
@@ -110,10 +110,9 @@ describe('Task 12: Growth Simulation System', () => {
       expect(resultHeatwave.matured).toBe(false);
     });
 
-    it('advances growth on dry tilled plots when weather is heavy_rain', () => {
+    it('advances growth on dry plots when weather is heavy_rain', () => {
       const rng = new SeededRNG(42);
       const dryPlot = createMockPlot({
-        tilled: true,
         hydratedUntilUtcMs: baseTime - 5000,
         crop: {
           cropId: 'carrot',
@@ -279,17 +278,11 @@ describe('Task 12: Growth Simulation System', () => {
       expect(result.matured).toBe(true);
     });
 
-    it('returns unmodified plot and matured=false for empty or untilled plots', () => {
+    it('returns unmodified plot and matured=false for empty plots', () => {
       const rng = new SeededRNG(1);
-      const emptyPlot = createMockPlot({ crop: null });
+      const emptyPlot = createMockPlot({ crop: NULL_CROP });
       expect(advancePlotGrowth(emptyPlot, 10, 'sunny', null, rng, baseTime)).toEqual({
         plot: emptyPlot,
-        matured: false,
-      });
-
-      const untilledPlot = createMockPlot({ tilled: false, crop: null });
-      expect(advancePlotGrowth(untilledPlot, 10, 'sunny', null, rng, baseTime)).toEqual({
-        plot: untilledPlot,
         matured: false,
       });
     });
@@ -350,7 +343,7 @@ describe('Task 12: Growth Simulation System', () => {
         }),
         plot_0_2: createMockPlot({
           id: 'plot_0_2',
-          crop: null, // Empty plot
+          crop: NULL_CROP, // Defensive: plots without crops never advance
         }),
         plot_0_3: createMockPlot({
           id: 'plot_0_3',

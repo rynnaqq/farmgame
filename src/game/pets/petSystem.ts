@@ -15,7 +15,6 @@ import {
   DOG_AUTO_HARVEST_RANGE,
   DOG_AUTO_HARVEST_INTERVAL_MS,
 } from './petDefinitions';
-import { getPlotPosition, getPlotDistance, isPlotUnlocked } from '../world/gridCoordinates';
 import { isPlotHarvestable } from '../farming/plotMachine';
 import { harvestCrop } from '../farming/farmingCommands';
 import { audioManager } from '../audio/AudioManager';
@@ -202,27 +201,23 @@ export function setIncubatingEgg(eggId: string | null): CommandResult<undefined>
 }
 
 /**
- * Finds the closest unlocked mature harvestable crop within the Dog's 1.75 unit harvest radius.
+ * Finds the closest mature harvestable crop within the Dog's harvest radius.
  */
 export function findDogHarvestTarget(
   dogPos: [number, number, number],
-  plots: Record<PlotId, PlotData>,
-  gridSize: 4 | 6 | 8
+  plots: Record<PlotId, PlotData>
 ): PlotId | null {
   let closestPlotId: PlotId | null = null;
   let closestDistance = Number.POSITIVE_INFINITY;
 
   for (const plot of Object.values(plots)) {
-    if (!isPlotUnlocked(plot.row, plot.col, gridSize)) {
+    if (!isPlotHarvestable(plot)) {
       continue;
     }
 
-    if (!plot.crop || !isPlotHarvestable(plot)) {
-      continue;
-    }
-
-    const plotPos = getPlotPosition(plot.row, plot.col, gridSize);
-    const distance = getPlotDistance(dogPos, plotPos);
+    const dx = dogPos[0] - plot.x;
+    const dz = dogPos[2] - plot.z;
+    const distance = Math.sqrt(dx * dx + dz * dz);
 
     if (distance <= DOG_AUTO_HARVEST_RANGE) {
       if (distance < closestDistance) {
@@ -257,7 +252,7 @@ export function tickDogAutoHarvest(
     return null;
   }
 
-  const targetPlotId = findDogHarvestTarget(dogPos, store.farm.plots, store.farm.gridSize);
+  const targetPlotId = findDogHarvestTarget(dogPos, store.farm.plots);
   if (!targetPlotId) {
     return null;
   }

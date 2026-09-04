@@ -20,6 +20,31 @@ const SHARED_OUTLINE_RING_GEO = new THREE.RingGeometry(
   Math.PI / 4
 );
 
+// Shared materials: one instance per soil state for ALL plots. Per-plot
+// <meshStandardMaterial> JSX would compile a program switch per tile and
+// allocate on every state change — with unbounded free-placement plots the
+// shared set keeps draw state constant no matter the farm size.
+function soilMaterial(color: string, roughness: number, metalness: number) {
+  return new THREE.MeshStandardMaterial({ color, roughness, metalness, flatShading: true });
+}
+const SOIL_BASE_MAT = soilMaterial('#553218', 0.88, 0.05);
+const SOIL_BORDER_MAT = soilMaterial('#754823', 0.8, 0.05);
+const SOIL_DRY_MAT = soilMaterial('#663C1D', 0.85, 0.05);
+const SOIL_WET_MAT = soilMaterial('#281509', 0.32, 0.15);
+const FURROW_DRY_MAT = soilMaterial('#522E15', 0.85, 0.05);
+const FURROW_WET_MAT = soilMaterial('#1C0D05', 0.32, 0.15);
+const SHEEN_MAT = new THREE.MeshStandardMaterial({
+  color: '#241307',
+  roughness: 0.12,
+  metalness: 0.45,
+  transparent: true,
+  opacity: 0.45,
+  depthWrite: false,
+  polygonOffset: true,
+  polygonOffsetFactor: -1,
+  polygonOffsetUnits: -1,
+});
+
 export interface PlotMeshProps {
   plot: PlotData;
   position: [number, number, number];
@@ -43,36 +68,14 @@ export const PlotMesh: React.FC<PlotMeshProps> = ({
   const setHoveredPlot = useUiStore((state) => state.setHoveredPlot);
 
   const isHydrated = useMemo(() => {
-    return plot.tilled && plot.hydratedUntilUtcMs > (nowMs ?? Date.now());
-  }, [plot.tilled, plot.hydratedUntilUtcMs, nowMs]);
+    return plot.hydratedUntilUtcMs > (nowMs ?? Date.now());
+  }, [plot.hydratedUntilUtcMs, nowMs]);
 
-  // Determine soil visual properties based on state (Growden.io palette)
-  const soilMaterialProps = useMemo(() => {
-    if (!plot.tilled) {
-      // Untilled, warm golden-clay sandy earth (Growden.io look)
-      return {
-        color: '#D8A568',
-        roughness: 0.92,
-        metalness: 0.0,
-      };
-    }
-
-    if (isHydrated) {
-      // Hydrated, dark moist soil with slight reflection
-      return {
-        color: '#281509',
-        roughness: 0.32,
-        metalness: 0.15,
-      };
-    }
-
-    // Tilled, rich furrowed dark loam
-    return {
-      color: '#663C1D',
-      roughness: 0.85,
-      metalness: 0.05,
-    };
-  }, [plot.tilled, isHydrated]);
+  // Uniform soil palette: rich furrowed dark loam when dry, dark moist
+  // soil when hydrated. No till distinction — all soil is plantable.
+  // Resolved to SHARED materials (see module scope) at render time.
+  const soilMat = isHydrated ? SOIL_WET_MAT : SOIL_DRY_MAT;
+  const furrowMat = isHydrated ? FURROW_WET_MAT : FURROW_DRY_MAT;
 
   const outlineColor = isTargeted ? '#FFD700' : '#FFFFFF';
   const showOutline = isHovered || isTargeted;
@@ -100,45 +103,44 @@ export const PlotMesh: React.FC<PlotMeshProps> = ({
       {/* 1. Raised Wooden Border Bed (Planter Frame) */}
       <group position={[0, 0, 0]}>
         {/* Underbed base foundation */}
-        <mesh receiveShadow geometry={SHARED_SOIL_BASE_GEO} position={[0, 0, 0]}>
-          <meshStandardMaterial color="#553218" roughness={0.88} metalness={0.05} flatShading />
-        </mesh>
+        <mesh
+          receiveShadow
+          geometry={SHARED_SOIL_BASE_GEO}
+          material={SOIL_BASE_MAT}
+          position={[0, 0, 0]}
+        />
 
         {/* North and South Raised Wooden Edges */}
         <mesh
           position={[0, 0.045, (PLOT_SIZE - 0.09) / 2]}
           geometry={SHARED_BORDER_NS_GEO}
+          material={SOIL_BORDER_MAT}
           castShadow
           receiveShadow
-        >
-          <meshStandardMaterial color="#754823" roughness={0.8} metalness={0.05} flatShading />
-        </mesh>
+        />
         <mesh
           position={[0, 0.045, -(PLOT_SIZE - 0.09) / 2]}
           geometry={SHARED_BORDER_NS_GEO}
+          material={SOIL_BORDER_MAT}
           castShadow
           receiveShadow
-        >
-          <meshStandardMaterial color="#754823" roughness={0.8} metalness={0.05} flatShading />
-        </mesh>
+        />
 
         {/* East and West Raised Wooden Edges */}
         <mesh
           position={[(PLOT_SIZE - 0.09) / 2, 0.045, 0]}
           geometry={SHARED_BORDER_EW_GEO}
+          material={SOIL_BORDER_MAT}
           castShadow
           receiveShadow
-        >
-          <meshStandardMaterial color="#754823" roughness={0.8} metalness={0.05} flatShading />
-        </mesh>
+        />
         <mesh
           position={[-(PLOT_SIZE - 0.09) / 2, 0.045, 0]}
           geometry={SHARED_BORDER_EW_GEO}
+          material={SOIL_BORDER_MAT}
           castShadow
           receiveShadow
-        >
-          <meshStandardMaterial color="#754823" roughness={0.8} metalness={0.05} flatShading />
-        </mesh>
+        />
       </group>
 
       {/* 2. Inner Tillable Soil Surface */}
@@ -146,56 +148,39 @@ export const PlotMesh: React.FC<PlotMeshProps> = ({
         castShadow
         receiveShadow
         geometry={SHARED_SOIL_INNER_GEO}
+        material={soilMat}
         onPointerOver={handlePointerOver}
         onPointerOut={handlePointerOut}
         onClick={handleClick}
         position={[0, 0.042, 0]}
-      >
-        <meshStandardMaterial
-          color={soilMaterialProps.color}
-          roughness={soilMaterialProps.roughness}
-          metalness={soilMaterialProps.metalness}
-          flatShading
-        />
-      </mesh>
+      />
 
-      {/* 3. Tilled Furrow Ridges (Visual detail when tilled) */}
-      {plot.tilled && (
-        <group position={[0, 0.058, 0]}>
-          {[-0.28, 0, 0.28].map((offsetZ, idx) => (
-            <mesh
-              key={idx}
-              position={[0, 0.01, offsetZ]}
-              geometry={SHARED_FURROW_RIDGE_GEO}
-              receiveShadow
-            >
-              <meshStandardMaterial
-                color={isHydrated ? '#1C0D05' : '#522E15'}
-                roughness={soilMaterialProps.roughness}
-                metalness={soilMaterialProps.metalness}
-                flatShading
-              />
-            </mesh>
-          ))}
-        </group>
-      )}
+      {/* 3. Furrow Ridges (always visible — all soil is plantable) */}
+      {/* Raised clear of the soil top to avoid depth shimmer at grazing angles. */}
+      <group position={[0, 0.068, 0]}>
+        {[-0.28, 0, 0.28].map((offsetZ, idx) => (
+          <mesh
+            key={idx}
+            position={[0, 0.01, offsetZ]}
+            geometry={SHARED_FURROW_RIDGE_GEO}
+            material={furrowMat}
+            receiveShadow
+          />
+        ))}
+      </group>
 
       {/* 4. Hydration Water Sheen Layer */}
+      {/* Lifted + polygon-offset so the zero-thickness plane never z-fights
+          the soil top; depthWrite off keeps it from haloing the furrows. */}
       {isHydrated && (
         <mesh
-          position={[0, 0.056, 0]}
+          position={[0, 0.066, 0]}
           rotation={[-Math.PI / 2, 0, 0]}
           geometry={SHARED_HYDRATION_PLANE_GEO}
+          material={SHEEN_MAT}
           receiveShadow
-        >
-          <meshStandardMaterial
-            color="#241307"
-            roughness={0.12}
-            metalness={0.45}
-            transparent
-            opacity={0.45}
-          />
-        </mesh>
+          renderOrder={1}
+        />
       )}
 
       {/* 5. Procedural 3D Crop Mesh */}
@@ -203,9 +188,14 @@ export const PlotMesh: React.FC<PlotMeshProps> = ({
 
       {/* 6. Hover / Targeted Selection Outline */}
       {showOutline && (
-        <group position={[0, 0.08, 0]}>
+        <group position={[0, 0.095, 0]}>
           <mesh rotation={[-Math.PI / 2, 0, 0]} geometry={SHARED_OUTLINE_RING_GEO}>
-            <meshBasicMaterial color={outlineColor} transparent opacity={isTargeted ? 0.9 : 0.65} />
+            <meshBasicMaterial
+              color={outlineColor}
+              transparent
+              opacity={isTargeted ? 0.9 : 0.65}
+              depthWrite={false}
+            />
           </mesh>
         </group>
       )}

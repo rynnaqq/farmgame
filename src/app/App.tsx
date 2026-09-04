@@ -23,7 +23,8 @@ import { useGameStore } from '../state/gameStore';
 import { useUiStore } from '../state/uiStore';
 import { AUTOSAVE_INTERVAL_MS } from '../game/core/constants';
 import { getGameMode } from '../game/core/gameMode';
-import { executeToolAction } from '../game/farming/farmingCommands';
+import { executePlantAt, executePlotAction } from '../game/farming/farmingCommands';
+import type { FarmSoilPoint } from '../game/world/FarmBeds';
 import { installTestClock } from '../test/testClock';
 import { AuthModal } from '../features/auth/AuthModal';
 import { useAuthStore } from '../features/auth/authStore';
@@ -35,6 +36,7 @@ import type { PlotId } from '../state/storeTypes';
 export interface AppProps {
   children?: React.ReactNode;
   forceWebGLSupported?: boolean;
+  onSoilClick?: (point: FarmSoilPoint) => void;
   onPlotClick?: (plotId: PlotId) => void;
   onPlayerFall?: () => void;
   inputManager?: InputManager;
@@ -48,6 +50,7 @@ export interface AppProps {
 export const App: React.FC<AppProps> = ({
   children,
   forceWebGLSupported,
+  onSoilClick,
   onPlotClick,
   onPlayerFall,
   inputManager,
@@ -93,11 +96,6 @@ export const App: React.FC<AppProps> = ({
           if (!isMounted) return;
 
           const { updatedEnvelope, summary } = simulateOfflineProgression(envelope, Date.now());
-          // Verdant free-placement keeps the full 8x8 unlocked; local PRD mode
-          // preserves the saved 4->6->8 progression.
-          if (isVerdant) {
-            updatedEnvelope.farm.gridSize = 8;
-          }
           useGameStore.getState().loadSaveEnvelope(updatedEnvelope);
           const saved = await saveService.saveImmediate(updatedEnvelope);
           if (!saved) {
@@ -135,6 +133,34 @@ export const App: React.FC<AppProps> = ({
     }
   }, [activeInputManager, isAuthenticated, isVerdant, authStatus]);
 
+  const broadcastToolUse = React.useCallback(() => {
+    if (isVerdant && useNetStore.getState().roomId) {
+      getRoomConnection().playToolAnimation();
+    }
+  }, [isVerdant]);
+
+  const handleSoilClick = React.useCallback(
+    (point: FarmSoilPoint) => {
+      if (onSoilClick) {
+        onSoilClick(point);
+        return;
+      }
+      const uiState = useUiStore.getState();
+      if (uiState.selectedTool !== 'seed_bag') {
+        uiState.showToast('Select seeds to plant here', 'info', 2000);
+        return;
+      }
+      const result = executePlantAt(point.x, point.z, uiState.selectedSeed, Date.now());
+      if (result.ok) {
+        broadcastToolUse();
+        audioManager.playSfx('plant');
+      } else if (result.message) {
+        uiState.showToast(result.message, 'warning', 2000);
+      }
+    },
+    [onSoilClick, broadcastToolUse]
+  );
+
   const handlePlotClick = React.useCallback(
     (plotId: PlotId) => {
       if (onPlotClick) {
@@ -143,34 +169,22 @@ export const App: React.FC<AppProps> = ({
       }
       const uiState = useUiStore.getState();
       const gameState = useGameStore.getState();
-      // Local PRD mode enforces the 3u farming reach + "Move closer" feedback.
-      // Verdant free-placement removes the constraint per user overhaul.
-      const playerPosition = gameState.player.position;
-      const result = executeToolAction(
-        plotId,
-        uiState.selectedTool,
-        uiState.selectedSeed,
-        isVerdant ? undefined : playerPosition,
-        {
-          isGoldenCan: gameState.farm.goldenWateringCanOwned,
-          weather: gameState.weather.current,
-          nowMs: Date.now(),
-        }
-      );
+      // No reach rule: taps and clicks always execute from anywhere.
+      const result = executePlotAction(plotId, uiState.selectedTool, {
+        isGoldenCan: gameState.farm.goldenWateringCanOwned,
+        weather: gameState.weather.current,
+        nowMs: Date.now(),
+      });
       if (result.ok) {
-        if (isVerdant && useNetStore.getState().roomId) {
-          getRoomConnection().playToolAnimation();
-        }
-        if (uiState.selectedTool === 'trowel') audioManager.playSfx('till');
-        else if (uiState.selectedTool === 'watering_can') audioManager.playSfx('water');
-        else if (uiState.selectedTool === 'seed_bag') audioManager.playSfx('plant');
+        broadcastToolUse();
+        if (uiState.selectedTool === 'watering_can') audioManager.playSfx('water');
         else if (uiState.selectedTool === 'hand' || uiState.selectedTool === 'scythe')
           audioManager.playSfx('harvest');
       } else if (result.message) {
         uiState.showToast(result.message, 'warning', 2000);
       }
     },
-    [onPlotClick, isVerdant]
+    [onPlotClick, broadcastToolUse]
   );
 
   const showAuthGate = isVerdant && authStatus !== 'authenticated';
@@ -190,6 +204,7 @@ export const App: React.FC<AppProps> = ({
               {/* 3D WebGL Canvas Layer */}
               <GameCanvas>
                 <GameRuntime
+                  onSoilClick={handleSoilClick}
                   onPlotClick={handlePlotClick}
                   onPlayerFall={onPlayerFall}
                   inputManager={activeInputManager}
@@ -205,7 +220,7 @@ export const App: React.FC<AppProps> = ({
                 data-testid="ui-overlay-container"
               >
                 <HUD />
-                <MobileHUD inputManager={activeInputManager} onPlotInteract={handlePlotClick} />
+                <MobileHUD inputManager={activeInputManager} />
                 <Toolbelt inputManager={activeInputManager} />
                 <ShopModal />
                 <InventoryPanel />

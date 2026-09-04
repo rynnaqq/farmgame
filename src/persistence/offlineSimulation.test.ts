@@ -1,7 +1,23 @@
 import { describe, it, expect } from 'vitest';
 import { simulateOfflineProgression, formatOfflineDuration } from './offlineSimulation';
 import { createDefaultSaveEnvelope } from './saveSchema';
-import type { EggData, WeatherType } from '../state/storeTypes';
+import type { CropData, EggData, SaveEnvelope, WeatherType } from '../state/storeTypes';
+
+function addFreePlot(
+  envelope: SaveEnvelope,
+  id: string,
+  x: number,
+  z: number,
+  crop: CropData,
+  hydratedUntilUtcMs: number
+): void {
+  envelope.farm.plots = envelope.farm.plots.filter((p) => p.id !== id);
+  envelope.farm.plots.push({ id, x, z, crop, hydratedUntilUtcMs });
+}
+
+function getFreePlot(envelope: SaveEnvelope, id: string) {
+  return envelope.farm.plots.find((p) => p.id === id);
+}
 import { SeededRNG } from '../game/core/rng';
 
 import { CROPS, MAX_OFFLINE_PROGRESSION_MS } from '../game/core/constants';
@@ -101,66 +117,72 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
   });
 
   describe('Crop Growth & Hydration Windows', () => {
-    it('does not advance crop growth on untilled or unwatered dry plots', () => {
+    it('does not advance crop growth on unwatered dry plots', () => {
       const envelope = createDefaultSaveEnvelope(BASE_TIME, 1);
-      // Untilled plot with crop (invalid state, should not grow)
-      envelope.farm.plots[0] = {
-        ...envelope.farm.plots[0],
-        tilled: false,
-        crop: {
+      // Dry plot with crop (no hydration, should not grow)
+      addFreePlot(
+        envelope,
+        'crop-1',
+        0,
+        0,
+        {
           cropId: 'carrot',
           plantedAtUtcMs: BASE_TIME,
           growthProgressSec: 0,
           mutation: 'none',
         },
-        hydratedUntilUtcMs: 0,
-      };
+        0
+      );
 
-      // Tilled plot but dry
-      envelope.farm.plots[1] = {
-        ...envelope.farm.plots[1],
-        tilled: true,
-        crop: {
+      // Dry plot
+      addFreePlot(
+        envelope,
+        'crop-2',
+        3,
+        0,
+        {
           cropId: 'carrot',
           plantedAtUtcMs: BASE_TIME,
           growthProgressSec: 10,
           mutation: 'none',
         },
-        hydratedUntilUtcMs: 0,
-      };
+        0
+      );
 
       const result = simulateOfflineProgression(envelope, BASE_TIME + 60_000);
 
-      expect(result.updatedEnvelope.farm.plots[0].crop?.growthProgressSec).toBe(0);
-      expect(result.updatedEnvelope.farm.plots[1].crop?.growthProgressSec).toBe(10);
+      expect(getFreePlot(result.updatedEnvelope, 'crop-1')?.crop.growthProgressSec).toBe(0);
+      expect(getFreePlot(result.updatedEnvelope, 'crop-2')?.crop.growthProgressSec).toBe(10);
       expect(result.summary.totalMaturedCount).toBe(0);
     });
 
     it('advances growth only until plot hydration expires', () => {
       const envelope = createDefaultSaveEnvelope(BASE_TIME, 1);
       // Carrot needs 45s. Hydrated for only 20s.
-      envelope.farm.plots[0] = {
-        ...envelope.farm.plots[0],
-        tilled: true,
-        crop: {
+      addFreePlot(
+        envelope,
+        'crop-1',
+        0,
+        0,
+        {
           cropId: 'carrot',
           plantedAtUtcMs: BASE_TIME,
           growthProgressSec: 0,
           mutation: 'none',
         },
-        hydratedUntilUtcMs: BASE_TIME + 20_000,
-      };
+        BASE_TIME + 20_000
+      );
 
       // Sunny multiplier = 1.0. In 20s hydration, growth advances by 20s.
       const result = simulateOfflineProgression(envelope, BASE_TIME + 120_000);
 
-      const plot = result.updatedEnvelope.farm.plots[0];
+      const plot = getFreePlot(result.updatedEnvelope, 'crop-1')!;
       expect(plot.crop?.growthProgressSec).toBeCloseTo(20, 1);
       expect(plot.crop?.growthProgressSec).toBeLessThan(CROPS.carrot.baseGrowthSec);
       expect(result.summary.totalMaturedCount).toBe(0);
     });
 
-    it('automatically hydrates all tilled plots during Heavy Rain weather', () => {
+    it('automatically hydrates all plots during Heavy Rain weather', () => {
       const envelope = createDefaultSaveEnvelope(BASE_TIME, 1);
       // Heavy rain for 100s
       envelope.weather = {
@@ -170,24 +192,26 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
         previousWeather: null,
       };
 
-      // Dry tilled plot with tomato (needs 90s)
-      envelope.farm.plots[0] = {
-        ...envelope.farm.plots[0],
-        tilled: true,
-        crop: {
+      // Dry plot with tomato (needs 90s)
+      addFreePlot(
+        envelope,
+        'crop-1',
+        0,
+        0,
+        {
           cropId: 'tomato',
           plantedAtUtcMs: BASE_TIME,
           growthProgressSec: 0,
           mutation: 'none',
         },
-        hydratedUntilUtcMs: 0, // initially dry!
-      };
+        0 // initially dry!
+      );
 
       // Heavy rain multiplier = 1.15. 90s / 1.15 = ~78.26s to mature.
       // Offline for 85s -> crop will mature!
       const result = simulateOfflineProgression(envelope, BASE_TIME + 85_000);
 
-      const plot = result.updatedEnvelope.farm.plots[0];
+      const plot = getFreePlot(result.updatedEnvelope, 'crop-1')!;
       expect(plot.crop?.growthProgressSec).toBe(CROPS.tomato.baseGrowthSec);
       expect(result.summary.totalMaturedCount).toBe(1);
       expect(result.summary.maturedCrops[0].cropId).toBe('tomato');
@@ -200,21 +224,23 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
 
       // Carrot needs 45s. With Sunny (1.0x) and Bee (1.15x) -> growth speed is 1.15x.
       // In 30 seconds of hydration, growth progress = 30 * 1.15 = 34.5s.
-      envelope.farm.plots[0] = {
-        ...envelope.farm.plots[0],
-        tilled: true,
-        crop: {
+      addFreePlot(
+        envelope,
+        'crop-1',
+        0,
+        0,
+        {
           cropId: 'carrot',
           plantedAtUtcMs: BASE_TIME,
           growthProgressSec: 0,
           mutation: 'none',
         },
-        hydratedUntilUtcMs: BASE_TIME + 60_000,
-      };
+        BASE_TIME + 60_000
+      );
 
       const result = simulateOfflineProgression(envelope, BASE_TIME + 30_000);
 
-      const plot = result.updatedEnvelope.farm.plots[0];
+      const plot = getFreePlot(result.updatedEnvelope, 'crop-1')!;
       expect(plot.crop?.growthProgressSec).toBeCloseTo(34.5, 1);
     });
   });
@@ -225,21 +251,23 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
       const envelope = createDefaultSaveEnvelope(BASE_TIME, seed);
 
       // Carrot needs 45s. Hydrated for 60s.
-      envelope.farm.plots[0] = {
-        ...envelope.farm.plots[0],
-        tilled: true,
-        crop: {
+      addFreePlot(
+        envelope,
+        'crop-1',
+        0,
+        0,
+        {
           cropId: 'carrot',
           plantedAtUtcMs: BASE_TIME,
           growthProgressSec: 40, // 5s remaining
           mutation: 'none',
         },
-        hydratedUntilUtcMs: BASE_TIME + 60_000,
-      };
+        BASE_TIME + 60_000
+      );
 
       const result = simulateOfflineProgression(envelope, BASE_TIME + 10_000);
 
-      const plot = result.updatedEnvelope.farm.plots[0];
+      const plot = getFreePlot(result.updatedEnvelope, 'crop-1')!;
       expect(plot.crop?.growthProgressSec).toBe(45);
       expect(result.summary.totalMaturedCount).toBe(1);
       expect(plot.crop?.mutation).toBeDefined();
@@ -247,21 +275,23 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
 
     it('does not re-roll mutation for crops that were already mature at save time', () => {
       const envelope = createDefaultSaveEnvelope(BASE_TIME, 50);
-      envelope.farm.plots[0] = {
-        ...envelope.farm.plots[0],
-        tilled: true,
-        crop: {
+      addFreePlot(
+        envelope,
+        'crop-1',
+        0,
+        0,
+        {
           cropId: 'carrot',
           plantedAtUtcMs: BASE_TIME - 100_000,
           growthProgressSec: 45,
           mutation: 'gold',
         },
-        hydratedUntilUtcMs: BASE_TIME + 60_000,
-      };
+        BASE_TIME + 60_000
+      );
 
       const result = simulateOfflineProgression(envelope, BASE_TIME + 60_000);
 
-      const plot = result.updatedEnvelope.farm.plots[0];
+      const plot = getFreePlot(result.updatedEnvelope, 'crop-1')!;
       expect(plot.crop?.mutation).toBe('gold');
       // Already mature at start does not count as newly matured offline
       expect(result.summary.totalMaturedCount).toBe(0);
@@ -277,28 +307,30 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
       // Carrot needs 45s. Starts at 0s progress.
       // Reaches maturity at t = 45s.
       // Dog harvests at t = 45s + 30s = 75s.
-      envelope.farm.plots[0] = {
-        ...envelope.farm.plots[0],
-        tilled: true,
-        crop: {
+      addFreePlot(
+        envelope,
+        'crop-1',
+        0,
+        0,
+        {
           cropId: 'carrot',
           plantedAtUtcMs: BASE_TIME,
           growthProgressSec: 0,
           mutation: 'none',
         },
-        hydratedUntilUtcMs: BASE_TIME + 100_000,
-      };
+        BASE_TIME + 100_000
+      );
 
       // 1. At 60s (after maturity at 45s, but before 75s harvest): crop is mature on plot, not harvested yet
       const midResult = simulateOfflineProgression(envelope, BASE_TIME + 60_000);
-      expect(midResult.updatedEnvelope.farm.plots[0].crop).not.toBeNull();
-      expect(midResult.updatedEnvelope.farm.plots[0].crop?.growthProgressSec).toBe(45);
+      expect(getFreePlot(midResult.updatedEnvelope, 'crop-1')).toBeDefined();
+      expect(getFreePlot(midResult.updatedEnvelope, 'crop-1')?.crop.growthProgressSec).toBe(45);
       expect(midResult.summary.dogHarvestsCount).toBe(0);
       expect(midResult.updatedEnvelope.inventory.produce.length).toBe(0);
 
       // 2. At 80s (after 75s): Dog has harvested the crop into inventory
       const finalResult = simulateOfflineProgression(envelope, BASE_TIME + 80_000);
-      expect(finalResult.updatedEnvelope.farm.plots[0].crop).toBeNull();
+      expect(getFreePlot(finalResult.updatedEnvelope, 'crop-1')).toBeUndefined();
       expect(finalResult.summary.dogHarvestsCount).toBe(1);
       expect(finalResult.updatedEnvelope.inventory.produce).toEqual([
         expect.objectContaining({
@@ -314,21 +346,23 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
       envelope.inventory.equippedPetId = 'pet-dog';
 
       // Crop is already mature at save time
-      envelope.farm.plots[0] = {
-        ...envelope.farm.plots[0],
-        tilled: true,
-        crop: {
+      addFreePlot(
+        envelope,
+        'crop-1',
+        0,
+        0,
+        {
           cropId: 'pumpkin',
           plantedAtUtcMs: BASE_TIME - 200_000,
           growthProgressSec: 180,
           mutation: 'giant',
         },
-        hydratedUntilUtcMs: 0,
-      };
+        0
+      );
 
       // At 35s offline: Dog harvests it
       const result = simulateOfflineProgression(envelope, BASE_TIME + 35_000);
-      expect(result.updatedEnvelope.farm.plots[0].crop).toBeNull();
+      expect(getFreePlot(result.updatedEnvelope, 'crop-1')).toBeUndefined();
       expect(result.summary.dogHarvestsCount).toBe(1);
       expect(result.updatedEnvelope.inventory.produce).toEqual([
         { cropId: 'pumpkin', mutation: 'giant', quantity: 1 },
@@ -339,21 +373,23 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
       const envelope = createDefaultSaveEnvelope(BASE_TIME, 1);
       envelope.inventory.equippedPetId = null; // No pet equipped
 
-      envelope.farm.plots[0] = {
-        ...envelope.farm.plots[0],
-        tilled: true,
-        crop: {
+      addFreePlot(
+        envelope,
+        'crop-1',
+        0,
+        0,
+        {
           cropId: 'carrot',
           plantedAtUtcMs: BASE_TIME,
           growthProgressSec: 0,
           mutation: 'none',
         },
-        hydratedUntilUtcMs: BASE_TIME + 100_000,
-      };
+        BASE_TIME + 100_000
+      );
 
       const result = simulateOfflineProgression(envelope, BASE_TIME + 120_000);
 
-      expect(result.updatedEnvelope.farm.plots[0].crop?.growthProgressSec).toBe(45);
+      expect(getFreePlot(result.updatedEnvelope, 'crop-1')?.crop.growthProgressSec).toBe(45);
       expect(result.summary.dogHarvestsCount).toBe(0);
       expect(result.updatedEnvelope.inventory.produce.length).toBe(0);
     });
@@ -431,17 +467,19 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
       // Egg hatches into Dog at t = 10s and auto-equips!
       // Therefore, Dog is equipped when crop matures at t = 20s.
       // Dog harvests crop at t = 20s + 30s = 50s.
-      envelope.farm.plots[0] = {
-        ...envelope.farm.plots[0],
-        tilled: true,
-        crop: {
+      addFreePlot(
+        envelope,
+        'crop-1',
+        0,
+        0,
+        {
           cropId: 'carrot',
           plantedAtUtcMs: BASE_TIME,
           growthProgressSec: 25, // 20s to mature
           mutation: 'none',
         },
-        hydratedUntilUtcMs: BASE_TIME + 100_000,
-      };
+        BASE_TIME + 100_000
+      );
 
       // Offline for 60s (past 50s Dog harvest)
       const result = simulateOfflineProgression(envelope, BASE_TIME + 60_000);
@@ -449,7 +487,7 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
       expect(result.summary.hatchedPets.length).toBe(1);
       expect(result.summary.hatchedPets[0].type).toBe('dog');
       expect(result.summary.dogHarvestsCount).toBe(1);
-      expect(result.updatedEnvelope.farm.plots[0].crop).toBeNull();
+      expect(getFreePlot(result.updatedEnvelope, 'crop-1')).toBeUndefined();
       expect(result.updatedEnvelope.inventory.produce.length).toBe(1);
     });
   });
@@ -457,17 +495,19 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
   describe('Idempotency & State Commitment', () => {
     it('guarantees idempotency: running simulation twice does not grant double progression', () => {
       const envelope = createDefaultSaveEnvelope(BASE_TIME, 77);
-      envelope.farm.plots[0] = {
-        ...envelope.farm.plots[0],
-        tilled: true,
-        crop: {
+      addFreePlot(
+        envelope,
+        'crop-1',
+        0,
+        0,
+        {
           cropId: 'carrot',
           plantedAtUtcMs: BASE_TIME,
           growthProgressSec: 0,
           mutation: 'none',
         },
-        hydratedUntilUtcMs: BASE_TIME + 100_000,
-      };
+        BASE_TIME + 100_000
+      );
 
       const offlineTimeMs = BASE_TIME + 60_000;
 
@@ -481,7 +521,7 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
       expect(secondRun.summary.elapsedMs).toBe(0);
       expect(secondRun.summary.totalMaturedCount).toBe(0);
       expect(secondRun.summary.shouldDisplay).toBe(false);
-      expect(secondRun.updatedEnvelope.farm.plots[0].crop?.growthProgressSec).toBe(45);
+      expect(getFreePlot(secondRun.updatedEnvelope, 'crop-1')?.crop.growthProgressSec).toBe(45);
     });
   });
 
@@ -495,17 +535,19 @@ describe('offlineSimulation - Deterministic Offline Progression Engine', () => {
       expect(noEventsResult.summary.shouldDisplay).toBe(false);
 
       // 2. Elapsed < 30s (e.g. 10s) with mature crop -> shouldDisplay = false
-      envelope.farm.plots[0] = {
-        ...envelope.farm.plots[0],
-        tilled: true,
-        crop: {
+      addFreePlot(
+        envelope,
+        'crop-1',
+        0,
+        0,
+        {
           cropId: 'carrot',
           plantedAtUtcMs: BASE_TIME,
           growthProgressSec: 42,
           mutation: 'none',
         },
-        hydratedUntilUtcMs: BASE_TIME + 20_000,
-      };
+        BASE_TIME + 20_000
+      );
       const shortTimeResult = simulateOfflineProgression(envelope, BASE_TIME + 10_000);
       expect(shortTimeResult.summary.elapsedMs).toBe(10_000);
       expect(shortTimeResult.summary.totalMaturedCount).toBe(1);

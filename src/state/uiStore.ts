@@ -35,7 +35,7 @@ function createInitialUiState(): UiState {
     activeToast: null,
     isJoystickActive: false,
     joystickVector: { x: 0, y: 0 },
-    selectedTool: 'trowel',
+    selectedTool: 'watering_can',
     selectedSeed: 'carrot',
     hoveredPlotId: null,
     targetedPlotId: null,

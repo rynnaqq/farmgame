@@ -2,8 +2,11 @@ import {
   JOYSTICK_RUN_THRESHOLD,
   JOYSTICK_RUN_TIME_MS,
   CAMERA_DEFAULT_YAW_DEG,
+  MERCHANT_POSITION,
+  MERCHANT_INTERACTION_RANGE,
 } from '../core/constants';
 import { useUiStore } from '../../state/uiStore';
+import { useGameStore } from '../../state/gameStore';
 import {
   processJoystickDeadzone,
   mergeInputVectors,
@@ -66,6 +69,9 @@ export class InputManager {
 
     this.keyboard.onCycleSeed = (direction) => {
       if (this.isModalOpen()) return;
+      // Near the market, E belongs to the merchant shortcut (opens the
+      // nearest stall's shop tab) — don't also cycle seeds underneath it.
+      if (this.isNearMerchantCluster()) return;
       this.onCycleSeed?.(direction);
       if (useUiStore.getState().selectedTool !== 'seed_bag') {
         return;
@@ -184,6 +190,18 @@ export class InputManager {
 
   public isModalOpen(): boolean {
     return useUiStore.getState().activeModal !== null;
+  }
+
+  /**
+   * Whether the player stands within the market cluster (center merchant +
+   * side stalls spanning roughly x -6.8..+3.4). Used to give the E key to
+   * the merchant shortcut instead of seed cycling.
+   */
+  public isNearMerchantCluster(): boolean {
+    const pos = useGameStore.getState().player.position;
+    const dx = pos[0] - MERCHANT_POSITION[0];
+    const dz = pos[2] - MERCHANT_POSITION[2];
+    return Math.hypot(dx, dz) <= MERCHANT_INTERACTION_RANGE + 5.0;
   }
 
   public update(deltaMs: number = 16): ProcessedMovementState {

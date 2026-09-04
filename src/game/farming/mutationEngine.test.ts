@@ -31,10 +31,9 @@ describe('Task 22: Procedural Mutation Engine & Custom Shaders', () => {
   const baseTime = 1700000000000;
 
   const createMockPlot = (overrides?: Partial<PlotData>): PlotData => ({
-    id: 'plot_0_0',
-    row: 0,
-    col: 0,
-    tilled: true,
+    id: 'crop-1',
+    x: 0,
+    z: 0,
     crop: {
       cropId: 'carrot',
       plantedAtUtcMs: baseTime,

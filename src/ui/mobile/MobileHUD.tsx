@@ -1,17 +1,11 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { VirtualJoystick } from './VirtualJoystick';
-import { MobileActionButton } from './MobileActionButton';
-import { findNearestTargetPlot, isMerchantInRange } from './targetPlotFinder';
 import { useSettingsStore } from '../../state/settingsStore';
-import { useGameStore } from '../../state/gameStore';
 import { useUiStore } from '../../state/uiStore';
-import { playerTransform } from '../../game/player/playerTransformStore';
 import type { InputManager } from '../../game/input/InputManager';
-import type { PlotId, ToolType } from '../../state/storeTypes';
 
 export interface MobileHUDProps {
   inputManager?: InputManager;
-  onPlotInteract?: (plotId: PlotId, tool: ToolType) => void;
   forceTouch?: boolean;
   className?: string;
 }
@@ -37,23 +31,19 @@ function checkIsTouchDevice(): boolean {
 /**
  * Responsive Mobile Touch Controls HUD layer:
  * - Floating VirtualJoystick in bottom-left safe area
- * - Large Contextual Action Button in bottom-right safe area
+ * - Jump button in bottom-right safe area
  * - Non-blocking overlay container with pointer-events-none
- * - Continuous target plot & merchant proximity calculation
+ *
+ * Farming uses direct plot taps (no reach rule) and tool switching via the
+ * Toolbelt; the shop opens by tapping the merchant NPC directly.
  */
 export const MobileHUD: React.FC<MobileHUDProps> = ({
   inputManager,
-  onPlotInteract,
   forceTouch,
   className = '',
 }) => {
   const inputMode = useSettingsStore((state) => state.inputMode);
   const activeModal = useUiStore((state) => state.activeModal);
-  const selectedTool = useUiStore((state) => state.selectedTool);
-
-  const playerPosition = useGameStore((state) => state.player.position);
-  const farmPlots = useGameStore((state) => state.farm.plots);
-  const gridSize = useGameStore((state) => state.farm.gridSize);
 
   const [isTouchEnvironment, setIsTouchEnvironment] = useState<boolean>(() => {
     return forceTouch !== undefined ? forceTouch : checkIsTouchDevice();
@@ -83,50 +73,6 @@ export const MobileHUD: React.FC<MobileHUDProps> = ({
     return isTouchEnvironment;
   }, [inputMode, isTouchEnvironment, forceTouch]);
 
-  // Track actual character facing yaw (eliminating raycast/selection misalignment)
-  const [characterYaw, setCharacterYaw] = useState<number>(() => playerTransform.yaw);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      if (Math.abs(playerTransform.yaw - characterYaw) > 0.02) {
-        setCharacterYaw(playerTransform.yaw);
-      }
-    }, 50);
-    return () => clearInterval(timer);
-  }, [characterYaw]);
-
-  // Calculate nearest target plot in player forward cone & reach using character yaw
-  const targetPlotResult = useMemo(() => {
-    return findNearestTargetPlot(playerPosition, characterYaw, farmPlots, gridSize, selectedTool, {
-      filterByTool: false,
-    });
-  }, [playerPosition, characterYaw, farmPlots, gridSize, selectedTool]);
-
-  // Check merchant proximity
-  const nearMerchant = useMemo(() => {
-    return isMerchantInRange(playerPosition);
-  }, [playerPosition]);
-
-  // Synchronize targeted plot ID with uiStore
-  useEffect(() => {
-    const currentTargeted = useUiStore.getState().targetedPlotId;
-    const nextTargeted = targetPlotResult?.plot.id ?? null;
-    if (currentTargeted !== nextTargeted) {
-      useUiStore.getState().setTargetedPlot(nextTargeted);
-    }
-  }, [targetPlotResult]);
-
-  const handleActionButton = useCallback(() => {
-    if (nearMerchant) {
-      useUiStore.getState().openModal('shop');
-      return;
-    }
-
-    if (targetPlotResult) {
-      onPlotInteract?.(targetPlotResult.plot.id, selectedTool);
-    }
-  }, [nearMerchant, targetPlotResult, selectedTool, onPlotInteract]);
-
   if (!shouldRender) {
     return null;
   }
@@ -151,27 +97,21 @@ export const MobileHUD: React.FC<MobileHUDProps> = ({
           <VirtualJoystick inputManager={inputManager} disabled={isModalOpen} />
         </div>
 
-        {/* Lower-right: Action & Jump Buttons (Growden.io style) */}
+        {/* Lower-right: Jump Button (Circular with Up Arrow ↑) */}
         <div className="pointer-events-auto flex flex-col items-center gap-3">
-          {/* 1. Contextual Action Button */}
-          <MobileActionButton
-            selectedTool={selectedTool}
-            hasTarget={targetPlotResult !== null}
-            nearMerchant={nearMerchant}
-            onAction={handleActionButton}
-            disabled={isModalOpen}
-          />
-
-          {/* 2. Jump Button (Circular with Up Arrow ↑) */}
           <button
             type="button"
             data-testid="mobile-jump-button"
             aria-label="Jump"
             disabled={isModalOpen}
-            onClick={(e) => {
+            onPointerDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
               inputManager?.triggerJump();
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
             }}
             className={`w-16 h-16 rounded-full bg-slate-900/90 hover:bg-slate-800/90 active:scale-90 border-2 border-white/40 text-white shadow-2xl flex items-center justify-center cursor-pointer transition-transform duration-100 ${
               isModalOpen ? 'opacity-40 cursor-not-allowed' : ''

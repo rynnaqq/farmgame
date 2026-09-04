@@ -7,7 +7,7 @@ import {
   type OfflineSummaryData,
 } from '../persistence/offlineSimulation';
 import { applyWeatherHydration } from '../game/weather/weatherSystem';
-import { tillPlot, plantCrop, waterPlot, harvestCrop } from '../game/farming/farmingCommands';
+import { plantCropAt, waterPlot, harvestCrop } from '../game/farming/farmingCommands';
 import { hatchEgg } from '../game/pets/petSystem';
 import type {
   SaveEnvelope,
@@ -29,8 +29,7 @@ declare global {
     __setWeather?: (type: WeatherType, durationSeconds?: number) => WeatherState;
     __getGameState?: () => SaveEnvelope;
     __resetGame?: (seed?: number) => void;
-    __tillPlot?: (plotId: PlotId) => CommandResult<{ plotId: PlotId }>;
-    __plantCrop?: (plotId: PlotId, cropId: CropId) => CommandResult<{ cropId: CropId }>;
+    __plantCropAt?: (x: number, z: number, cropId: CropId) => CommandResult<{ plotId: PlotId }>;
     __waterPlot?: (plotId: PlotId) => CommandResult<{ hydratedPlotIds: PlotId[] }>;
     __harvestCrop?: (
       plotId: PlotId
@@ -129,12 +128,10 @@ export function installTestClock(): boolean {
   window.__setWeather = setTestWeather;
   window.__getGameState = getTestGameState;
   window.__resetGame = resetTestGame;
-  window.__tillPlot = (plotId: PlotId) => tillPlot(plotId);
-  window.__plantCrop = (plotId: PlotId, cropId: CropId) => plantCrop(plotId, cropId);
+  window.__plantCropAt = (x: number, z: number, cropId: CropId) => plantCropAt(x, z, cropId);
   window.__waterPlot = (plotId: PlotId) =>
     waterPlot(
       plotId,
-      undefined,
       useGameStore.getState().farm.goldenWateringCanOwned,
       useGameStore.getState().weather.current
     );
@@ -189,8 +186,7 @@ export function uninstallTestClock(): void {
   delete window.__setWeather;
   delete window.__getGameState;
   delete window.__resetGame;
-  delete window.__tillPlot;
-  delete window.__plantCrop;
+  delete window.__plantCropAt;
   delete window.__waterPlot;
   delete window.__harvestCrop;
   delete window.__addCoins;

@@ -13,14 +13,19 @@ describe('Task 10: Farming State Machine & Evaluator', () => {
   const baseTime = 1700000000000;
 
   const createMockPlot = (overrides?: Partial<PlotData>): PlotData => ({
-    id: 'plot_0_0',
-    row: 0,
-    col: 0,
-    tilled: false,
-    crop: null,
+    id: 'crop-1',
+    x: 0,
+    z: 0,
+    crop: {
+      cropId: 'carrot',
+      plantedAtUtcMs: baseTime,
+      growthProgressSec: 10,
+      mutation: 'none',
+    },
     hydratedUntilUtcMs: 0,
     ...overrides,
   });
+  const NULL_CROP = null as unknown as import('../../state/storeTypes').CropData;
 
   describe('evaluateCropStage() - Crop Stage Boundary Evaluator', () => {
     it('returns "sprout" for 0% to 32.99% growth progress', () => {
@@ -64,48 +69,44 @@ describe('Task 10: Farming State Machine & Evaluator', () => {
   });
 
   describe('isPlotHydrated()', () => {
-    it('returns true when plot is tilled and hydration expiry is in the future', () => {
+    it('returns true when hydration expiry is in the future', () => {
       const plot = createMockPlot({
-        tilled: true,
         hydratedUntilUtcMs: baseTime + 60000,
       });
       expect(isPlotHydrated(plot, baseTime)).toBe(true);
     });
 
-    it('returns false when plot is tilled but hydration expiry is in the past', () => {
+    it('returns false when hydration expiry is in the past', () => {
       const plot = createMockPlot({
-        tilled: true,
         hydratedUntilUtcMs: baseTime - 1000,
       });
       expect(isPlotHydrated(plot, baseTime)).toBe(false);
     });
 
-    it('returns false when plot is tilled and hydration expiry equals current time', () => {
+    it('returns false when hydration expiry equals current time', () => {
       const plot = createMockPlot({
-        tilled: true,
         hydratedUntilUtcMs: baseTime,
       });
       expect(isPlotHydrated(plot, baseTime)).toBe(false);
     });
 
-    it('returns false when plot is untilled even if hydratedUntilUtcMs is in the future', () => {
+    it('returns true for empty soil with hydration expiry in the future (no till step)', () => {
       const plot = createMockPlot({
-        tilled: false,
+        crop: NULL_CROP,
         hydratedUntilUtcMs: baseTime + 60000,
       });
-      expect(isPlotHydrated(plot, baseTime)).toBe(false);
+      expect(isPlotHydrated(plot, baseTime)).toBe(true);
     });
   });
 
   describe('isPlotHarvestable()', () => {
     it('returns false when plot has no crop', () => {
-      const plot = createMockPlot({ tilled: true, crop: null });
+      const plot = createMockPlot({ crop: NULL_CROP });
       expect(isPlotHarvestable(plot)).toBe(false);
     });
 
     it('returns false when crop growth progress is below required duration', () => {
       const plot = createMockPlot({
-        tilled: true,
         crop: {
           cropId: 'carrot',
           plantedAtUtcMs: baseTime,
@@ -118,7 +119,6 @@ describe('Task 10: Farming State Machine & Evaluator', () => {
 
     it('returns true when crop growth progress equals or exceeds required duration', () => {
       const plot = createMockPlot({
-        tilled: true,
         crop: {
           cropId: 'carrot',
           plantedAtUtcMs: baseTime,
@@ -129,7 +129,6 @@ describe('Task 10: Farming State Machine & Evaluator', () => {
       expect(isPlotHarvestable(plot)).toBe(true);
 
       const matureOvergrowth = createMockPlot({
-        tilled: true,
         crop: {
           cropId: 'starfruit', // 480s required
           plantedAtUtcMs: baseTime,
@@ -142,7 +141,6 @@ describe('Task 10: Farming State Machine & Evaluator', () => {
 
     it('returns false for unknown cropId', () => {
       const plot = createMockPlot({
-        tilled: true,
         crop: {
           cropId: 'invalid_crop' as unknown as CropId,
           plantedAtUtcMs: baseTime,
@@ -154,33 +152,9 @@ describe('Task 10: Farming State Machine & Evaluator', () => {
     });
   });
 
-  describe('evaluatePlotState() - 5 Distinct Plot States', () => {
-    it('evaluates "untilled" state when plot is untilled and empty', () => {
-      const plot = createMockPlot({ tilled: false, crop: null });
-      expect(evaluatePlotState(plot, baseTime)).toBe('untilled');
-    });
-
-    it('evaluates "tilled" state when plot is tilled, empty, and dry', () => {
-      const plot = createMockPlot({
-        tilled: true,
-        crop: null,
-        hydratedUntilUtcMs: baseTime - 5000,
-      });
-      expect(evaluatePlotState(plot, baseTime)).toBe('tilled');
-    });
-
-    it('evaluates "watered" state when plot is tilled, empty, and hydrated', () => {
-      const plot = createMockPlot({
-        tilled: true,
-        crop: null,
-        hydratedUntilUtcMs: baseTime + 60000,
-      });
-      expect(evaluatePlotState(plot, baseTime)).toBe('watered');
-    });
-
+  describe('evaluatePlotState() - 3 Distinct Plot States', () => {
     it('evaluates "planted" state when crop is growing on dry soil', () => {
       const plot = createMockPlot({
-        tilled: true,
         crop: {
           cropId: 'tomato',
           plantedAtUtcMs: baseTime,
@@ -194,7 +168,6 @@ describe('Task 10: Farming State Machine & Evaluator', () => {
 
     it('evaluates "watered" state when crop is growing on hydrated soil', () => {
       const plot = createMockPlot({
-        tilled: true,
         crop: {
           cropId: 'tomato',
           plantedAtUtcMs: baseTime,
@@ -208,7 +181,6 @@ describe('Task 10: Farming State Machine & Evaluator', () => {
 
     it('evaluates "harvestable" state when crop reaches 100% progress regardless of hydration', () => {
       const dryHarvestable = createMockPlot({
-        tilled: true,
         crop: {
           cropId: 'pumpkin',
           plantedAtUtcMs: baseTime,
@@ -220,7 +192,6 @@ describe('Task 10: Farming State Machine & Evaluator', () => {
       expect(evaluatePlotState(dryHarvestable, baseTime)).toBe('harvestable');
 
       const wetHarvestable = createMockPlot({
-        tilled: true,
         crop: {
           cropId: 'pumpkin',
           plantedAtUtcMs: baseTime,
@@ -234,23 +205,15 @@ describe('Task 10: Farming State Machine & Evaluator', () => {
   });
 
   describe('getValidToolActions()', () => {
-    it('returns trowel for untilled plot', () => {
-      const plot = createMockPlot({ tilled: false });
+    it('returns watering_can for a dry growing plot', () => {
+      const plot = createMockPlot();
       const actions = getValidToolActions(plot, baseTime);
-      expect(actions.validTools).toContain('trowel');
-      expect(actions.primaryAction.toLowerCase()).toContain('till');
-    });
-
-    it('returns seed_bag and watering_can for empty tilled plot', () => {
-      const plot = createMockPlot({ tilled: true, crop: null });
-      const actions = getValidToolActions(plot, baseTime);
-      expect(actions.validTools).toContain('seed_bag');
       expect(actions.validTools).toContain('watering_can');
+      expect(actions.primaryAction.toLowerCase()).toContain('water');
     });
 
     it('returns watering_can for growing crop', () => {
       const plot = createMockPlot({
-        tilled: true,
         crop: {
           cropId: 'golden_berry',
           plantedAtUtcMs: baseTime,
@@ -264,7 +227,6 @@ describe('Task 10: Farming State Machine & Evaluator', () => {
 
     it('returns scythe and hand for harvestable plot', () => {
       const plot = createMockPlot({
-        tilled: true,
         crop: {
           cropId: 'carrot',
           plantedAtUtcMs: baseTime,
@@ -280,10 +242,8 @@ describe('Task 10: Farming State Machine & Evaluator', () => {
   });
 
   describe('describeNextAction()', () => {
-    const untilledPlot = createMockPlot({ tilled: false, crop: null });
-    const emptyTilledPlot = createMockPlot({ tilled: true, crop: null });
+    const emptyPlot = createMockPlot({ crop: NULL_CROP });
     const growingPlot = createMockPlot({
-      tilled: true,
       crop: {
         cropId: 'tomato',
         plantedAtUtcMs: baseTime,
@@ -292,7 +252,6 @@ describe('Task 10: Farming State Machine & Evaluator', () => {
       },
     });
     const harvestablePlot = createMockPlot({
-      tilled: true,
       crop: {
         cropId: 'tomato',
         plantedAtUtcMs: baseTime,
@@ -301,19 +260,8 @@ describe('Task 10: Farming State Machine & Evaluator', () => {
       },
     });
 
-    it('provides accurate feedback for trowel', () => {
-      expect(describeNextAction(untilledPlot, baseTime, 'trowel').toLowerCase()).toContain('till');
-      expect(describeNextAction(emptyTilledPlot, baseTime, 'trowel').toLowerCase()).toContain(
-        'already tilled'
-      );
-      expect(describeNextAction(growingPlot, baseTime, 'trowel').toLowerCase()).toContain('crop');
-    });
-
     it('provides accurate feedback for watering_can', () => {
-      expect(describeNextAction(untilledPlot, baseTime, 'watering_can').toLowerCase()).toContain(
-        'till'
-      );
-      expect(describeNextAction(emptyTilledPlot, baseTime, 'watering_can').toLowerCase()).toContain(
+      expect(describeNextAction(emptyPlot, baseTime, 'watering_can').toLowerCase()).toContain(
         'water'
       );
       expect(describeNextAction(growingPlot, baseTime, 'watering_can').toLowerCase()).toContain(
@@ -325,12 +273,7 @@ describe('Task 10: Farming State Machine & Evaluator', () => {
     });
 
     it('provides accurate feedback for seed_bag', () => {
-      expect(describeNextAction(untilledPlot, baseTime, 'seed_bag').toLowerCase()).toContain(
-        'till'
-      );
-      expect(describeNextAction(emptyTilledPlot, baseTime, 'seed_bag').toLowerCase()).toContain(
-        'plant'
-      );
+      expect(describeNextAction(emptyPlot, baseTime, 'seed_bag').toLowerCase()).toContain('plant');
       expect(describeNextAction(growingPlot, baseTime, 'seed_bag').toLowerCase()).toContain(
         'already'
       );
@@ -339,10 +282,7 @@ describe('Task 10: Farming State Machine & Evaluator', () => {
     it('provides accurate feedback for scythe and hand', () => {
       const tools: ToolType[] = ['scythe', 'hand'];
       tools.forEach((tool) => {
-        expect(describeNextAction(untilledPlot, baseTime, tool).toLowerCase()).toContain('no crop');
-        expect(describeNextAction(emptyTilledPlot, baseTime, tool).toLowerCase()).toContain(
-          'no crop'
-        );
+        expect(describeNextAction(emptyPlot, baseTime, tool).toLowerCase()).toContain('no crop');
         expect(describeNextAction(growingPlot, baseTime, tool).toLowerCase()).toContain('growing');
         expect(describeNextAction(harvestablePlot, baseTime, tool).toLowerCase()).toContain(
           'harvest'

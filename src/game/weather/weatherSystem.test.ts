@@ -285,31 +285,35 @@ describe('Weather System', () => {
   });
 
   describe('applyWeatherHydration', () => {
-    const createPlot = (id: PlotId, tilled: boolean, hydratedUntil: number): PlotData => ({
+    const createPlot = (id: PlotId, hydratedUntil: number): PlotData => ({
       id,
-      row: 0,
-      col: 0,
-      tilled,
-      crop: null,
+      x: 0,
+      z: 0,
+      crop: {
+        cropId: 'carrot',
+        plantedAtUtcMs: 0,
+        growthProgressSec: 0,
+        mutation: 'none',
+      },
       hydratedUntilUtcMs: hydratedUntil,
     });
 
-    it('extends hydration on all tilled plots to weatherEndMs + 20s buffer during heavy_rain', () => {
+    it('extends hydration on all plots to weatherEndMs + 20s buffer during heavy_rain', () => {
       const nowMs = 100_000;
       const weatherEndMs = 280_000;
       const expectedHydration = weatherEndMs + 20_000; // 300_000
 
       const plots: Record<PlotId, PlotData> = {
-        plot1: createPlot('plot1', true, 0), // dry tilled plot
-        plot2: createPlot('plot2', true, 150_000), // partially hydrated tilled plot
-        plot3: createPlot('plot3', false, 0), // untilled plot
+        plot1: createPlot('plot1', 0), // dry plot
+        plot2: createPlot('plot2', 150_000), // partially hydrated plot
+        plot3: createPlot('plot3', 0), // dry plot
       };
 
       const updated = applyWeatherHydration(plots, 'heavy_rain', weatherEndMs, nowMs);
 
       expect(updated.plot1.hydratedUntilUtcMs).toBe(expectedHydration);
       expect(updated.plot2.hydratedUntilUtcMs).toBe(expectedHydration);
-      expect(updated.plot3.hydratedUntilUtcMs).toBe(0); // untilled remains dry
+      expect(updated.plot3.hydratedUntilUtcMs).toBe(expectedHydration);
     });
 
     it('does not reduce existing hydration if already beyond the rain buffer', () => {
@@ -318,7 +322,7 @@ describe('Weather System', () => {
       const farFutureHydration = 500_000;
 
       const plots: Record<PlotId, PlotData> = {
-        plot1: createPlot('plot1', true, farFutureHydration),
+        plot1: createPlot('plot1', farFutureHydration),
       };
 
       const updated = applyWeatherHydration(plots, 'heavy_rain', weatherEndMs, nowMs);
@@ -330,8 +334,8 @@ describe('Weather System', () => {
       const weatherEndMs = 280_000;
 
       const plots: Record<PlotId, PlotData> = {
-        plot1: createPlot('plot1', true, 110_000),
-        plot2: createPlot('plot2', false, 0),
+        plot1: createPlot('plot1', 110_000),
+        plot2: createPlot('plot2', 0),
       };
 
       const updatedSunny = applyWeatherHydration(plots, 'sunny', weatherEndMs, nowMs);

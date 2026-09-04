@@ -10,7 +10,7 @@ test.describe('Farming Loop E2E', () => {
     });
   });
 
-  test('full farming cycle: till, plant carrot, water, mature via test clock, harvest, and sell for coins', async ({
+  test('full farming cycle: plant carrot, water, mature via test clock, harvest, and sell for coins', async ({
     page,
   }) => {
     // Verify initial coins and carrot seed count
@@ -22,36 +22,22 @@ test.describe('Farming Loop E2E', () => {
     );
     expect(initialSeeds).toBe(5);
 
-    // 1. Select Trowel tool
-    const trowelBtn = page.locator('[data-testid="tool-trowel"]');
-    await trowelBtn.click();
-    await expect(trowelBtn).toHaveAttribute('aria-pressed', 'true');
-
-    // 2. Till plot-0-0
-    await page.evaluate(() => {
-      window.__tillPlot?.('plot-0-0');
-    });
-
-    let plotState = await page.evaluate(() => {
-      const plots = window.__getGameState?.().farm.plots;
-      return plots?.find((p) => p.id === 'plot-0-0');
-    });
-    expect(plotState?.tilled).toBe(true);
-
-    // 3. Select Seed Bag tool
+    // 1. Select Seed Bag tool and plant directly at a free soil point (no till step)
     const seedBagBtn = page.locator('[data-testid="tool-seed_bag"]');
     await seedBagBtn.click();
     await expect(seedBagBtn).toHaveAttribute('aria-pressed', 'true');
 
-    // 4. Plant Carrot on plot-0-0
-    await page.evaluate(() => {
-      window.__plantCrop?.('plot-0-0', 'carrot');
+    // 2. Plant Carrot at (0, 0)
+    const plotId = await page.evaluate(() => {
+      const res = window.__plantCropAt?.(0, 0, 'carrot');
+      if (!res || !res.ok) throw new Error('planting failed');
+      return res.value.plotId;
     });
 
-    plotState = await page.evaluate(() => {
+    let plotState = await page.evaluate((id) => {
       const plots = window.__getGameState?.().farm.plots;
-      return plots?.find((p) => p.id === 'plot-0-0');
-    });
+      return plots?.find((p) => p.id === id);
+    }, plotId);
     expect(plotState?.crop?.cropId).toBe('carrot');
     expect(plotState?.crop?.growthProgressSec).toBe(0);
 
@@ -60,67 +46,64 @@ test.describe('Farming Loop E2E', () => {
     );
     expect(seedsAfterPlanting).toBe(4);
 
-    // 5. Select Watering Can tool
+    // 3. Select Watering Can tool
     const wateringBtn = page.locator('[data-testid="tool-watering_can"]');
     await wateringBtn.click();
     await expect(wateringBtn).toHaveAttribute('aria-pressed', 'true');
 
-    // 6. Water plot-0-0
-    await page.evaluate(() => {
-      window.__waterPlot?.('plot-0-0');
-    });
+    // 4. Water the crop
+    await page.evaluate((id) => {
+      window.__waterPlot?.(id);
+    }, plotId);
 
-    plotState = await page.evaluate(() => {
+    plotState = await page.evaluate((id) => {
       const plots = window.__getGameState?.().farm.plots;
-      return plots?.find((p) => p.id === 'plot-0-0');
-    });
+      return plots?.find((p) => p.id === id);
+    }, plotId);
     expect(plotState?.hydratedUntilUtcMs).toBeGreaterThan(Date.now());
 
-    // 7. Fast forward clock by 45 seconds to mature the carrot
+    // 5. Fast forward clock by 45 seconds to mature the carrot
     await page.evaluate(() => {
       window.__advanceGameTime?.(45_000);
     });
 
-    plotState = await page.evaluate(() => {
+    plotState = await page.evaluate((id) => {
       const plots = window.__getGameState?.().farm.plots;
-      return plots?.find((p) => p.id === 'plot-0-0');
-    });
+      return plots?.find((p) => p.id === id);
+    }, plotId);
     expect(plotState?.crop?.growthProgressSec).toBe(45);
 
-    // 8. Select Hand/Scythe tool
+    // 6. Select Hand/Scythe tool
     const handBtn = page.locator('[data-testid="tool-hand"]');
     await handBtn.click();
     await expect(handBtn).toHaveAttribute('aria-pressed', 'true');
 
-    // 9. Harvest carrot from plot-0-0
-    await page.evaluate(() => {
-      window.__harvestCrop?.('plot-0-0');
-    });
+    // 7. Harvest carrot (plot is removed, freeing the soil)
+    await page.evaluate((id) => {
+      window.__harvestCrop?.(id);
+    }, plotId);
 
-    plotState = await page.evaluate(() => {
-      const plots = window.__getGameState?.().farm.plots;
-      return plots?.find((p) => p.id === 'plot-0-0');
-    });
-    expect(plotState?.crop).toBeNull();
+    const plotsAfter = await page.evaluate(() => window.__getGameState?.().farm.plots);
+    expect(plotsAfter?.find((p) => p.id === plotId)).toBeUndefined();
 
     const produce = await page.evaluate(() => window.__getGameState?.().inventory.produce);
     expect(produce?.length).toBe(1);
     expect(produce?.[0].cropId).toBe('carrot');
     expect(produce?.[0].quantity).toBe(1);
 
-    // 10. Open Shop Modal
+    // 8. Open Shop Modal
     await page.evaluate(() => {
       window.__openModal?.('shop');
     });
     const shopModal = page.locator('[data-testid="shop-modal"]');
     await expect(shopModal).toBeVisible();
 
-    // 11. Navigate to Sell Produce tab
+    // 9. Navigate to Sell Produce tab
     const sellTab = page.locator('[data-testid="tab-sell"]');
     await sellTab.click();
     await expect(page.locator('[data-testid="pane-sell"]')).toBeVisible();
 
-    // 12. Verify carrot produce item and sell it
+    // 10. Verify carrot produce item and sell it
     const carrotStack = page.locator('[data-testid^="produce-stack-carrot-"]');
     await expect(carrotStack).toBeVisible();
 
@@ -128,7 +111,7 @@ test.describe('Farming Loop E2E', () => {
     await expect(sellAllBtn).toBeEnabled();
     await sellAllBtn.click();
 
-    // 13. Verify coin balance increased by 12 coins (100 -> 112)
+    // 11. Verify coin balance increased by 12 coins (100 -> 112)
     const finalCoins = await page.evaluate(() => window.__getGameState?.().player.coins);
     expect(finalCoins).toBe(112);
 

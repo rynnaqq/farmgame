@@ -5,10 +5,15 @@ import * as THREE from 'three';
 import {
   PLAYER_WALK_SPEED,
   PLAYER_RUN_SPEED,
+  PLAYER_JUMP_VELOCITY,
+  PLAYER_FALL_EXTRA_GRAVITY,
+  JUMP_BUFFER_MS,
+  COYOTE_MS,
   ISLAND_FALL_Y_THRESHOLD,
   PLAYER_SPAWN_POSITION,
 } from '../core/constants';
 import { useGameStore } from '../../state/gameStore';
+import { useSettingsStore } from '../../state/settingsStore';
 import { useUiStore } from '../../state/uiStore';
 import { useNetStore } from '../multiplayer/netStore';
 import { getRoomConnection } from '../multiplayer/RoomConnection';
@@ -24,6 +29,8 @@ import {
   shouldRespawn,
   dampAngle,
   dampScalar,
+  WALK_SWING_FREQUENCY,
+  RUN_SWING_FREQUENCY,
   DEFAULT_ROTATION_DAMPING,
   DEFAULT_STRIDE_BLEND_DAMPING,
 } from './playerAnimation';
@@ -57,6 +64,7 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
   // Animation bone group references for zero-re-render 60fps updates
   const rootModelRef = useRef<THREE.Group | null>(null);
   const headRef = useRef<THREE.Group | null>(null);
+  const torsoRef = useRef<THREE.Group | null>(null);
   const leftArmRef = useRef<THREE.Group | null>(null);
   const rightArmRef = useRef<THREE.Group | null>(null);
   const leftLegRef = useRef<THREE.Group | null>(null);
@@ -71,6 +79,16 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
   const smoothedSpeedRef = useRef<number>(0);
   /** Throttle timestamp for zustand store position syncs. */
   const lastStoreSyncRef = useRef<number>(0);
+  /** Jump input buffer: last Space/tap press timestamp (ms). */
+  const lastJumpPressMsRef = useRef<number>(-Infinity);
+  /** Coyote timer: last grounded timestamp (ms). */
+  const lastGroundedMsRef = useRef<number>(-Infinity);
+  /** Previous-frame grounded flag for landing detection. */
+  const wasGroundedRef = useRef<boolean>(true);
+  /** Landing timestamp (ms) for the touchdown dip. */
+  const landDipStartMsRef = useRef<number>(-Infinity);
+  /** Grounded flag from the previous physics read (1 frame lag, imperceptible). */
+  const groundedRef = useRef<boolean>(true);
 
   // Reusable Three math primitives to avoid GC allocations
   const quaternionRef = useRef<THREE.Quaternion>(new THREE.Quaternion());
@@ -122,37 +140,63 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
     // 4. Procedural limb & idle animations, blended continuously.
     // Stride phase advances with the blended speed so steps stay continuous
     // while accelerating or decelerating (no visible stepping/skipping).
-    const strideFreq = smoothed.speed * 2.8;
+    // Cadence follows the walk/run swing frequencies scaled by actual speed
+    // so footsteps match ground movement instead of sliding.
+    const runRatio = Math.max(
+      0,
+      Math.min(1, (smoothed.speed - PLAYER_WALK_SPEED) / (PLAYER_RUN_SPEED - PLAYER_WALK_SPEED))
+    );
+    const baseSpeed = PLAYER_WALK_SPEED + (PLAYER_RUN_SPEED - PLAYER_WALK_SPEED) * runRatio;
+    const speedRatio = baseSpeed > 0.001 ? Math.min(smoothed.speed / baseSpeed, 1.0) : 0;
+    const strideFreq =
+      (WALK_SWING_FREQUENCY + (RUN_SWING_FREQUENCY - WALK_SWING_FREQUENCY) * runRatio) * speedRatio;
     walkPhaseRef.current += strideFreq * dt;
-    idlePhaseRef.current += 2.5 * dt;
+    // Idle clock runs in plain seconds — calculateIdleBob applies its own
+    // per-layer frequencies (previously double-scaled, making idle frantic).
+    idlePhaseRef.current += dt;
 
+    const reducedMotion = useSettingsStore.getState().reducedMotion;
+    // Airborne pose uses the previous frame's grounded flag (1 frame lag).
     const swings = calculateLimbSwings(
       smoothed.speed,
       isRunning,
       walkPhaseRef.current,
-      strideBlend
+      strideBlend,
+      !groundedRef.current,
+      reducedMotion
     );
-    const idle = calculateIdleBob(idlePhaseRef.current, strideBlend);
+    const idle = calculateIdleBob(idlePhaseRef.current, strideBlend, reducedMotion);
 
     // Blend limb poses: swing amplitude scales with the blend, idle sway
     // scales with (1 - blend); sum is continuous at every speed.
+    // Arm roll combines the walk lateral swing with the asymmetric idle drift.
+    const nowMs = performance.now();
+    const dipAgeSec = (nowMs - landDipStartMsRef.current) / 1000;
+    const landDip = dipAgeSec < 0.18 && !reducedMotion ? 0.06 * (1 - dipAgeSec / 0.18) : 0;
     if (leftLegRef.current) leftLegRef.current.rotation.x = swings.leftLegPitch;
     if (rightLegRef.current) rightLegRef.current.rotation.x = swings.rightLegPitch;
     if (leftArmRef.current) {
       leftArmRef.current.rotation.x = swings.leftArmPitch;
-      leftArmRef.current.rotation.z = 0.08 + idle.armSwayZ;
+      leftArmRef.current.rotation.z = 0.08 + swings.leftArmRoll + idle.leftArmSwayZ;
     }
     if (rightArmRef.current) {
       rightArmRef.current.rotation.x = swings.rightArmPitch;
-      rightArmRef.current.rotation.z = -0.08 - idle.armSwayZ;
+      rightArmRef.current.rotation.z = -0.08 + swings.rightArmRoll - idle.rightArmSwayZ;
     }
     if (rootModelRef.current) {
-      rootModelRef.current.position.y = swings.stepBounce + idle.idleBobY;
+      rootModelRef.current.position.y =
+        swings.stepBounce + swings.legLift + idle.idleBobY - landDip;
       rootModelRef.current.rotation.z = swings.bodyRoll + idle.idleSwayZ;
-      rootModelRef.current.rotation.x = idle.torsoPitch;
+      rootModelRef.current.rotation.y = swings.torsoYaw;
+    }
+    if (torsoRef.current) {
+      // Chest breathes on its own pivot instead of nodding the whole avatar.
+      torsoRef.current.rotation.x = idle.torsoPitch;
+      const breathe = 1 + idle.breatheScale;
+      torsoRef.current.scale.set(breathe, 1, breathe);
     }
     if (headRef.current) {
-      headRef.current.rotation.z = idle.headTiltZ;
+      headRef.current.rotation.z = idle.headTiltZ + idle.headRollZ;
       headRef.current.rotation.y = idle.headYaw;
     }
 
@@ -179,12 +223,37 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
         useGameStore.getState().setPlayerPosition([spawnX, spawnY, spawnZ]);
         onFall?.();
       } else {
-        // Command horizontal velocity and apply jump impulses if requested while grounded
-        const shouldJump = inputManager?.consumeJump() ?? false;
-        let vy = rb.linvel().y;
-        if (shouldJump && pos.y < 0.45 && Math.abs(vy) < 0.6) {
-          vy = 5.8;
-          audioManager.playSfx('ui_click');
+        // Jump input buffer: Space/tap presses are captured into a timestamp
+        // so presses slightly before landing are not swallowed while moving.
+        if (inputManager?.consumeJump() ?? false) {
+          lastJumpPressMsRef.current = nowMs;
+        }
+        const vyRead = rb.linvel().y;
+        const grounded = pos.y <= 0.08 && vyRead <= 0.5;
+        if (grounded) {
+          lastGroundedMsRef.current = nowMs;
+        }
+        // Touchdown dip on landing.
+        if (grounded && !wasGroundedRef.current) {
+          landDipStartMsRef.current = nowMs;
+        }
+        wasGroundedRef.current = grounded;
+        groundedRef.current = grounded;
+
+        // Buffered jump + coyote time: fires while walking, shortly after
+        // leaving a ledge, or slightly before touchdown.
+        let vy = vyRead;
+        const pressAgeMs = nowMs - lastJumpPressMsRef.current;
+        const groundAgeMs = nowMs - lastGroundedMsRef.current;
+        if (pressAgeMs < JUMP_BUFFER_MS && groundAgeMs < COYOTE_MS) {
+          vy = PLAYER_JUMP_VELOCITY;
+          lastJumpPressMsRef.current = -Infinity;
+          lastGroundedMsRef.current = -Infinity;
+          groundedRef.current = false;
+          audioManager.playSfx('jump');
+        } else if (!grounded && vy < 0) {
+          // Extra fall gravity for a snappy, non-floaty landing.
+          vy -= PLAYER_FALL_EXTRA_GRAVITY * dt;
         }
         rb.setLinvel({ x: smoothed.x, y: vy, z: smoothed.z }, true);
 
@@ -212,7 +281,6 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
         // Throttled store sync: gameplay UI (mobile target highlight, merchant
         // proximity) needs ~10 Hz, not 60 Hz. This removes the per-frame React
         // re-render storm that made movement feel jerky on mobile.
-        const nowMs = performance.now();
         if (nowMs - lastStoreSyncRef.current >= STORE_SYNC_INTERVAL_MS) {
           lastStoreSyncRef.current = nowMs;
           useGameStore.getState().setPlayerPosition([nextX, nextY, nextZ]);
@@ -253,6 +321,7 @@ export const PlayerController: React.FC<PlayerControllerProps> = ({
         <PlayerModel
           rootRef={rootModelRef}
           headRef={headRef}
+          torsoRef={torsoRef}
           leftArmRef={leftArmRef}
           rightArmRef={rightArmRef}
           leftLegRef={leftLegRef}

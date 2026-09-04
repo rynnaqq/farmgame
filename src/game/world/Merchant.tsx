@@ -44,23 +44,50 @@ export const Merchant: React.FC<MerchantProps> = ({ position = MERCHANT_POSITION
     onOpenShop?.();
   }, [onOpenShop]);
 
-  // Desktop 'E' key shortcut listener
+  // Nearest market counter (center SELL + 3 side stalls) for the E shortcut.
+  // Side-stall offsets must match the <StripedStall position> props below.
+  const nearestCounter = useMemo(() => {
+    const counters: { dx: number; dz: number; tab: 'seeds' | 'eggs' | 'upgrades' | null }[] = [
+      { dx: 0, dz: 0, tab: null }, // center SELL merchant (shop default tab)
+      { dx: -3.4, dz: 0, tab: 'seeds' },
+      { dx: -6.8, dz: 0, tab: 'eggs' },
+      { dx: 3.4, dz: 0, tab: 'upgrades' },
+    ];
+    let best: { tab: 'seeds' | 'eggs' | 'upgrades' | null; dist: number } | null = null;
+    for (const counter of counters) {
+      const dist = Math.hypot(
+        playerPosition[0] - (position[0] + counter.dx),
+        playerPosition[2] - (position[2] + counter.dz)
+      );
+      if (dist <= MERCHANT_INTERACTION_RANGE && (!best || dist < best.dist)) {
+        best = { tab: counter.tab, dist };
+      }
+    }
+    return best;
+  }, [playerPosition, position]);
+
+  // Single market-wide 'E' shortcut: opens the nearest counter's shop tab.
+  // (Stalls own no E listener so overlapping ranges can't stack modals.)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.key === 'e' || e.key === 'E') && isNear && activeModal === null) {
+      if ((e.key === 'e' || e.key === 'E') && nearestCounter && activeModal === null) {
         // Prevent triggering if typing in an input element
         const target = e.target as HTMLElement;
         if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
           return;
         }
         e.preventDefault();
-        handleOpenShop();
+        if (nearestCounter.tab) {
+          useUiStore.getState().openModal('shop', { initialTab: nearestCounter.tab });
+        } else {
+          handleOpenShop();
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isNear, activeModal, handleOpenShop]);
+  }, [nearestCounter, activeModal, handleOpenShop]);
 
   // Subtle procedural idle animation (gentle breathing & head movement)
   useFrame((state) => {
@@ -79,6 +106,7 @@ export const Merchant: React.FC<MerchantProps> = ({ position = MERCHANT_POSITION
       {/* 0. Adjacent Festival Marketplace Stalls (Seeds, Eggs, Gear) */}
       <StripedStall
         position={[-3.4, 0, 0]}
+        basePosition={position}
         primaryColor="#3B82F6"
         signTitle="SEEDS"
         npcName="Seed Vendor"
@@ -88,6 +116,7 @@ export const Merchant: React.FC<MerchantProps> = ({ position = MERCHANT_POSITION
       />
       <StripedStall
         position={[-6.8, 0, 0]}
+        basePosition={position}
         primaryColor="#F59E0B"
         signTitle="PET EGGS"
         npcName="Pet Handler"
@@ -97,6 +126,7 @@ export const Merchant: React.FC<MerchantProps> = ({ position = MERCHANT_POSITION
       />
       <StripedStall
         position={[3.4, 0, 0]}
+        basePosition={position}
         primaryColor="#10B981"
         signTitle="GEAR"
         npcName="Toolsmith"

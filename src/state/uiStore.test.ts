@@ -20,7 +20,7 @@ describe('useUiStore', () => {
       expect(state.activeToast).toBeNull();
       expect(state.isJoystickActive).toBe(false);
       expect(state.joystickVector).toEqual({ x: 0, y: 0 });
-      expect(state.selectedTool).toBe('trowel');
+      expect(state.selectedTool).toBe('watering_can');
       expect(state.selectedSeed).toBe('carrot');
       expect(state.hoveredPlotId).toBeNull();
       expect(state.targetedPlotId).toBeNull();

@@ -53,16 +53,19 @@ export const WeatherRenderer: React.FC = () => {
     }
   }, [currentWeather]);
 
-  // Configure directional shadow camera bounds
+  // Configure directional shadow camera bounds.
+  // Tight fit over the farm + near decorations (±12): at 1024px this is
+  // ~2.3cm/texel instead of ~3.1cm, calming acne on the thin soil stack.
+  // Distant landmarks (merchant/monument) intentionally fall outside.
   useEffect(() => {
     if (dirLightRef.current && shadowConfig.castShadow) {
       const cam = dirLightRef.current.shadow.camera;
-      cam.left = -16;
-      cam.right = 16;
-      cam.top = 16;
-      cam.bottom = -16;
+      cam.left = -12;
+      cam.right = 12;
+      cam.top = 12;
+      cam.bottom = -12;
       cam.near = 0.5;
-      cam.far = 50;
+      cam.far = 60;
       cam.updateProjectionMatrix();
     }
   }, [shadowConfig.castShadow]);
@@ -175,8 +178,8 @@ export const WeatherRenderer: React.FC = () => {
         shadow-mapSize={
           shadowConfig.castShadow ? [shadowConfig.mapSize, shadowConfig.mapSize] : undefined
         }
-        shadow-bias={-0.0003}
-        shadow-normalBias={0.02}
+        shadow-bias={-0.0005}
+        shadow-normalBias={0.01}
       />
     </group>
   );

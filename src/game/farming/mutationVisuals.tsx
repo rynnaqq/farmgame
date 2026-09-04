@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import type * as THREE from 'three';
 import type { MutationType } from '../core/constants';
 import { useSettingsStore } from '../../state/settingsStore';
+import { useMutationLightSlot } from './mutationLightBudget';
 import { getCosmicMotePositions } from './cropMeshGenerators';
 import { getGoldSparklePositions } from './mutationShaders';
 
@@ -21,6 +22,8 @@ export const GoldVisualDecorator: React.FC<GoldVisualDecoratorProps> = ({
 }) => {
   const lightRef = useRef<THREE.PointLight>(null);
   const effectiveQuality = useSettingsStore((state) => state.effectiveQuality);
+  // Global light budget: beyond the cap this crop renders sparkles only.
+  const lightSlot = useMutationLightSlot();
 
   const initialSparkles = useMemo(() => getGoldSparklePositions(0), []);
   const sparkleMeshes = useRef<THREE.Mesh[]>([]);
@@ -64,8 +67,8 @@ export const GoldVisualDecorator: React.FC<GoldVisualDecoratorProps> = ({
           </mesh>
         ))}
 
-      {/* Pulsing point light on medium/high settings */}
-      {effectiveQuality !== 'low' && (
+      {/* Pulsing point light on medium/high settings (budget-capped) */}
+      {effectiveQuality !== 'low' && lightSlot && (
         <pointLight
           ref={lightRef}
           position={[0, 0.35, 0]}
@@ -89,6 +92,8 @@ export const CosmicVisualDecorator: React.FC<CosmicVisualDecoratorProps> = ({
   const groupRef = useRef<THREE.Group>(null);
   const lightRef = useRef<THREE.PointLight>(null);
   const effectiveQuality = useSettingsStore((state) => state.effectiveQuality);
+  // Global light budget: beyond the cap this crop renders motes only.
+  const lightSlot = useMutationLightSlot();
 
   const initialMotes = useMemo(() => getCosmicMotePositions(0), []);
   const moteMeshes = useRef<THREE.Mesh[]>([]);
@@ -131,8 +136,8 @@ export const CosmicVisualDecorator: React.FC<CosmicVisualDecoratorProps> = ({
         </mesh>
       ))}
 
-      {/* Cosmic ambient point light on medium/high settings */}
-      {effectiveQuality !== 'low' && (
+      {/* Cosmic ambient point light on medium/high settings (budget-capped) */}
+      {effectiveQuality !== 'low' && lightSlot && (
         <pointLight
           ref={lightRef}
           position={[0, 0.4, 0]}

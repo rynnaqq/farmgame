@@ -81,14 +81,10 @@ test.describe('Shop Economy, Upgrades, and Companion Pets E2E', () => {
     expect(state?.farm.goldenWateringCanOwned).toBe(true);
     expect(state?.player.coins).toBe(1900); // 3100 - 1200
 
-    // 4. Buy 6x6 Grid Expansion (Cost: 750c)
-    const buyExpansionBtn = page.locator('[data-testid="upgrade-buy-expansion_6x6"]');
-    await expect(buyExpansionBtn).toBeEnabled();
-    await buyExpansionBtn.click();
-
-    const stateAfterExpansion = await page.evaluate(() => window.__getGameState?.());
-    expect(stateAfterExpansion?.farm.gridSize).toBe(6);
-    expect(stateAfterExpansion?.player.coins).toBe(1150); // 1900 - 750
+    // 4. No grid expansions exist in the free-placement farm: only the
+    // golden can upgrade card is offered
+    await expect(page.locator('[data-testid="upgrade-card-golden_can"]')).toBeVisible();
+    await expect(page.locator('[data-testid="upgrade-card-expansion_6x6"]')).toHaveCount(0);
   });
 
   test('companion eggs: purchase common egg, incubate, fast-forward, hatch and verify pet equipped', async ({

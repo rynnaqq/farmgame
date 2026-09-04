@@ -56,12 +56,12 @@ describe('Task 19: Tutorial Component Tests', () => {
       render(<Tutorial />);
 
       expect(screen.getByTestId('tutorial-step-indicator')).toHaveTextContent(
-        /1\s*\/\s*6|step 1 of 6/i
+        /1\s*\/\s*5|step 1 of 5/i
       );
       expect(screen.getByTestId('tutorial-title')).toHaveTextContent(/move|camera|movement/i);
     });
 
-    it('navigates through all 6 steps with Next and Back buttons', () => {
+    it('navigates through all 5 steps with Next and Back buttons', () => {
       render(<Tutorial />);
 
       // Step 1: Move & Camera
@@ -72,49 +72,42 @@ describe('Task 19: Tutorial Component Tests', () => {
       const nextBtn = screen.getByTestId('tutorial-next-button');
       expect(nextBtn).toHaveTextContent(/next/i);
 
-      // Step 2: Tilling
+      // Step 2: Planting
       fireEvent.click(nextBtn);
       expect(screen.getByTestId('tutorial-step-indicator')).toHaveTextContent(
-        /2\s*\/\s*6|step 2 of 6/i
-      );
-      expect(screen.getByTestId('tutorial-title')).toHaveTextContent(/till|tilling/i);
-      expect(screen.getByTestId('tutorial-back-button')).not.toBeDisabled();
-
-      // Step 3: Planting
-      fireEvent.click(nextBtn);
-      expect(screen.getByTestId('tutorial-step-indicator')).toHaveTextContent(
-        /3\s*\/\s*6|step 3 of 6/i
+        /2\s*\/\s*5|step 2 of 5/i
       );
       expect(screen.getByTestId('tutorial-title')).toHaveTextContent(/plant|seed/i);
+      expect(screen.getByTestId('tutorial-back-button')).not.toBeDisabled();
 
-      // Step 4: Watering
+      // Step 3: Watering
       fireEvent.click(nextBtn);
       expect(screen.getByTestId('tutorial-step-indicator')).toHaveTextContent(
-        /4\s*\/\s*6|step 4 of 6/i
+        /3\s*\/\s*5|step 3 of 5/i
       );
       expect(screen.getByTestId('tutorial-title')).toHaveTextContent(/water|hydration/i);
 
-      // Step 5: Harvesting & Selling
+      // Step 4: Harvesting & Selling
       fireEvent.click(nextBtn);
       expect(screen.getByTestId('tutorial-step-indicator')).toHaveTextContent(
-        /5\s*\/\s*6|step 5 of 6/i
+        /4\s*\/\s*5|step 4 of 5/i
       );
       expect(screen.getByTestId('tutorial-title')).toHaveTextContent(/harvest|sell/i);
 
-      // Step 6: Weather & Pets
+      // Step 5: Weather & Pets
       fireEvent.click(nextBtn);
       expect(screen.getByTestId('tutorial-step-indicator')).toHaveTextContent(
-        /6\s*\/\s*6|step 6 of 6/i
+        /5\s*\/\s*5|step 5 of 5/i
       );
       expect(screen.getByTestId('tutorial-title')).toHaveTextContent(/weather|pet/i);
       expect(screen.getByTestId('tutorial-next-button')).toHaveTextContent(
         /finish|done|got it|start farming/i
       );
 
-      // Step Back from 6 to 5
+      // Step Back from 5 to 4
       fireEvent.click(screen.getByTestId('tutorial-back-button'));
       expect(screen.getByTestId('tutorial-step-indicator')).toHaveTextContent(
-        /5\s*\/\s*6|step 5 of 6/i
+        /4\s*\/\s*5|step 4 of 5/i
       );
     });
 
@@ -130,7 +123,7 @@ describe('Task 19: Tutorial Component Tests', () => {
   });
 
   describe('3. Device-Aware Instructions (Desktop vs Mobile)', () => {
-    it('displays desktop instructions (WASD, 1-4, Q/E, Right-click drag) when inputMode is "desktop"', () => {
+    it('displays desktop instructions (WASD, 1-3, Q/E, Right-click drag) when inputMode is "desktop"', () => {
       useSettingsStore.getState().setInputMode('desktop');
       render(<Tutorial />);
 
@@ -142,14 +135,14 @@ describe('Task 19: Tutorial Component Tests', () => {
 
       // Step 2 on Desktop
       fireEvent.click(screen.getByTestId('tutorial-next-button'));
-      expect(screen.getByTestId('tutorial-body').textContent).toMatch(/1|Hotbar|Click/i);
+      expect(screen.getByTestId('tutorial-body').textContent).toMatch(/2|Seed|Click/i);
 
       // Step 3 on Desktop
       fireEvent.click(screen.getByTestId('tutorial-next-button'));
-      expect(screen.getByTestId('tutorial-body').textContent).toMatch(/3|Seed|Click/i);
+      expect(screen.getByTestId('tutorial-body').textContent).toMatch(/1|Water|Click/i);
     });
 
-    it('displays mobile instructions (Virtual Joystick, tap action button, drag to orbit) when inputMode is "touch"', () => {
+    it('displays mobile instructions (Virtual Joystick, tap plot, drag to orbit) when inputMode is "touch"', () => {
       useSettingsStore.getState().setInputMode('touch');
       render(<Tutorial />);
 
@@ -159,11 +152,9 @@ describe('Task 19: Tutorial Component Tests', () => {
       expect(body.textContent).toMatch(/drag|orbit|pinch/i);
       expect(body.textContent).not.toMatch(/WASD/i);
 
-      // Step 2 on Mobile (Tilling)
+      // Step 2 on Mobile (Planting)
       fireEvent.click(screen.getByTestId('tutorial-next-button'));
-      expect(screen.getByTestId('tutorial-body').textContent).toMatch(
-        /tap|action button|toolbelt/i
-      );
+      expect(screen.getByTestId('tutorial-body').textContent).toMatch(/tap|toolbelt/i);
       expect(screen.getByTestId('tutorial-body').textContent).not.toMatch(/WASD/i);
     });
 
@@ -187,15 +178,15 @@ describe('Task 19: Tutorial Component Tests', () => {
       expect(screen.queryByTestId('tutorial-card')).not.toBeInTheDocument();
     });
 
-    it('dismisses tutorial when finishing the 6th step', () => {
+    it('dismisses tutorial when finishing the 5th step', () => {
       render(<Tutorial />);
 
-      // Advance to step 6
-      for (let i = 0; i < 5; i++) {
+      // Advance to step 5
+      for (let i = 0; i < 4; i++) {
         fireEvent.click(screen.getByTestId('tutorial-next-button'));
       }
 
-      // Finish step 6
+      // Finish step 5
       const finishBtn = screen.getByTestId('tutorial-next-button');
       fireEvent.click(finishBtn);
 

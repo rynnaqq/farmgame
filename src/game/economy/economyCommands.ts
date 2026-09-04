@@ -3,8 +3,6 @@ import {
   CROPS,
   EGG_CONFIGS,
   GOLDEN_WATERING_CAN_COST,
-  EXPANSION_1_COST,
-  EXPANSION_2_COST,
   MAX_PET_INVENTORY,
   type CropId,
   type EggType,
@@ -209,96 +207,12 @@ export function buyGoldenWateringCan(): CommandResult<{ cost: number }> {
 }
 
 /**
- * Buys the next available farm grid expansion (4x4 -> 6x6 for 750c, or 6x6 -> 8x8 for 3500c).
- */
-export function buyGridExpansion(): CommandResult<{ newGridSize: 6 | 8; cost: number }> {
-  const store = useGameStore.getState();
-  const currentSize = store.farm.gridSize;
-
-  let targetSize: 6 | 8;
-  let cost: number;
-
-  if (currentSize === 4) {
-    targetSize = 6;
-    cost = EXPANSION_1_COST;
-  } else if (currentSize === 6) {
-    targetSize = 8;
-    cost = EXPANSION_2_COST;
-  } else {
-    return {
-      ok: false,
-      reason: 'already_owned',
-      message: 'Farm is already at maximum grid size (8x8)',
-    };
-  }
-
-  if (store.player.coins < cost) {
-    return {
-      ok: false,
-      reason: 'insufficient_coins',
-      message: `Insufficient coins for grid expansion (need ${cost}c, have ${store.player.coins}c)`,
-    };
-  }
-
-  const deducted = store.deductCoins(cost);
-  if (!deducted) {
-    return {
-      ok: false,
-      reason: 'insufficient_coins',
-      message: `Failed to deduct ${cost} coins`,
-    };
-  }
-
-  store.setGridSize(targetSize);
-
-  return {
-    ok: true,
-    value: { newGridSize: targetSize, cost },
-    message: `Expanded farm grid to ${targetSize}x${targetSize}`,
-  };
-}
-
-/**
  * Unified upgrade purchase dispatcher.
  */
-export function buyUpgrade(
-  upgradeId: UpgradeId | 'expansion_6x6' | 'expansion_8x8' | 'golden_can' | 'grid_expansion'
-): CommandResult<unknown> {
-  const store = useGameStore.getState();
-
+export function buyUpgrade(upgradeId: UpgradeId | 'golden_can'): CommandResult<unknown> {
   switch (upgradeId) {
     case 'golden_can':
       return buyGoldenWateringCan();
-
-    case 'grid_expansion':
-      return buyGridExpansion();
-
-    case 'expansion_6x6':
-      if (store.farm.gridSize >= 6) {
-        return {
-          ok: false,
-          reason: 'already_owned',
-          message: 'Farm is already 6x6 or larger',
-        };
-      }
-      return buyGridExpansion();
-
-    case 'expansion_8x8':
-      if (store.farm.gridSize === 4) {
-        return {
-          ok: false,
-          reason: 'unknown',
-          message: 'Must purchase 6x6 expansion before 8x8 expansion',
-        };
-      }
-      if (store.farm.gridSize >= 8) {
-        return {
-          ok: false,
-          reason: 'already_owned',
-          message: 'Farm is already at maximum 8x8 size',
-        };
-      }
-      return buyGridExpansion();
 
     default:
       return {

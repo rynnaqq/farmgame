@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { VirtualJoystick } from './VirtualJoystick';
-import { MobileActionButton } from './MobileActionButton';
 import { MobileHUD } from './MobileHUD';
 import { InputManager } from '../../game/input/InputManager';
 import { useUiStore, resetUiStore } from '../../state/uiStore';
@@ -331,93 +330,22 @@ describe('Task 9: Mobile Virtual Joystick & Touch Controls', () => {
     });
   });
 
-  describe('4. MobileActionButton Contextual Actions & Haptics', () => {
-    it('renders with minimum 56x56 CSS pixel size in bottom-right safe area', () => {
-      render(<MobileActionButton />);
-      const actionButton = screen.getByTestId('mobile-action-button');
-      expect(actionButton).toBeInTheDocument();
-      expect(actionButton).toHaveClass('min-w-[56px]', 'min-h-[56px]');
-    });
-
-    it('displays contextual label and icon for selected tool (trowel -> Till, watering_can -> Water, seed_bag -> Plant, scythe -> Harvest)', () => {
-      const { rerender } = render(<MobileActionButton selectedTool="trowel" hasTarget={true} />);
-      expect(screen.getByTestId('mobile-action-button')).toHaveAttribute(
-        'aria-label',
-        expect.stringMatching(/till/i)
-      );
-
-      rerender(<MobileActionButton selectedTool="watering_can" hasTarget={true} />);
-      expect(screen.getByTestId('mobile-action-button')).toHaveAttribute(
-        'aria-label',
-        expect.stringMatching(/water/i)
-      );
-
-      rerender(<MobileActionButton selectedTool="seed_bag" hasTarget={true} />);
-      expect(screen.getByTestId('mobile-action-button')).toHaveAttribute(
-        'aria-label',
-        expect.stringMatching(/plant/i)
-      );
-
-      rerender(<MobileActionButton selectedTool="scythe" hasTarget={true} />);
-      expect(screen.getByTestId('mobile-action-button')).toHaveAttribute(
-        'aria-label',
-        expect.stringMatching(/harvest/i)
-      );
-    });
-
-    it('displays Merchant Shop action when nearMerchant is true', () => {
-      render(<MobileActionButton nearMerchant={true} />);
-      expect(screen.getByTestId('mobile-action-button')).toHaveAttribute(
-        'aria-label',
-        expect.stringMatching(/shop|merchant/i)
-      );
-    });
-
-    it('triggers navigator.vibrate(15) on tap when haptics setting is true', () => {
-      useSettingsStore.getState().setHaptics(true);
-      const vibrateMock = vi.fn();
-      Object.defineProperty(navigator, 'vibrate', {
-        value: vibrateMock,
-        configurable: true,
-        writable: true,
-      });
-
-      const onAction = vi.fn();
-      render(<MobileActionButton onAction={onAction} hasTarget={true} />);
-      const button = screen.getByTestId('mobile-action-button');
-
-      fireEvent.click(button);
-
-      expect(vibrateMock).toHaveBeenCalledWith(15);
-      expect(onAction).toHaveBeenCalledTimes(1);
-    });
-
-    it('does not trigger navigator.vibrate when haptics setting is false', () => {
-      useSettingsStore.getState().setHaptics(false);
-      const vibrateMock = vi.fn();
-      Object.defineProperty(navigator, 'vibrate', {
-        value: vibrateMock,
-        configurable: true,
-        writable: true,
-      });
-
-      render(<MobileActionButton hasTarget={true} />);
-      const button = screen.getByTestId('mobile-action-button');
-
-      fireEvent.click(button);
-
-      expect(vibrateMock).not.toHaveBeenCalled();
+  describe('4. Mobile Jump Button', () => {
+    it('renders jump button in bottom-right safe area', () => {
+      useSettingsStore.getState().setInputMode('touch');
+      render(<MobileHUD inputManager={inputManager} />);
+      expect(screen.getByTestId('mobile-jump-button')).toBeInTheDocument();
     });
   });
 
   describe('5. MobileHUD Component Integration', () => {
-    it('renders VirtualJoystick and MobileActionButton when inputMode is "touch"', () => {
+    it('renders VirtualJoystick and jump button when inputMode is "touch"', () => {
       useSettingsStore.getState().setInputMode('touch');
       render(<MobileHUD inputManager={inputManager} />);
 
       expect(screen.getByTestId('mobile-hud-container')).toBeInTheDocument();
       expect(screen.getByTestId('virtual-joystick-base')).toBeInTheDocument();
-      expect(screen.getByTestId('mobile-action-button')).toBeInTheDocument();
+      expect(screen.getByTestId('mobile-jump-button')).toBeInTheDocument();
     });
 
     it('does not render mobile HUD when inputMode is "desktop" on non-touch device', () => {

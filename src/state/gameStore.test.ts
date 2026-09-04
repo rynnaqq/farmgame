@@ -30,15 +30,9 @@ describe('useGameStore', () => {
       expect(state.player.position).toEqual([0, 0, 0]);
       expect(state.player.totalDistance).toBe(0);
 
-      expect(state.farm.gridSize).toBe(4);
       expect(state.farm.goldenWateringCanOwned).toBe(false);
-      expect(Object.keys(state.farm.plots)).toHaveLength(16);
-
-      // Verify plot format plot-0-0 to plot-3-3
-      expect(state.farm.plots['plot-0-0']).toBeDefined();
-      expect(state.farm.plots['plot-0-0'].tilled).toBe(false);
-      expect(state.farm.plots['plot-0-0'].crop).toBeNull();
-      expect(state.farm.plots['plot-0-0'].hydratedUntilUtcMs).toBe(0);
+      expect(Object.keys(state.farm.plots)).toHaveLength(0);
+      expect(state.farm.nextPlotNumber).toBe(1);
 
       expect(state.inventory.seeds.carrot).toBe(5);
       expect(state.inventory.seeds.tomato).toBe(0);
@@ -58,10 +52,9 @@ describe('useGameStore', () => {
   describe('Plot Actions', () => {
     it('updates a single plot atomically with setPlot', () => {
       const updatedPlot: PlotData = {
-        id: 'plot-1-2',
-        row: 1,
-        col: 2,
-        tilled: true,
+        id: 'crop-1',
+        x: 1,
+        z: 2,
         crop: {
           cropId: 'carrot',
           growthProgressSec: 15,
@@ -74,63 +67,83 @@ describe('useGameStore', () => {
       useGameStore.getState().setPlot(updatedPlot);
 
       const state = useGameStore.getState();
-      expect(state.farm.plots['plot-1-2']).toEqual(updatedPlot);
+      expect(state.farm.plots['crop-1']).toEqual(updatedPlot);
+      expect(state.isDirty).toBe(true);
+    });
+
+    it('adds plots with deterministic incrementing ids via addPlot', () => {
+      const first = useGameStore.getState().addPlot(0, 0, {
+        cropId: 'carrot',
+        growthProgressSec: 0,
+        mutation: 'none',
+        plantedAtUtcMs: 1000,
+      });
+      const second = useGameStore.getState().addPlot(3, 0, {
+        cropId: 'tomato',
+        growthProgressSec: 0,
+        mutation: 'none',
+        plantedAtUtcMs: 1000,
+      });
+
+      expect(first.id).toBe('crop-1');
+      expect(second.id).toBe('crop-2');
+
+      const state = useGameStore.getState();
+      expect(state.farm.nextPlotNumber).toBe(3);
+      expect(state.isDirty).toBe(true);
+    });
+
+    it('removes plots with removePlot, freeing the soil', () => {
+      useGameStore.getState().addPlot(0, 0, {
+        cropId: 'carrot',
+        growthProgressSec: 0,
+        mutation: 'none',
+        plantedAtUtcMs: 1000,
+      });
+
+      useGameStore.getState().removePlot('crop-1');
+
+      const state = useGameStore.getState();
+      expect(state.farm.plots['crop-1']).toBeUndefined();
       expect(state.isDirty).toBe(true);
     });
 
     it('updates multiple plots with updatePlots', () => {
+      useGameStore.getState().addPlot(0, 0, {
+        cropId: 'carrot',
+        growthProgressSec: 0,
+        mutation: 'none',
+        plantedAtUtcMs: 1000,
+      });
+      useGameStore.getState().addPlot(3, 0, {
+        cropId: 'carrot',
+        growthProgressSec: 0,
+        mutation: 'none',
+        plantedAtUtcMs: 1000,
+      });
+
       const plots = useGameStore.getState().farm.plots;
-      const plot1 = { ...plots['plot-0-0'], tilled: true };
-      const plot2 = { ...plots['plot-0-1'], tilled: true };
+      const plot1 = { ...plots['crop-1'], hydratedUntilUtcMs: 999 };
+      const plot2 = { ...plots['crop-2'], hydratedUntilUtcMs: 999 };
 
       useGameStore.getState().updatePlots([plot1, plot2]);
 
       const state = useGameStore.getState();
-      expect(state.farm.plots['plot-0-0'].tilled).toBe(true);
-      expect(state.farm.plots['plot-0-1'].tilled).toBe(true);
-      expect(state.farm.plots['plot-0-2'].tilled).toBe(false);
+      expect(state.farm.plots['crop-1'].hydratedUntilUtcMs).toBe(999);
+      expect(state.farm.plots['crop-2'].hydratedUntilUtcMs).toBe(999);
     });
 
     it('sets plot hydration timestamp with setPlotHydration', () => {
-      useGameStore.getState().setPlotHydration('plot-0-0', 12345678);
-
-      const plot = useGameStore.getState().farm.plots['plot-0-0'];
-      expect(plot.hydratedUntilUtcMs).toBe(12345678);
-    });
-
-    it('expands grid size and preserves existing plot contents and IDs', () => {
-      // Till and plant on plot-0-0
-      useGameStore.getState().setPlot({
-        id: 'plot-0-0',
-        row: 0,
-        col: 0,
-        tilled: true,
-        crop: {
-          cropId: 'tomato',
-          growthProgressSec: 45,
-          mutation: 'gold',
-          plantedAtUtcMs: 2000,
-        },
-        hydratedUntilUtcMs: 8000,
+      useGameStore.getState().addPlot(0, 0, {
+        cropId: 'carrot',
+        growthProgressSec: 0,
+        mutation: 'none',
+        plantedAtUtcMs: 1000,
       });
+      useGameStore.getState().setPlotHydration('crop-1', 12345678);
 
-      // Expand to 6x6
-      useGameStore.getState().setGridSize(6);
-
-      let state = useGameStore.getState();
-      expect(state.farm.gridSize).toBe(6);
-      expect(Object.keys(state.farm.plots)).toHaveLength(36);
-      expect(state.farm.plots['plot-0-0'].crop?.cropId).toBe('tomato');
-      expect(state.farm.plots['plot-0-0'].crop?.mutation).toBe('gold');
-      expect(state.farm.plots['plot-5-5']).toBeDefined();
-      expect(state.farm.plots['plot-5-5'].tilled).toBe(false);
-
-      // Expand to 8x8
-      useGameStore.getState().setGridSize(8);
-      state = useGameStore.getState();
-      expect(state.farm.gridSize).toBe(8);
-      expect(Object.keys(state.farm.plots)).toHaveLength(64);
-      expect(state.farm.plots['plot-7-7']).toBeDefined();
+      const plot = useGameStore.getState().farm.plots['crop-1'];
+      expect(plot.hydratedUntilUtcMs).toBe(12345678);
     });
   });
 
@@ -323,15 +336,20 @@ describe('useGameStore', () => {
       useGameStore.getState().addCoins(250);
       useGameStore.getState().addSeeds('starfruit', 2);
       useGameStore.getState().setGoldenWateringCan(true);
-      useGameStore.getState().setGridSize(6);
+      useGameStore.getState().addPlot(1, 1, {
+        cropId: 'carrot',
+        growthProgressSec: 10,
+        mutation: 'none',
+        plantedAtUtcMs: 1000,
+      });
 
       const envelope = useGameStore.getState().toSaveEnvelope(500000);
-      expect(envelope.schemaVersion).toBe(1);
+      expect(envelope.schemaVersion).toBe(2);
       expect(envelope.savedAtUtcMs).toBe(500000);
       expect(envelope.player.coins).toBe(350);
-      expect(envelope.farm.gridSize).toBe(6);
       expect(envelope.farm.goldenWateringCanOwned).toBe(true);
-      expect(envelope.farm.plots).toHaveLength(36);
+      expect(envelope.farm.plots).toHaveLength(1);
+      expect(envelope.farm.nextPlotNumber).toBe(2);
 
       // Reset and reload envelope
       resetGameStore();
@@ -340,8 +358,8 @@ describe('useGameStore', () => {
       useGameStore.getState().loadSaveEnvelope(envelope);
       const state = useGameStore.getState();
       expect(state.player.coins).toBe(350);
-      expect(state.farm.gridSize).toBe(6);
       expect(state.farm.goldenWateringCanOwned).toBe(true);
+      expect(state.farm.nextPlotNumber).toBe(2);
       expect(state.inventory.seeds.starfruit).toBe(2);
       expect(state.isDirty).toBe(false);
     });
@@ -368,10 +386,9 @@ describe('useGameStore', () => {
 
       // Harvestable plots
       useGameStore.getState().setPlot({
-        id: 'plot-0-0',
-        row: 0,
-        col: 0,
-        tilled: true,
+        id: 'crop-1',
+        x: 0,
+        z: 0,
         crop: {
           cropId: 'carrot',
           growthProgressSec: 45, // Carrot baseGrowthSec = 45 -> 100%
@@ -384,7 +401,7 @@ describe('useGameStore', () => {
       const harvestState = useGameStore.getState();
       expect(selectHarvestableCount(harvestState)).toBe(1);
       expect(selectHarvestablePlots(harvestState)).toHaveLength(1);
-      expect(selectPlotById('plot-0-0')(harvestState)?.id).toBe('plot-0-0');
+      expect(selectPlotById('crop-1')(harvestState)?.id).toBe('crop-1');
 
       // Pets and Perks
       const pet: PetData = { id: 'p1', type: 'bee', acquiredAtUtcMs: 1 };
@@ -401,11 +418,9 @@ describe('useGameStore', () => {
         mutationChanceMultiplier: 1.0,
       });
 
-      // Grid expansion selector
-      expect(selectCanExpand(petState)).toEqual({
-        canExpand: true,
-        nextSize: 6,
-        cost: 750,
+      // Grid expansion selector (no expansions in free-placement farm)
+      expect(selectCanExpand()).toEqual({
+        canExpand: false,
       });
     });
   });

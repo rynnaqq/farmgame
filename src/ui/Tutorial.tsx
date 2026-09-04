@@ -29,29 +29,20 @@ const TUTORIAL_STEPS: TutorialStepData[] = [
       'Use the virtual joystick on the bottom-left to move your farmer. Drag anywhere on screen to rotate the camera, and pinch with two fingers to zoom.',
   },
   {
-    id: 'tilling',
-    title: 'Tilling Soil',
-    icon: '⛏️',
-    desktopText:
-      'Select the Trowel (Key 1 or click in hotbar). Click on an untilled grass plot to till soil ready for planting.',
-    mobileText:
-      'Select the Trowel from the toolbelt at the bottom. Approach a grass plot and tap the action button (or tap the plot directly) to till the soil.',
-  },
-  {
     id: 'planting',
     title: 'Seed Selection & Planting',
     icon: '🌱',
     desktopText:
-      'Select the Seed Bag (Key 3), pick your crop seed from the picker (Carrot, Tomato, etc.), and click on a tilled plot to plant.',
+      'Select the Seed Bag (Key 2), pick your crop seed from the picker (Carrot, Tomato, etc.), and click on any soil plot to plant. No tilling needed!',
     mobileText:
-      'Select the Seed Bag from the toolbelt, choose your seeds from the picker popover, and tap a tilled plot or action button to plant.',
+      'Select the Seed Bag from the toolbelt, choose your seeds from the picker popover, and tap any soil plot to plant. No tilling needed!',
   },
   {
     id: 'watering',
     title: 'Watering & Hydration',
     icon: '💧',
     desktopText:
-      'Select the Watering Can (Key 2) and click planted crops to water them. Hydrated soil keeps crops thriving and accelerates growth!',
+      'Select the Watering Can (Key 1) and click planted crops to water them. Hydrated soil keeps crops thriving and accelerates growth!',
     mobileText:
       'Select the Watering Can from the toolbelt and tap your planted crops to water them. Keep plots hydrated to watch your crops grow!',
   },
@@ -60,9 +51,9 @@ const TUTORIAL_STEPS: TutorialStepData[] = [
     title: 'Harvesting & Selling',
     icon: '🌾',
     desktopText:
-      'When crops are fully grown and glowing, switch to the Scythe (Key 4) or Hand tool (Key 5) and click to harvest. Visit the Merchant Shop to sell produce for coins!',
+      'When crops are fully grown and glowing, switch to the Harvest tool (Key 3) and click to harvest. Visit the Merchant Shop to sell produce for coins!',
     mobileText:
-      'When crops are fully grown and sparkling, tap with the Scythe or Hand tool to harvest. Open the Merchant Shop from the HUD to sell your produce for coins!',
+      'When crops are fully grown and sparkling, tap with the Harvest tool to harvest. Visit the Merchant Shop (or open your inventory) to sell your produce for coins!',
   },
   {
     id: 'weather_pets',
@@ -91,7 +82,7 @@ function checkIsTouchDevice(): boolean {
 }
 
 /**
- * 6-step interactive/skippable onboarding tutorial with device-aware instructions
+ * 5-step interactive/skippable onboarding tutorial with device-aware instructions
  * (desktop WASD vs mobile joystick/touch) and persistence in gameStore.
  */
 export const Tutorial: React.FC<TutorialProps> = ({ forceTouch, className = '', onDismiss }) => {

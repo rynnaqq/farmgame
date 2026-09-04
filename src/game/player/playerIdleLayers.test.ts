@@ -6,14 +6,17 @@ describe('calculateIdleBob secondary layers (natural idle)', () => {
     const moving = calculateIdleBob(3.2, 1.0);
     expect(moving.torsoPitch).toBeCloseTo(0, 6);
     expect(moving.headYaw).toBeCloseTo(0, 6);
+    expect(moving.headRollZ).toBeCloseTo(0, 6);
     expect(moving.armSwayZ).toBeCloseTo(0, 6);
+    expect(moving.leftArmSwayZ).toBeCloseTo(0, 6);
+    expect(moving.rightArmSwayZ).toBeCloseTo(0, 6);
     expect(moving.breatheScale).toBeCloseTo(0, 6);
     expect(moving.idleBobY).toBeCloseTo(0, 6);
   });
 
   it('breathes the torso at a calm frequency when fully idle', () => {
     const a = calculateIdleBob(0, 0);
-    const quarter = calculateIdleBob((Math.PI / 2) / 1.1, 0);
+    const quarter = calculateIdleBob(Math.PI / 2 / 1.1, 0);
     expect(a.torsoPitch).toBeCloseTo(0, 5);
     expect(quarter.torsoPitch).toBeGreaterThan(0);
     // Breathing must be subtle (well under a degree-ish scale).
@@ -54,5 +57,30 @@ describe('calculateIdleBob secondary layers (natural idle)', () => {
     expect(idle.idleBobY).toBeCloseTo(Math.sin(2.0 * 2.5) * 0.025, 6);
     expect(idle.idleSwayZ).toBeCloseTo(Math.sin(2.0 * 1.8) * 0.02, 6);
     expect(idle.headTiltZ).toBeCloseTo(Math.sin(2.0 * 0.9) * 0.015, 6);
+  });
+
+  it('drifts the left and right arms asymmetrically', () => {
+    // Different frequencies/phases guarantee the sides decorrelate.
+    let differed = false;
+    for (let t = 0; t < 10; t += 0.1) {
+      const idle = calculateIdleBob(t, 0);
+      if (Math.abs(idle.leftArmSwayZ - idle.rightArmSwayZ) > 0.005) {
+        differed = true;
+        break;
+      }
+    }
+    expect(differed).toBe(true);
+    const idle = calculateIdleBob(1.7, 0);
+    expect(Math.abs(idle.leftArmSwayZ)).toBeLessThanOrEqual(0.05);
+    expect(Math.abs(idle.rightArmSwayZ)).toBeLessThanOrEqual(0.05);
+  });
+
+  it('damps every layer under reduced motion', () => {
+    const full = calculateIdleBob(1.7, 0, false);
+    const calm = calculateIdleBob(1.7, 0, true);
+    expect(Math.abs(calm.idleBobY)).toBeLessThanOrEqual(Math.abs(full.idleBobY));
+    expect(Math.abs(calm.headYaw)).toBeLessThanOrEqual(Math.abs(full.headYaw));
+    expect(Math.abs(calm.breatheScale)).toBeLessThanOrEqual(Math.abs(full.breatheScale));
+    expect(Math.abs(calm.breatheScale)).toBeLessThan(0.008);
   });
 });

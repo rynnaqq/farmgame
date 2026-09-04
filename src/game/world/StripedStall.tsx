@@ -1,14 +1,17 @@
-import React, { useRef, useMemo, useCallback, useEffect } from 'react';
+import React, { useRef, useMemo, useCallback } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import type * as THREE from 'three';
 import { useGameStore } from '../../state/gameStore';
 import { useUiStore } from '../../state/uiStore';
+import { MERCHANT_INTERACTION_RANGE } from '../core/constants';
 import type { ShopTabId } from '../../ui/ShopModal';
 
 export interface StripedStallProps {
   position: [number, number, number];
+  /** World position of the parent market (stall `position` is relative to it). */
+  basePosition?: readonly [number, number, number];
   rotation?: [number, number, number];
   primaryColor: string;
   secondaryColor?: string;
@@ -21,6 +24,7 @@ export interface StripedStallProps {
 
 export const StripedStall: React.FC<StripedStallProps> = ({
   position,
+  basePosition = [0, 0, 0],
   rotation = [0, 0, 0],
   primaryColor,
   secondaryColor = '#FFFFFF',
@@ -35,31 +39,29 @@ export const StripedStall: React.FC<StripedStallProps> = ({
   const headRef = useRef<THREE.Group>(null);
   const characterRef = useRef<THREE.Group>(null);
 
-  // Proximity check (within 3.0 meters)
+  // Proximity check against the stall's WORLD position (base + local offset).
+  const worldPosition = useMemo(
+    (): [number, number, number] => [
+      basePosition[0] + position[0],
+      basePosition[1] + position[1],
+      basePosition[2] + position[2],
+    ],
+    [basePosition, position]
+  );
   const isNear = useMemo(() => {
-    const dx = playerPosition[0] - position[0];
-    const dz = playerPosition[2] - position[2];
-    return Math.hypot(dx, dz) <= 3.2;
-  }, [playerPosition, position]);
+    const dx = playerPosition[0] - worldPosition[0];
+    const dz = playerPosition[2] - worldPosition[2];
+    return Math.hypot(dx, dz) <= MERCHANT_INTERACTION_RANGE;
+  }, [playerPosition, worldPosition]);
 
   const handleOpenStall = useCallback(() => {
     if (useUiStore.getState().activeModal !== null) return;
     useUiStore.getState().openModal('shop', { initialTab: tab });
   }, [tab]);
 
-  // Keyboard shortcut E when near
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.key === 'e' || e.key === 'E') && isNear && activeModal === null) {
-        const target = e.target as HTMLElement;
-        if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
-        e.preventDefault();
-        handleOpenStall();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isNear, activeModal, handleOpenStall]);
+  // NOTE: no window 'E' listener here — the parent Merchant owns the single
+  // market-wide E shortcut and opens the nearest stall's tab. Direct
+  // click/tap on this NPC always targets this stall explicitly.
 
   // Idle animation for NPC
   useFrame((state) => {

@@ -37,7 +37,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         return [1, 1.5];
       case 'high':
       default:
-        return [1, isMobile ? 2.0 : 2.5];
+        // Spec caps: 2.0 desktop / 1.5 mobile. Higher values multiply
+        // fullscreen (bloom) cost quadratically for little visible gain.
+        return [1, isMobile ? 1.5 : 2.0];
     }
   }, [effectiveQuality]);
 
@@ -47,10 +49,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   // when the player is idle: without touch-action none, an idle-hold can be
   // consumed by the browser as a pan/zoom gesture and the camera swipe appears
   // stuck until the next full gesture.
-  const canvasStyle = useMemo<React.CSSProperties>(
-    () => ({ touchAction: 'none' }),
-    []
-  );
+  const canvasStyle = useMemo<React.CSSProperties>(() => ({ touchAction: 'none' }), []);
 
   return (
     <div className={className} tabIndex={0} style={canvasStyle}>

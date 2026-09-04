@@ -24,28 +24,23 @@ describe('Task 14: Toolbelt Component', () => {
   });
 
   describe('1. Tool Layout and Fixed Ordering', () => {
-    it('renders exactly 4 tool buttons in fixed order: Trowel (1), Watering Can (2), Seed Bag (3), Hand/Scythe (4)', () => {
+    it('renders exactly 3 tool buttons in fixed order: Watering Can (1), Seed Bag (2), Hand/Scythe (3)', () => {
       render(<Toolbelt inputManager={inputManager} />);
 
       const toolbelt = screen.getByTestId('toolbelt-container');
       expect(toolbelt).toBeInTheDocument();
 
-      const toolButtons = screen.getAllByRole('button');
-      // At least the 4 main tool buttons must be present
-      expect(toolButtons.length).toBeGreaterThanOrEqual(4);
-
-      const trowelBtn = screen.getByTestId('tool-trowel');
       const waterBtn = screen.getByTestId('tool-watering_can');
       const seedBtn = screen.getByTestId('tool-seed_bag');
       const handBtn = screen.getByTestId('tool-hand');
 
-      expect(trowelBtn).toBeInTheDocument();
       expect(waterBtn).toBeInTheDocument();
       expect(seedBtn).toBeInTheDocument();
       expect(handBtn).toBeInTheDocument();
+      expect(screen.queryByTestId('tool-trowel')).not.toBeInTheDocument();
 
       // Verify DOM order
-      const buttons = [trowelBtn, waterBtn, seedBtn, handBtn];
+      const buttons = [waterBtn, seedBtn, handBtn];
       for (let i = 0; i < buttons.length - 1; i++) {
         expect(buttons[i].compareDocumentPosition(buttons[i + 1])).toBe(
           Node.DOCUMENT_POSITION_FOLLOWING
@@ -53,25 +48,24 @@ describe('Task 14: Toolbelt Component', () => {
       }
     });
 
-    it('displays shortcut numbers 1, 2, 3, 4 on the respective tools', () => {
+    it('displays shortcut numbers 1, 2, 3 on the respective tools', () => {
       render(<Toolbelt inputManager={inputManager} />);
 
-      expect(screen.getByTestId('tool-trowel')).toHaveTextContent('1');
-      expect(screen.getByTestId('tool-watering_can')).toHaveTextContent('2');
-      expect(screen.getByTestId('tool-seed_bag')).toHaveTextContent('3');
-      expect(screen.getByTestId('tool-hand')).toHaveTextContent('4');
+      expect(screen.getByTestId('tool-watering_can')).toHaveTextContent('1');
+      expect(screen.getByTestId('tool-seed_bag')).toHaveTextContent('2');
+      expect(screen.getByTestId('tool-hand')).toHaveTextContent('3');
     });
   });
 
   describe('2. Tool Selection and Active State Highlighting', () => {
-    it('initializes with trowel as active tool with aria-pressed="true"', () => {
+    it('initializes with watering can as active tool with aria-pressed="true"', () => {
       render(<Toolbelt inputManager={inputManager} />);
 
-      const trowelBtn = screen.getByTestId('tool-trowel');
       const waterBtn = screen.getByTestId('tool-watering_can');
+      const seedBtn = screen.getByTestId('tool-seed_bag');
 
-      expect(trowelBtn).toHaveAttribute('aria-pressed', 'true');
-      expect(waterBtn).toHaveAttribute('aria-pressed', 'false');
+      expect(waterBtn).toHaveAttribute('aria-pressed', 'true');
+      expect(seedBtn).toHaveAttribute('aria-pressed', 'false');
     });
 
     it('selects Watering Can on click and updates uiStore', () => {
@@ -82,7 +76,7 @@ describe('Task 14: Toolbelt Component', () => {
 
       expect(useUiStore.getState().selectedTool).toBe('watering_can');
       expect(waterBtn).toHaveAttribute('aria-pressed', 'true');
-      expect(screen.getByTestId('tool-trowel')).toHaveAttribute('aria-pressed', 'false');
+      expect(screen.getByTestId('tool-seed_bag')).toHaveAttribute('aria-pressed', 'false');
     });
 
     it('selects Seed Bag on click and updates uiStore', () => {
@@ -108,42 +102,34 @@ describe('Task 14: Toolbelt Component', () => {
     it('applies distinct active styling (border, scale, high contrast) to selected tool', () => {
       render(<Toolbelt inputManager={inputManager} />);
 
-      const trowelBtn = screen.getByTestId('tool-trowel');
+      const waterBtn = screen.getByTestId('tool-watering_can');
       // Active tool should have active classes (border, ring, scale, etc.)
-      expect(trowelBtn.className).toMatch(/border-|ring-|scale-/);
+      expect(waterBtn.className).toMatch(/border-|ring-|scale-/);
     });
   });
 
-  describe('3. Keyboard Shortcuts (1-4)', () => {
-    it('switches tool to Trowel on pressing "1"', () => {
-      useUiStore.getState().setSelectedTool('watering_can');
+  describe('3. Keyboard Shortcuts (1-3)', () => {
+    it('switches tool to Watering Can on pressing "1"', () => {
+      useUiStore.getState().setSelectedTool('seed_bag');
       render(<Toolbelt inputManager={inputManager} />);
 
       fireEvent.keyDown(window, { key: '1' });
-      expect(useUiStore.getState().selectedTool).toBe('trowel');
-      expect(screen.getByTestId('tool-trowel')).toHaveAttribute('aria-pressed', 'true');
-    });
-
-    it('switches tool to Watering Can on pressing "2"', () => {
-      render(<Toolbelt inputManager={inputManager} />);
-
-      fireEvent.keyDown(window, { key: '2' });
       expect(useUiStore.getState().selectedTool).toBe('watering_can');
       expect(screen.getByTestId('tool-watering_can')).toHaveAttribute('aria-pressed', 'true');
     });
 
-    it('switches tool to Seed Bag on pressing "3"', () => {
+    it('switches tool to Seed Bag on pressing "2"', () => {
       render(<Toolbelt inputManager={inputManager} />);
 
-      fireEvent.keyDown(window, { key: '3' });
+      fireEvent.keyDown(window, { key: '2' });
       expect(useUiStore.getState().selectedTool).toBe('seed_bag');
       expect(screen.getByTestId('tool-seed_bag')).toHaveAttribute('aria-pressed', 'true');
     });
 
-    it('switches tool to Hand/Scythe on pressing "4"', () => {
+    it('switches tool to Hand/Scythe on pressing "3"', () => {
       render(<Toolbelt inputManager={inputManager} />);
 
-      fireEvent.keyDown(window, { key: '4' });
+      fireEvent.keyDown(window, { key: '3' });
       expect(['hand', 'scythe']).toContain(useUiStore.getState().selectedTool);
       expect(screen.getByTestId('tool-hand')).toHaveAttribute('aria-pressed', 'true');
     });
@@ -160,8 +146,8 @@ describe('Task 14: Toolbelt Component', () => {
       input.focus();
 
       fireEvent.keyDown(input, { key: '2' });
-      // Should remain trowel
-      expect(useUiStore.getState().selectedTool).toBe('trowel');
+      // Should remain watering_can (default)
+      expect(useUiStore.getState().selectedTool).toBe('watering_can');
     });
   });
 
@@ -221,7 +207,7 @@ describe('Task 14: Toolbelt Component', () => {
     });
 
     it('hides SeedPicker popup when a non-seed tool is active', () => {
-      useUiStore.getState().setSelectedTool('trowel');
+      useUiStore.getState().setSelectedTool('watering_can');
       render(<Toolbelt inputManager={inputManager} />);
 
       expect(screen.queryByTestId('seed-picker')).not.toBeInTheDocument();
@@ -233,7 +219,6 @@ describe('Task 14: Toolbelt Component', () => {
       render(<Toolbelt inputManager={inputManager} />);
 
       const buttons = [
-        screen.getByTestId('tool-trowel'),
         screen.getByTestId('tool-watering_can'),
         screen.getByTestId('tool-seed_bag'),
         screen.getByTestId('tool-hand'),
@@ -247,7 +232,6 @@ describe('Task 14: Toolbelt Component', () => {
     it('all tool buttons have descriptive aria-labels', () => {
       render(<Toolbelt inputManager={inputManager} />);
 
-      expect(screen.getByTestId('tool-trowel')).toHaveAttribute('aria-label');
       expect(screen.getByTestId('tool-watering_can')).toHaveAttribute('aria-label');
       expect(screen.getByTestId('tool-seed_bag')).toHaveAttribute('aria-label');
       expect(screen.getByTestId('tool-hand')).toHaveAttribute('aria-label');

@@ -1,10 +1,10 @@
 import { useSettingsStore } from '../../state/settingsStore';
 import type { WeatherType, MutationType } from '../../state/storeTypes';
 import {
-  synthesizeTill,
   synthesizeWater,
   synthesizePlant,
   synthesizeHarvest,
+  synthesizeJump,
   synthesizeCoin,
   synthesizeMutation,
   synthesizeWeatherChange,
@@ -16,10 +16,10 @@ import {
 } from './audioSynthesizer';
 
 export type SfxType =
-  | 'till'
   | 'water'
   | 'plant'
   | 'harvest'
+  | 'jump'
   | 'coin'
   | 'mutation'
   | 'weather_change'
@@ -338,9 +338,6 @@ export class AudioManager {
 
     try {
       switch (type) {
-        case 'till':
-          synthesizeTill(this.ctx, soundGain, pitch);
-          break;
         case 'water':
           synthesizeWater(this.ctx, soundGain, pitch);
           break;
@@ -349,6 +346,9 @@ export class AudioManager {
           break;
         case 'harvest':
           synthesizeHarvest(this.ctx, soundGain, pitch);
+          break;
+        case 'jump':
+          synthesizeJump(this.ctx, soundGain, pitch);
           break;
         case 'coin':
           synthesizeCoin(this.ctx, soundGain, pitch);

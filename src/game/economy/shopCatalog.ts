@@ -21,8 +21,6 @@ export interface UpgradeCatalogItem {
   description: string;
   isAvailable: boolean;
   isOwned: boolean;
-  targetGridSize?: 6 | 8;
-  requiredGridSize?: 4 | 6;
 }
 
 export interface EggCatalogItem {
@@ -54,20 +52,14 @@ export function getSeedCatalog(): SeedCatalogItem[] {
 }
 
 /**
- * Returns catalog data for permanent farm upgrades (Golden Watering Can & Grid Expansions).
+ * Returns catalog data for permanent farm upgrades (Golden Watering Can).
  * Dynamically computes availability and ownership based on current farm state.
  */
-export function getUpgradeCatalog(
-  gridSize?: 4 | 6 | 8,
-  goldenCanOwned?: boolean
-): UpgradeCatalogItem[] {
+export function getUpgradeCatalog(goldenCanOwned?: boolean): UpgradeCatalogItem[] {
   const store = useGameStore.getState();
-  const currentGridSize = gridSize ?? store.farm.gridSize;
   const isGoldenCanOwned = goldenCanOwned ?? store.farm.goldenWateringCanOwned;
 
   const goldenCanDef = UPGRADE_CONFIGS.golden_can;
-  const exp6Def = UPGRADE_CONFIGS.expansion_6x6;
-  const exp8Def = UPGRADE_CONFIGS.expansion_8x8;
 
   return [
     {
@@ -77,26 +69,6 @@ export function getUpgradeCatalog(
       description: goldenCanDef.description,
       isAvailable: !isGoldenCanOwned,
       isOwned: isGoldenCanOwned,
-    },
-    {
-      id: exp6Def.id,
-      name: exp6Def.name,
-      cost: exp6Def.cost,
-      description: exp6Def.description,
-      isAvailable: currentGridSize === 4,
-      isOwned: currentGridSize >= 6,
-      targetGridSize: exp6Def.targetGridSize,
-      requiredGridSize: exp6Def.requiredGridSize,
-    },
-    {
-      id: exp8Def.id,
-      name: exp8Def.name,
-      cost: exp8Def.cost,
-      description: exp8Def.description,
-      isAvailable: currentGridSize === 6,
-      isOwned: currentGridSize >= 8,
-      targetGridSize: exp8Def.targetGridSize,
-      requiredGridSize: exp8Def.requiredGridSize,
     },
   ];
 }

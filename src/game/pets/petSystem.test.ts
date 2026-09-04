@@ -22,7 +22,6 @@ import {
 import type { EggData, PetData, PlotData, PlotId } from '../../state/storeTypes';
 import { buyEgg } from '../economy/economyCommands';
 import { rollEggOutcome } from '../economy/economyDefinitions';
-import { getPlotPosition } from '../world/gridCoordinates';
 
 describe('Pet & Egg Domain Logic', () => {
   beforeEach(() => {
@@ -438,103 +437,67 @@ describe('Pet & Egg Domain Logic', () => {
   describe('Dog Auto-Harvest Logic (findDogHarvestTarget & tickDogAutoHarvest)', () => {
     const setupPlot = (
       plotId: PlotId,
+      x: number,
+      z: number,
       options: {
-        tilled?: boolean;
         cropId?: 'carrot' | 'tomato' | 'pumpkin';
         progress?: number;
         mutation?: 'none' | 'gold';
       }
     ) => {
-      const current = useGameStore.getState().farm.plots[plotId];
-      if (!current) return;
-
       const plot: PlotData = {
-        ...current,
-        tilled: options.tilled ?? true,
-        crop: options.cropId
-          ? {
-              cropId: options.cropId,
-              plantedAtUtcMs: 1000,
-              growthProgressSec: options.progress ?? 45,
-              mutation: options.mutation ?? 'none',
-            }
-          : null,
+        id: plotId,
+        x,
+        z,
+        crop: {
+          cropId: options.cropId ?? 'carrot',
+          plantedAtUtcMs: 1000,
+          growthProgressSec: options.progress ?? 45,
+          mutation: options.mutation ?? 'none',
+        },
+        hydratedUntilUtcMs: 0,
       };
       useGameStore.getState().setPlot(plot);
     };
 
     it('finds mature plot within 1.75 units and ignores plots farther away', () => {
-      const gridSize = 4;
-      // Plot (1, 1) position
-      const plot11Pos = getPlotPosition(1, 1, gridSize);
-      // Mature carrot on plot-1-1 (Carrot needs 45s)
-      setupPlot('plot-1-1', { cropId: 'carrot', progress: 45 });
+      // Mature carrot at (0, 0) (Carrot needs 45s)
+      setupPlot('crop-1', 0, 0, { cropId: 'carrot', progress: 45 });
 
-      // Dog position 1.0 unit away from plot-1-1
-      const dogPosNear: [number, number, number] = [plot11Pos[0] + 1.0, plot11Pos[1], plot11Pos[2]];
-      const targetNear = findDogHarvestTarget(
-        dogPosNear,
-        useGameStore.getState().farm.plots,
-        gridSize
-      );
-      expect(targetNear).toBe('plot-1-1');
+      // Dog position 1.0 unit away
+      const dogPosNear: [number, number, number] = [1.0, 0, 0];
+      const targetNear = findDogHarvestTarget(dogPosNear, useGameStore.getState().farm.plots);
+      expect(targetNear).toBe('crop-1');
 
-      // Dog position 2.5 units away from plot-1-1 (> 1.75 limit)
-      const dogPosFar: [number, number, number] = [plot11Pos[0] + 2.5, plot11Pos[1], plot11Pos[2]];
-      const targetFar = findDogHarvestTarget(
-        dogPosFar,
-        useGameStore.getState().farm.plots,
-        gridSize
-      );
+      // Dog position 2.5 units away (> 1.75 limit)
+      const dogPosFar: [number, number, number] = [2.5, 0, 0];
+      const targetFar = findDogHarvestTarget(dogPosFar, useGameStore.getState().farm.plots);
       expect(targetFar).toBeNull();
     });
 
-    it('ignores locked plots beyond current grid size', () => {
-      const gridSize = 4;
-      // Create a mature plot at (5, 5) which is locked on a 4x4 grid
-      const plot55Pos = getPlotPosition(5, 5, 8);
-      const plot: PlotData = {
-        id: 'plot-5-5',
-        row: 5,
-        col: 5,
-        tilled: true,
-        crop: {
-          cropId: 'carrot',
-          plantedAtUtcMs: 1000,
-          growthProgressSec: 45,
-          mutation: 'none',
-        },
-        hydratedUntilUtcMs: 0,
-      };
-      useGameStore.getState().setPlot(plot);
-
-      // Place dog right on top of (5,5)
-      const target = findDogHarvestTarget(plot55Pos, useGameStore.getState().farm.plots, gridSize);
+    it('returns null when no plots exist', () => {
+      const target = findDogHarvestTarget([0, 0, 0], useGameStore.getState().farm.plots);
       expect(target).toBeNull();
     });
 
     it('ignores immature crops within range', () => {
-      const gridSize = 4;
-      const plot11Pos = getPlotPosition(1, 1, gridSize);
       // Immature carrot (only 20s of 45s)
-      setupPlot('plot-1-1', { cropId: 'carrot', progress: 20 });
+      setupPlot('crop-1', 0, 0, { cropId: 'carrot', progress: 20 });
 
-      const dogPos: [number, number, number] = [plot11Pos[0], plot11Pos[1], plot11Pos[2]];
-      const target = findDogHarvestTarget(dogPos, useGameStore.getState().farm.plots, gridSize);
+      const dogPos: [number, number, number] = [0, 0, 0];
+      const target = findDogHarvestTarget(dogPos, useGameStore.getState().farm.plots);
       expect(target).toBeNull();
     });
 
     it('selects closest mature plot when multiple are in range', () => {
-      const gridSize = 4;
-      setupPlot('plot-1-1', { cropId: 'carrot', progress: 45 });
-      setupPlot('plot-1-2', { cropId: 'carrot', progress: 45 });
+      setupPlot('crop-1', 0, 0, { cropId: 'carrot', progress: 45 });
+      setupPlot('crop-2', 1.5, 0, { cropId: 'carrot', progress: 45 });
 
-      const plot11Pos = getPlotPosition(1, 1, gridSize);
-      // Dog placed 0.2 units from plot-1-1 and 1.35 units from plot-1-2 (both < 1.75)
-      const dogPos: [number, number, number] = [plot11Pos[0] + 0.2, plot11Pos[1], plot11Pos[2]];
+      // Dog placed 0.2 units from crop-1 and 1.3 units from crop-2 (both < 1.75)
+      const dogPos: [number, number, number] = [0.2, 0, 0];
 
-      const target = findDogHarvestTarget(dogPos, useGameStore.getState().farm.plots, gridSize);
-      expect(target).toBe('plot-1-1');
+      const target = findDogHarvestTarget(dogPos, useGameStore.getState().farm.plots);
+      expect(target).toBe('crop-1');
     });
 
     it('ticks dog auto-harvest: rate limited to max 1 harvest per second', () => {
@@ -542,11 +505,10 @@ describe('Pet & Egg Domain Logic', () => {
       useGameStore.getState().addPet(dogPet);
       useGameStore.getState().setEquippedPet('dog-pet-1');
 
-      setupPlot('plot-1-1', { cropId: 'carrot', progress: 45 });
-      setupPlot('plot-1-2', { cropId: 'carrot', progress: 45 });
+      setupPlot('crop-1', 0, 0, { cropId: 'carrot', progress: 45 });
+      setupPlot('crop-2', 1.5, 0, { cropId: 'carrot', progress: 45 });
 
-      const plot11Pos = getPlotPosition(1, 1, 4);
-      const dogPos: [number, number, number] = [plot11Pos[0], plot11Pos[1], plot11Pos[2]];
+      const dogPos: [number, number, number] = [0, 0, 0];
 
       const lastHarvestTimeRef = { current: 0 };
       const nowMs = 10000;
@@ -557,23 +519,22 @@ describe('Pet & Egg Domain Logic', () => {
       expect(tick1?.ok).toBe(true);
       expect(lastHarvestTimeRef.current).toBe(nowMs);
 
-      // Verify plot-1-1 harvested into produce
-      expect(useGameStore.getState().farm.plots['plot-1-1'].crop).toBeNull();
+      // Verify crop-1 harvested into produce and plot removed
+      expect(useGameStore.getState().farm.plots['crop-1']).toBeUndefined();
       expect(useGameStore.getState().inventory.produce.length).toBe(1);
 
       // Second harvest tick 500ms later (at 10,500ms) -> rate-limited, returns null
       const tick2 = tickDogAutoHarvest(dogPos, nowMs + 500, lastHarvestTimeRef);
       expect(tick2).toBeNull();
-      expect(useGameStore.getState().farm.plots['plot-1-2'].crop).not.toBeNull();
+      expect(useGameStore.getState().farm.plots['crop-2']).toBeDefined();
 
-      // Third harvest tick 1000ms later (at 11,000ms) -> succeeds
-      const plot12Pos = getPlotPosition(1, 2, 4);
-      const dogPos2: [number, number, number] = [plot12Pos[0], plot12Pos[1], plot12Pos[2]];
+      // Third harvest tick 1000ms later (at 11,000ms) -> succeeds on crop-2
+      const dogPos2: [number, number, number] = [1.5, 0, 0];
       const tick3 = tickDogAutoHarvest(dogPos2, nowMs + 1000, lastHarvestTimeRef);
       expect(tick3).not.toBeNull();
       expect(tick3?.ok).toBe(true);
       expect(lastHarvestTimeRef.current).toBe(nowMs + 1000);
-      expect(useGameStore.getState().farm.plots['plot-1-2'].crop).toBeNull();
+      expect(useGameStore.getState().farm.plots['crop-2']).toBeUndefined();
     });
 
     it('does nothing when equipped pet is not Dog', () => {
@@ -581,15 +542,14 @@ describe('Pet & Egg Domain Logic', () => {
       useGameStore.getState().addPet(beePet);
       useGameStore.getState().setEquippedPet('bee-pet-1');
 
-      setupPlot('plot-1-1', { cropId: 'carrot', progress: 45 });
-      const plot11Pos = getPlotPosition(1, 1, 4);
-      const dogPos: [number, number, number] = [plot11Pos[0], plot11Pos[1], plot11Pos[2]];
+      setupPlot('crop-1', 0, 0, { cropId: 'carrot', progress: 45 });
+      const dogPos: [number, number, number] = [0, 0, 0];
 
       const lastHarvestTimeRef = { current: 0 };
       const tick = tickDogAutoHarvest(dogPos, 5000, lastHarvestTimeRef);
 
       expect(tick).toBeNull();
-      expect(useGameStore.getState().farm.plots['plot-1-1'].crop).not.toBeNull();
+      expect(useGameStore.getState().farm.plots['crop-1']).toBeDefined();
     });
 
     it('protects against race conditions when plot is already harvested concurrently', () => {
@@ -597,15 +557,11 @@ describe('Pet & Egg Domain Logic', () => {
       useGameStore.getState().addPet(dogPet);
       useGameStore.getState().setEquippedPet('dog-pet-1');
 
-      setupPlot('plot-1-1', { cropId: 'carrot', progress: 45 });
-      const plot11Pos = getPlotPosition(1, 1, 4);
-      const dogPos: [number, number, number] = [plot11Pos[0], plot11Pos[1], plot11Pos[2]];
+      setupPlot('crop-1', 0, 0, { cropId: 'carrot', progress: 45 });
+      const dogPos: [number, number, number] = [0, 0, 0];
 
-      // Clear plot crop right before dog ticks (simulating player harvesting at the same moment)
-      useGameStore.getState().setPlot({
-        ...useGameStore.getState().farm.plots['plot-1-1'],
-        crop: null,
-      });
+      // Remove plot right before dog ticks (simulating player harvesting at the same moment)
+      useGameStore.getState().removePlot('crop-1');
 
       const lastHarvestTimeRef = { current: 0 };
       const tick = tickDogAutoHarvest(dogPos, 5000, lastHarvestTimeRef);

@@ -16,7 +16,7 @@ test.describe('Mobile Controls & Touch Viewport E2E', () => {
     });
   });
 
-  test('mobile HUD, virtual joystick, and action button are displayed on mobile viewport', async ({
+  test('mobile HUD, virtual joystick, and jump button are displayed on mobile viewport', async ({
     page,
   }) => {
     const mobileHud = page.locator('[data-testid="mobile-hud-container"]');
@@ -25,8 +25,8 @@ test.describe('Mobile Controls & Touch Viewport E2E', () => {
     const joystick = page.locator('[data-testid="virtual-joystick-base"]');
     await expect(joystick).toBeVisible();
 
-    const actionBtn = page.locator('[data-testid="mobile-action-button"]');
-    await expect(actionBtn).toBeVisible();
+    const jumpBtn = page.locator('[data-testid="mobile-jump-button"]');
+    await expect(jumpBtn).toBeVisible();
   });
 
   test('virtual joystick touch interaction updates input manager and active joystick state', async ({
@@ -50,27 +50,22 @@ test.describe('Mobile Controls & Touch Viewport E2E', () => {
     await expect(knob).toBeVisible();
   });
 
-  test('mobile action button performs contextual interactions and updates plot', async ({
-    page,
-  }) => {
-    // 1. Select Trowel tool
-    const trowelBtn = page.locator('[data-testid="tool-trowel"]');
-    await trowelBtn.click();
+  test('direct plot tap plants without till step or reach rule', async ({ page }) => {
+    // 1. Select Seed Bag tool
+    const seedBagBtn = page.locator('[data-testid="tool-seed_bag"]');
+    await seedBagBtn.click();
 
-    // 2. Click mobile action button
-    const actionBtn = page.locator('[data-testid="mobile-action-button"]');
-    await expect(actionBtn).toBeVisible();
-    await actionBtn.click();
-
-    // 3. Or trigger via till plot helper to verify integration
-    await page.evaluate(() => {
-      window.__tillPlot?.('plot-0-0');
+    // 2. Plant directly via helper (no till, no reach check)
+    const plotId = await page.evaluate(() => {
+      const res = window.__plantCropAt?.(1, 1, 'carrot');
+      if (!res || !res.ok) throw new Error('planting failed');
+      return res.value.plotId;
     });
 
-    const plot = await page.evaluate(() => {
-      return window.__getGameState?.().farm.plots.find((p) => p.id === 'plot-0-0');
-    });
-    expect(plot?.tilled).toBe(true);
+    const plot = await page.evaluate((id) => {
+      return window.__getGameState?.().farm.plots.find((p) => p.id === id);
+    }, plotId);
+    expect(plot?.crop?.cropId).toBe('carrot');
   });
 
   test('opening modal suppresses mobile joystick and action button inputs', async ({ page }) => {
