@@ -9,6 +9,7 @@ import {
   CAMERA_MAX_PITCH_DEG,
   CAMERA_MIN_DISTANCE,
   CAMERA_MAX_DISTANCE,
+  CAMERA_MIN_HEIGHT,
   CAMERA_TARGET_HEIGHT_OFFSET,
   CAMERA_EYE_HEIGHT_OFFSET,
   FIRST_PERSON_DISTANCE_THRESHOLD,
@@ -57,7 +58,8 @@ export interface FollowCameraProps {
  * - Controls the active Three.js PerspectiveCamera in R3F.
  * - Follows target entity (Player + Y=1.2 height offset) with smooth exponential damping.
  * - Supports orbit (right-mouse drag / 1-finger touch) and zoom (scroll wheel / pinch gesture).
- * - Enforces pitch limits [25°, 65°] and distance bounds [7, 18].
+ * - Free-look pitch range [-20°, 85°]: high top-down down to low look-up angles.
+ * - Ground guard keeps the camera above the island instead of clipping under it.
  * - Raycasts scene geometry to avoid camera clipping behind island terrain and props.
  * - Syncs camera yaw to InputManager for seamless camera-relative character movement.
  */
@@ -219,7 +221,8 @@ export const FollowCamera: React.FC<FollowCameraProps> = ({
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
       // Scroll down (deltaY > 0) zooms out (+distance), scroll up (deltaY < 0) zooms in (-distance)
-      const zoomAmount = Math.sign(e.deltaY) * Math.min(3.5, Math.max(1.2, Math.abs(e.deltaY) * 0.025));
+      const zoomAmount =
+        Math.sign(e.deltaY) * Math.min(3.5, Math.max(1.2, Math.abs(e.deltaY) * 0.025));
       targetDistanceRef.current = applyZoomDelta(
         targetDistanceRef.current,
         zoomAmount,
@@ -363,8 +366,7 @@ export const FollowCamera: React.FC<FollowCameraProps> = ({
       const forwardX =
         smoothedTargetPosRef.current.x -
         10 * Math.cos(currentPitchRef.current) * Math.sin(currentYawRef.current);
-      const forwardY =
-        smoothedTargetPosRef.current.y - 10 * Math.sin(currentPitchRef.current);
+      const forwardY = smoothedTargetPosRef.current.y - 10 * Math.sin(currentPitchRef.current);
       const forwardZ =
         smoothedTargetPosRef.current.z -
         10 * Math.cos(currentPitchRef.current) * Math.cos(currentYawRef.current);
@@ -377,6 +379,10 @@ export const FollowCamera: React.FC<FollowCameraProps> = ({
         effectiveDistance,
         smoothedTargetPosRef.current
       );
+
+      // Ground guard: at low/negative pitch slide along the grass instead of
+      // sinking under the island (the old "stuck looking up" feeling).
+      finalCameraPos.y = Math.max(finalCameraPos.y, CAMERA_MIN_HEIGHT);
 
       camera.position.set(finalCameraPos.x, finalCameraPos.y, finalCameraPos.z);
       camera.lookAt(

@@ -56,13 +56,15 @@ export const COYOTE_MS = 120; // jumps still allowed shortly after leaving groun
 export const CAMERA_DEFAULT_YAW_DEG = 45;
 export const CAMERA_DEFAULT_PITCH_DEG = 40;
 export const CAMERA_DEFAULT_DISTANCE = 12;
-export const CAMERA_MIN_PITCH_DEG = 15;
-export const CAMERA_MAX_PITCH_DEG = 75;
+export const CAMERA_MIN_PITCH_DEG = -20;
+export const CAMERA_MAX_PITCH_DEG = 85;
 export const CAMERA_MIN_DISTANCE = 0.0;
 export const CAMERA_MAX_DISTANCE = 20.0;
 export const CAMERA_TARGET_HEIGHT_OFFSET = 1.0;
 export const CAMERA_EYE_HEIGHT_OFFSET = 1.35;
 export const FIRST_PERSON_DISTANCE_THRESHOLD = 0.8;
+/** Third-person camera never sinks below this world height (no under-island stuck). */
+export const CAMERA_MIN_HEIGHT = 0.35;
 
 // ==========================================
 // 6. Interaction
