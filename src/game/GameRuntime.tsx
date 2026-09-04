@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { PlotId } from '../state/storeTypes';
 import { WeatherRenderer } from './weather/WeatherRenderer';
 import { GardenIsland } from './world/GardenIsland';
@@ -14,6 +14,7 @@ import { PostProcessing } from './effects/PostProcessing';
 import { DiagnosticsPanel } from './effects/DiagnosticsPanel';
 import { PetRenderer } from './pets/PetRenderer';
 import { RemotePlayerRenderer } from './multiplayer/RemotePlayerRenderer';
+import { getGameMode } from './core/gameMode';
 import type { InputManager } from './input/InputManager';
 
 export interface GameRuntimeProps {
@@ -45,6 +46,11 @@ export const GameRuntime: React.FC<GameRuntimeProps> = ({
   inputManager,
   children,
 }) => {
+  // Verdant-only backends (leaderboard service, multiplayer room) must never
+  // instantiate in local mode: their singletons throw MissingEnvError without
+  // Supabase env vars and would crash render (they fetch in useMemo/effects).
+  const isVerdant = useMemo(() => getGameMode() === 'verdant', []);
+
   return (
     <group name="GameRuntime">
       {/* 1. Atmospheric & Sun/Moon Lighting with 2s Crossfades */}
@@ -65,8 +71,8 @@ export const GameRuntime: React.FC<GameRuntimeProps> = ({
       {/* 5.1 Procedural Merchant NPC & Stall Interaction (Market, PRD §7.3) */}
       <Merchant />
 
-      {/* 5.2 Global Top 10 Leaderboard Monument (PRD §7.12) */}
-      <LeaderboardMonument />
+      {/* 5.2 Global Top 10 Leaderboard Monument (verdant-only) */}
+      {isVerdant && <LeaderboardMonument />}
 
       {/* 6. Procedural Player Character */}
       <Player inputManager={inputManager} onFall={onPlayerFall} />
@@ -86,8 +92,8 @@ export const GameRuntime: React.FC<GameRuntimeProps> = ({
       {/* 11. Companion Pet & Incubating Egg 3D Renderer */}
       <PetRenderer />
 
-      {/* 12. Remote Player Avatars (multiplayer presence) */}
-      <RemotePlayerRenderer />
+      {/* 12. Remote Player Avatars (verdant multiplayer presence only) */}
+      {isVerdant && <RemotePlayerRenderer />}
 
       {/* 13. Dynamic entities & extensions (Custom entities, etc.) */}
       {children}
