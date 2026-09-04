@@ -77,6 +77,28 @@ export const App: React.FC<AppProps> = ({
     }
   }, [initializeAuth, isVerdant]);
 
+  // Android back button (Capacitor): close the top modal first, otherwise
+  // minimize the app instead of killing it. No-op on web builds.
+  useEffect(() => {
+    let removeListener: (() => void) | undefined;
+    void import('@capacitor/app')
+      .then(({ App: CapApp }) => {
+        void CapApp.addListener('backButton', () => {
+          if (useUiStore.getState().activeModal !== null) {
+            useUiStore.getState().closeModal();
+          } else {
+            void CapApp.minimizeApp();
+          }
+        }).then((handle) => {
+          removeListener = () => void handle.remove();
+        });
+      })
+      .catch(() => {
+        // Web builds have no native shell; ignore.
+      });
+    return () => removeListener?.();
+  }, []);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       installTestClock();
