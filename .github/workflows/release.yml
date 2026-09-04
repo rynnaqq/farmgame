@@ -40,6 +40,22 @@ jobs:
       - name: Install web dependencies
         run: npm ci
 
+      - name: Configure Supabase env (verdant APK with login)
+        # Vite bakes VITE_* into the bundle at build time, and .env is
+        # gitignored, so CI must reconstruct it from repository secrets.
+        # Without secrets the build falls back to local (guest) mode.
+        # Required secrets (repo Settings -> Secrets -> Actions):
+        #   VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY
+        run: |
+          if [ -n "${{ secrets.VITE_SUPABASE_URL }}" ]; then
+            printf 'VITE_GAME_MODE=verdant\nVITE_SUPABASE_URL=%s\nVITE_SUPABASE_PUBLISHABLE_KEY=%s\n' \
+              "${{ secrets.VITE_SUPABASE_URL }}" \
+              "${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}" > .env
+            echo "Supabase env configured (verdant mode with login)"
+          else
+            echo "No Supabase secrets found; building in local mode"
+          fi
+
       - name: Verify web build (lint + typecheck + tests)
         run: |
           npx tsc --noEmit
