@@ -73,13 +73,11 @@ export class InputManager {
       // nearest stall's shop tab) — don't also cycle seeds underneath it.
       if (this.isNearMerchantCluster()) return;
       this.onCycleSeed?.(direction);
-      if (useUiStore.getState().selectedTool !== 'seed_bag') {
-        return;
-      }
+      // Q/E cycling always arms planting with the newly selected seed.
       const current = useUiStore.getState().selectedSeed;
       const idx = CROP_IDS.indexOf(current);
       const nextIdx = (idx + direction + CROP_IDS.length) % CROP_IDS.length;
-      useUiStore.getState().setSelectedSeed(CROP_IDS[nextIdx]);
+      useUiStore.getState().armSeed(CROP_IDS[nextIdx]);
     };
 
     this.keyboard.onInteract = () => {

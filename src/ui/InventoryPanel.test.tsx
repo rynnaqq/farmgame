@@ -84,6 +84,21 @@ describe('InventoryPanel Component', () => {
       expect(screen.getByTestId('inventory-seed-count-golden_berry')).toHaveTextContent('1');
       expect(screen.getByTestId('inventory-seed-count-starfruit')).toHaveTextContent('0');
     });
+
+    it('arms planting and closes the modal when a seed Plant button is clicked', () => {
+      useUiStore.getState().openModal('inventory');
+
+      render(<InventoryPanel />);
+
+      const seedsTab = screen.queryByTestId('tab-seeds');
+      if (seedsTab) fireEvent.click(seedsTab);
+
+      fireEvent.click(screen.getByTestId('inventory-plant-seed-tomato'));
+
+      expect(useUiStore.getState().selectedSeed).toBe('tomato');
+      expect(useUiStore.getState().plantArmed).toBe(true);
+      expect(useUiStore.getState().activeModal).toBeNull();
+    });
   });
 
   describe('Produce Section / Tab', () => {

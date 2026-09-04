@@ -4,6 +4,8 @@ import type * as THREE from 'three';
 import type { MutationType } from '../core/constants';
 import { useSettingsStore } from '../../state/settingsStore';
 import { useMutationLightSlot } from './mutationLightBudget';
+import { CulledGroup } from '../effects/CulledGroup';
+import { SPARKLE_CULL_DISTANCE } from '../effects/culling';
 import { getCosmicMotePositions } from './cropMeshGenerators';
 import { getGoldSparklePositions } from './mutationShaders';
 
@@ -52,20 +54,23 @@ export const GoldVisualDecorator: React.FC<GoldVisualDecoratorProps> = ({
 
   return (
     <group name="GoldVisualDecorator">
-      {/* Sparkle particle motes on medium/high settings */}
-      {effectiveQuality !== 'low' &&
-        initialSparkles.map((sparkle, idx) => (
-          <mesh
-            key={idx}
-            ref={(el) => {
-              if (el) sparkleMeshes.current[idx] = el;
-            }}
-            position={sparkle.position}
-          >
-            <octahedronGeometry args={[sparkle.size, 0]} />
-            <meshBasicMaterial color={sparkle.color} transparent opacity={sparkle.opacity} />
-          </mesh>
-        ))}
+      {/* Sparkle particle motes on medium/high settings (distance-culled) */}
+      {effectiveQuality !== 'low' && (
+        <CulledGroup maxDistance={SPARKLE_CULL_DISTANCE} name="GoldSparkles">
+          {initialSparkles.map((sparkle, idx) => (
+            <mesh
+              key={idx}
+              ref={(el) => {
+                if (el) sparkleMeshes.current[idx] = el;
+              }}
+              position={sparkle.position}
+            >
+              <octahedronGeometry args={[sparkle.size, 0]} />
+              <meshBasicMaterial color={sparkle.color} transparent opacity={sparkle.opacity} />
+            </mesh>
+          ))}
+        </CulledGroup>
+      )}
 
       {/* Pulsing point light on medium/high settings (budget-capped) */}
       {effectiveQuality !== 'low' && lightSlot && (
@@ -122,19 +127,21 @@ export const CosmicVisualDecorator: React.FC<CosmicVisualDecoratorProps> = ({
 
   return (
     <group ref={groupRef} name="CosmicVisualDecorator">
-      {/* Drifting star motes */}
-      {initialMotes.map((mote, idx) => (
-        <mesh
-          key={idx}
-          ref={(el) => {
-            if (el) moteMeshes.current[idx] = el;
-          }}
-          position={mote.position}
-        >
-          <octahedronGeometry args={[mote.size, 0]} />
-          <meshBasicMaterial color={mote.color} />
-        </mesh>
-      ))}
+      {/* Drifting star motes (distance-culled) */}
+      <CulledGroup maxDistance={SPARKLE_CULL_DISTANCE} name="CosmicMotes">
+        {initialMotes.map((mote, idx) => (
+          <mesh
+            key={idx}
+            ref={(el) => {
+              if (el) moteMeshes.current[idx] = el;
+            }}
+            position={mote.position}
+          >
+            <octahedronGeometry args={[mote.size, 0]} />
+            <meshBasicMaterial color={mote.color} />
+          </mesh>
+        ))}
+      </CulledGroup>
 
       {/* Cosmic ambient point light on medium/high settings (budget-capped) */}
       {effectiveQuality !== 'low' && lightSlot && (

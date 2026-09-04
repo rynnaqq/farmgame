@@ -5,6 +5,9 @@ import type { CropData } from '../../state/storeTypes';
 import { getCropDefinition } from './cropDefinitions';
 import {
   getCropStage,
+  getCropProgressRatio,
+  getGrowthScale,
+  CROP_EMERGE_RATIO,
   getMutationScale,
   getMutationMaterialProps,
   calculateStageTransition,
@@ -113,6 +116,11 @@ export const CropRenderer: React.FC<CropRendererProps> = ({ crop, position = [0,
   const baseGrowthSec = cropDef?.baseGrowthSec ?? 45;
 
   const currentStage = getCropStage(crop.growthProgressSec, baseGrowthSec);
+  const growthRatio = getCropProgressRatio(crop.growthProgressSec, baseGrowthSec);
+  // Continuous size from emergence to maturity; stored in a ref so the
+  // per-frame loop always uses the latest progress without re-subscribing.
+  const growthScaleRef = useRef<number>(getGrowthScale(growthRatio));
+  growthScaleRef.current = getGrowthScale(growthRatio);
   const [prevStage, setPrevStage] = useState<CropStage>(currentStage);
   const transitionStartMs = useRef<number>(Date.now());
   const [transitionProgress, setTransitionProgress] = useState({ scale: 1.0, opacity: 1.0 });
@@ -140,18 +148,25 @@ export const CropRenderer: React.FC<CropRendererProps> = ({ crop, position = [0,
     }
 
     if (rootRef.current) {
+      const growthScale = growthScaleRef.current;
       // Gentle harvestable idle bobbing/breathing if mature
       if (isHarvestable && !reducedMotion) {
         const t = clock.getElapsedTime();
         const harvestBob = 1.0 + Math.sin(t * 3.0) * 0.03;
-        const totalScale = mutationScale * transitionProgress.scale * harvestBob;
+        const totalScale = mutationScale * growthScale * transitionProgress.scale * harvestBob;
         rootRef.current.scale.set(totalScale, totalScale, totalScale);
       } else {
-        const totalScale = mutationScale * transitionProgress.scale;
+        const totalScale = mutationScale * growthScale * transitionProgress.scale;
         rootRef.current.scale.set(totalScale, totalScale, totalScale);
       }
     }
   });
+
+  // Freshly planted seeds show only the dark soil spot — the sprout
+  // emerges gradually once growth passes the emergence threshold.
+  if (growthRatio <= CROP_EMERGE_RATIO) {
+    return null;
+  }
 
   const cropConfig = CROP_STAGE_CATALOG[crop.cropId]?.[currentStage];
   if (!cropConfig) {

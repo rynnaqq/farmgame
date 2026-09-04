@@ -116,12 +116,6 @@ export function describeNextAction(plot: PlotData, _nowMs: number, selectedTool:
       }
       return 'Water plot';
 
-    case 'seed_bag':
-      if (hasCrop) {
-        return 'Plot already has a crop';
-      }
-      return 'Plant seed';
-
     case 'scythe':
     case 'hand':
       if (isMature) {

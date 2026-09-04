@@ -24,10 +24,10 @@ const RIGHT_BED_X = FARM_BOUNDS.maxX / 2;
 const SOIL_SLAB_GEO = new THREE.BoxGeometry(BED_WIDTH, 0.12, BED_DEPTH);
 
 /**
- * Free-placement farm rendering: two continuous soil beds plus one tile
- * per planted crop at its world position. No tile grid, no locks.
+ * Free-placement farm rendering: two continuous soil beds plus one small
+ * soil spot per planted crop at its world position. No tile grid, no locks.
  * Clicking bare soil reports the world point for planting; clicking a
- * planted tile reports its plot id for watering/harvesting.
+ * planted spot reports its plot id for watering/harvesting.
  */
 export const FarmBeds: React.FC<FarmBedsProps> = ({ onSoilClick, onPlotClick }) => {
   const plots = useGameStore((state) => state.farm.plots);

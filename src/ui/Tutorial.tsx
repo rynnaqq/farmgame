@@ -33,9 +33,9 @@ const TUTORIAL_STEPS: TutorialStepData[] = [
     title: 'Seed Selection & Planting',
     icon: '🌱',
     desktopText:
-      'Select the Seed Bag (Key 2), pick your crop seed from the picker (Carrot, Tomato, etc.), and click on any soil plot to plant. No tilling needed!',
+      'Pick a seed from the seed hotbar above the toolbelt (or press Q/E to cycle seeds), then click on any soil plot to plant. Tap the armed seed again or press Escape to stop planting.',
     mobileText:
-      'Select the Seed Bag from the toolbelt, choose your seeds from the picker popover, and tap any soil plot to plant. No tilling needed!',
+      'Tap a seed in the seed hotbar above the toolbelt (or pick one from your inventory), then tap any soil plot to plant. Tap the armed seed again to stop planting.',
   },
   {
     id: 'watering',

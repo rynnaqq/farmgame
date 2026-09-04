@@ -15,7 +15,7 @@ export type CropStage = 'sprout' | 'mid' | 'grown';
 
 export type PlotState = 'planted' | 'watered' | 'harvestable';
 
-export type ToolType = 'watering_can' | 'seed_bag' | 'scythe' | 'hand';
+export type ToolType = 'watering_can' | 'scythe' | 'hand';
 
 export type CommandFailureReason =
   | 'invalid_plot_state'
@@ -187,6 +187,8 @@ export interface UiState {
   joystickVector: { x: number; y: number };
   selectedTool: ToolType;
   selectedSeed: CropId;
+  /** True while a seed is armed: soil clicks plant the selected seed. */
+  plantArmed: boolean;
   hoveredPlotId: PlotId | null;
   targetedPlotId: PlotId | null;
   isFirstPerson: boolean;

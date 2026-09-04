@@ -81,26 +81,38 @@ describe('Task 14: SeedPicker Component', () => {
     });
   });
 
-  describe('2. Seed Selection & Active Highlighting', () => {
-    it('initializes with Carrot as selected seed with aria-pressed="true"', () => {
+  describe('2. Seed Selection & Plant Arming', () => {
+    it('starts disarmed with no card asserting planting mode', () => {
       render(<SeedPicker />);
 
-      const carrotCard = screen.getByTestId('seed-card-carrot');
-      const tomatoCard = screen.getByTestId('seed-card-tomato');
-
-      expect(carrotCard).toHaveAttribute('aria-pressed', 'true');
-      expect(tomatoCard).toHaveAttribute('aria-pressed', 'false');
+      expect(useUiStore.getState().plantArmed).toBe(false);
+      expect(screen.getByTestId('seed-card-carrot')).toHaveAttribute('aria-pressed', 'false');
+      expect(screen.getByTestId('seed-card-tomato')).toHaveAttribute('aria-pressed', 'false');
     });
 
-    it('selects seed on click and updates uiStore', () => {
+    it('arms planting on click and updates uiStore', () => {
       render(<SeedPicker />);
 
       const pumpkinCard = screen.getByTestId('seed-card-pumpkin');
       fireEvent.click(pumpkinCard);
 
       expect(useUiStore.getState().selectedSeed).toBe('pumpkin');
+      expect(useUiStore.getState().plantArmed).toBe(true);
       expect(pumpkinCard).toHaveAttribute('aria-pressed', 'true');
       expect(screen.getByTestId('seed-card-carrot')).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    it('toggles disarm when the armed card is clicked again', () => {
+      render(<SeedPicker />);
+
+      const tomatoCard = screen.getByTestId('seed-card-tomato');
+      fireEvent.click(tomatoCard);
+      expect(useUiStore.getState().plantArmed).toBe(true);
+
+      fireEvent.click(tomatoCard);
+      expect(useUiStore.getState().plantArmed).toBe(false);
+      expect(useUiStore.getState().selectedSeed).toBe('tomato');
+      expect(tomatoCard).toHaveAttribute('aria-pressed', 'false');
     });
 
     it('invokes custom onSelectSeed callback when provided', () => {
@@ -120,8 +132,7 @@ describe('Task 14: SeedPicker Component', () => {
   });
 
   describe('3. Keyboard Shortcut Seed Cycling (Q / E)', () => {
-    it('cycles to next seed on pressing "e" or "E" when Seed Bag is active (Carrot -> Tomato -> Pumpkin -> Golden Berry -> Starfruit -> Carrot)', () => {
-      useUiStore.getState().setSelectedTool('seed_bag');
+    it('cycles to next seed on pressing "e" or "E" and arms planting (Carrot -> Tomato -> Pumpkin -> Golden Berry -> Starfruit -> Carrot)', () => {
       render(<SeedPicker />);
 
       expect(useUiStore.getState().selectedSeed).toBe('carrot');
@@ -129,6 +140,7 @@ describe('Task 14: SeedPicker Component', () => {
       // Next -> Tomato
       fireEvent.keyDown(window, { key: 'e' });
       expect(useUiStore.getState().selectedSeed).toBe('tomato');
+      expect(useUiStore.getState().plantArmed).toBe(true);
       expect(screen.getByTestId('seed-card-tomato')).toHaveAttribute('aria-pressed', 'true');
 
       // Next -> Pumpkin
@@ -148,8 +160,7 @@ describe('Task 14: SeedPicker Component', () => {
       expect(useUiStore.getState().selectedSeed).toBe('carrot');
     });
 
-    it('cycles to previous seed on pressing "q" or "Q" when Seed Bag is active (Carrot -> Starfruit -> Golden Berry -> Pumpkin -> Tomato -> Carrot)', () => {
-      useUiStore.getState().setSelectedTool('seed_bag');
+    it('cycles to previous seed on pressing "q" or "Q" and arms planting (Carrot -> Starfruit -> Golden Berry -> Pumpkin -> Tomato -> Carrot)', () => {
       render(<SeedPicker />);
 
       expect(useUiStore.getState().selectedSeed).toBe('carrot');
@@ -157,6 +168,7 @@ describe('Task 14: SeedPicker Component', () => {
       // Prev -> Starfruit
       fireEvent.keyDown(window, { key: 'q' });
       expect(useUiStore.getState().selectedSeed).toBe('starfruit');
+      expect(useUiStore.getState().plantArmed).toBe(true);
       expect(screen.getByTestId('seed-card-starfruit')).toHaveAttribute('aria-pressed', 'true');
 
       // Prev -> Golden Berry
@@ -176,21 +188,22 @@ describe('Task 14: SeedPicker Component', () => {
       expect(useUiStore.getState().selectedSeed).toBe('carrot');
     });
 
-    it('does not cycle seed on Q/E when another tool is active (e.g. watering_can)', () => {
+    it('cycles seeds regardless of the active tool (no seed-bag tool anymore)', () => {
       useUiStore.getState().setSelectedTool('watering_can');
       render(<SeedPicker />);
 
       expect(useUiStore.getState().selectedSeed).toBe('carrot');
 
       fireEvent.keyDown(window, { key: 'e' });
-      expect(useUiStore.getState().selectedSeed).toBe('carrot');
+      expect(useUiStore.getState().selectedSeed).toBe('tomato');
+      expect(useUiStore.getState().plantArmed).toBe(true);
 
       fireEvent.keyDown(window, { key: 'q' });
       expect(useUiStore.getState().selectedSeed).toBe('carrot');
     });
 
     it('does not cycle seed when typing inside an input element', () => {
-      useUiStore.getState().setSelectedTool('seed_bag');
+      useUiStore.getState().setSelectedTool('watering_can');
       render(
         <div>
           <input data-testid="text-input" type="text" />
@@ -243,24 +256,10 @@ describe('Task 14: SeedPicker Component', () => {
       expect(screen.getByTestId('seed-shortcut-next')).toHaveTextContent('E');
     });
 
-    it('renders a close button and triggers onClose or default tool reset on click', () => {
-      const onClose = vi.fn();
-      render(<SeedPicker onClose={onClose} />);
-
-      const closeBtn = screen.getByTestId('seed-picker-close-button');
-      expect(closeBtn).toBeInTheDocument();
-
-      fireEvent.click(closeBtn);
-      expect(onClose).toHaveBeenCalledTimes(1);
-    });
-
-    it('defaults to switching to watering_can tool when close button is clicked without custom onClose', () => {
-      useUiStore.getState().setSelectedTool('seed_bag');
+    it('has no close button: the hotbar is always visible', () => {
       render(<SeedPicker />);
 
-      const closeBtn = screen.getByTestId('seed-picker-close-button');
-      fireEvent.click(closeBtn);
-      expect(useUiStore.getState().selectedTool).toBe('watering_can');
+      expect(screen.queryByTestId('seed-picker-close-button')).not.toBeInTheDocument();
     });
   });
 });

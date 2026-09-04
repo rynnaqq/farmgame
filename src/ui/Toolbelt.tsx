@@ -75,33 +75,6 @@ function ToolIcon({
         </svg>
       );
 
-    case 'seed_bag':
-      return (
-        <svg
-          className={`w-6 h-6 md:w-7 md:h-7 transition-transform ${
-            isActive ? 'scale-110 text-emerald-300' : 'text-emerald-200/70'
-          }`}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M12 22v-9" />
-          <path
-            d="M12 13a5 5 0 0 1 5-5c3 0 3 4 3 4s-4 0-4 4a5 5 0 0 1-4-3z"
-            fill="currentColor"
-            fillOpacity="0.2"
-          />
-          <path
-            d="M12 13a5 5 0 0 0-5-5c-3 0-3 4-3 4s4 0 4 4a5 5 0 0 0 4-3z"
-            fill="currentColor"
-            fillOpacity="0.2"
-          />
-        </svg>
-      );
-
     case 'hand':
     case 'scythe':
     default:
@@ -132,11 +105,12 @@ function ToolIcon({
 
 /**
  * Bottom Toolbelt Component for Garden Island 3D
- * - 3 Tools in fixed order: 1. Watering Can, 2. Seed Bag, 3. Hand/Scythe.
+ * - 2 Tools in fixed order: 1. Watering Can, 2. Hand/Scythe.
  * - Dynamic Golden Watering Can upgrade styling & icon.
- * - Seed Bag displays active seed indicator and count badge.
- * - SeedPicker popup floats directly above when Seed Bag is selected.
- * - Accessible >= 44x44px touch targets with keyboard shortcuts (1-4).
+ * - Persistent seed hotbar above: tap a seed card to arm planting,
+ *   tap again to disarm. Seeds can also be armed from the inventory.
+ * - Armed-seed indicator chip with cancel button while planting is armed.
+ * - Accessible >= 44x44px touch targets with keyboard shortcuts (1-2).
  * - Safe-area inset aware layout.
  */
 export const Toolbelt: React.FC<ToolbeltProps> = ({
@@ -147,6 +121,7 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
   const activeModal = useUiStore((state) => state.activeModal);
   const selectedTool = useUiStore((state) => state.selectedTool);
   const selectedSeed = useUiStore((state) => state.selectedSeed);
+  const plantArmed = useUiStore((state) => state.plantArmed);
 
   const goldenWateringCanOwned = useGameStore((state) => state.farm.goldenWateringCanOwned);
   const inventorySeeds = useGameStore((state) => state.inventory.seeds);
@@ -178,21 +153,29 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
   // Verdant keeps arcade produce quickslots; core tools are till-free in all modes.
   const isVerdant = useMemo(() => isVerdantMode(), []);
 
-  const currentSeedDef = CROPS[selectedSeed] ?? CROPS.carrot;
-  const currentSeedCount = inventorySeeds[selectedSeed] ?? 0;
+  const isWateringActive = selectedTool === 'watering_can';
+  const isHandActive = selectedTool === 'hand' || selectedTool === 'scythe';
+
+  const armedSeedDef = CROPS[selectedSeed] ?? CROPS.carrot;
+  const armedSeedCount = inventorySeeds[selectedSeed] ?? 0;
 
   const handleSelectTool = useCallback(
     (tool: ToolType) => {
       if (!isInteractive) return;
       audioManager.playSfx('ui_click');
-      useUiStore.getState().setSelectedTool(tool);
+      const ui = useUiStore.getState();
+      ui.setSelectedTool(tool);
+      // Switching tools disarms seed planting.
+      ui.disarmPlant();
     },
     [isInteractive]
   );
 
-  const isWateringActive = selectedTool === 'watering_can';
-  const isSeedBagActive = selectedTool === 'seed_bag';
-  const isHandActive = selectedTool === 'hand' || selectedTool === 'scythe';
+  const handleDisarmPlant = useCallback(() => {
+    if (!isInteractive) return;
+    audioManager.playSfx('ui_click');
+    useUiStore.getState().disarmPlant();
+  }, [isInteractive]);
 
   return (
     <div
@@ -203,10 +186,31 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
         paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))',
       }}
     >
-      {/* Floating SeedPicker Popup above Toolbelt */}
-      {isSeedBagActive && (
-        <div className="mb-2 pointer-events-auto transition-all duration-200">
-          <SeedPicker disabled={!isInteractive} onClose={() => handleSelectTool('watering_can')} />
+      {/* Persistent Seed Hotbar above Toolbelt */}
+      <div className="mb-2 pointer-events-auto transition-all duration-200">
+        <SeedPicker disabled={!isInteractive} />
+      </div>
+
+      {/* Armed-seed indicator chip (visible while planting is armed) */}
+      {plantArmed && (
+        <div className="mb-2 pointer-events-auto">
+          <div
+            data-testid="plant-armed-chip"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-950/90 border-2 border-emerald-400/60 text-emerald-200 text-xs font-bold shadow-lg"
+          >
+            <span>
+              🌱 Planting: {armedSeedDef.name} (×{armedSeedCount})
+            </span>
+            <button
+              type="button"
+              data-testid="plant-disarm-button"
+              aria-label="Cancel planting"
+              onClick={handleDisarmPlant}
+              className="w-6 h-6 flex items-center justify-center rounded-full bg-slate-800/90 hover:bg-rose-900/60 border border-white/10 hover:border-rose-400/50 text-slate-300 hover:text-rose-200 text-[11px] font-bold transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
 
@@ -264,54 +268,11 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
           </span>
         </button>
 
-        {/* 2. Seed Bag */}
-        <button
-          type="button"
-          data-testid="tool-seed_bag"
-          aria-label={`Seed Bag (2) - ${currentSeedDef.name} (${currentSeedCount})`}
-          aria-pressed={isSeedBagActive}
-          disabled={!isInteractive}
-          onClick={() => handleSelectTool('seed_bag')}
-          className={`min-w-[44px] min-h-[44px] w-14 h-15 md:w-16 md:h-17 flex flex-col items-center justify-between p-1 rounded-xl border transition-all duration-150 relative cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
-            isSeedBagActive
-              ? 'border-2 border-emerald-400 ring-2 ring-emerald-400/40 bg-emerald-950/80 scale-105 shadow-md shadow-emerald-500/20 z-10'
-              : 'border-white/10 bg-slate-800/80 hover:bg-slate-700/80 hover:border-white/25 scale-100 opacity-80 hover:opacity-100'
-          } ${!isInteractive ? 'cursor-not-allowed opacity-40' : ''}`}
-        >
-          {/* Active selection arrow marker (Growden.io style) */}
-          {isSeedBagActive && (
-            <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-white text-[11px] leading-none animate-bounce select-none pointer-events-none drop-shadow">
-              ▼
-            </span>
-          )}
-
-          {/* Key shortcut badge */}
-          <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
-            2
-          </span>
-
-          {/* Active seed inventory count chip */}
-          <span
-            data-testid="seed-badge-count"
-            className="absolute top-1 right-1 px-1 py-0.2 rounded-full text-[9px] font-bold bg-emerald-900/90 text-emerald-200 border border-emerald-500/30 leading-tight pointer-events-none"
-          >
-            {currentSeedCount}
-          </span>
-
-          <div className="flex-1 flex items-center justify-center pointer-events-none mt-1">
-            <ToolIcon tool="seed_bag" isActive={isSeedBagActive} />
-          </div>
-
-          <span className="text-[10px] md:text-[11px] font-bold text-white leading-tight pointer-events-none truncate max-w-[52px]">
-            {isSeedBagActive ? currentSeedDef.name : 'Seeds'}
-          </span>
-        </button>
-
-        {/* 3. Hand / Scythe */}
+        {/* 2. Hand / Scythe */}
         <button
           type="button"
           data-testid="tool-hand"
-          aria-label="Hand / Scythe (3)"
+          aria-label="Hand / Scythe (2)"
           aria-pressed={isHandActive}
           disabled={!isInteractive}
           onClick={() => handleSelectTool('hand')}
@@ -330,7 +291,7 @@ export const Toolbelt: React.FC<ToolbeltProps> = ({
 
           {/* Key shortcut badge */}
           <span className="absolute top-1 left-1.5 text-[9px] font-bold text-slate-300 leading-none">
-            3
+            2
           </span>
 
           <div className="flex-1 flex items-center justify-center pointer-events-none mt-1">

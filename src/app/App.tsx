@@ -77,6 +77,16 @@ export const App: React.FC<AppProps> = ({
     }
   }, [initializeAuth, isVerdant]);
 
+  // Escape disarms seed planting (modals handle their own Escape to close).
+  useEffect(() => {
+    activeInputManager.onEscape = () => {
+      useUiStore.getState().disarmPlant();
+    };
+    return () => {
+      activeInputManager.onEscape = undefined;
+    };
+  }, [activeInputManager]);
+
   // Android back button (Capacitor): close the top modal first, otherwise
   // minimize the app instead of killing it. No-op on web builds.
   useEffect(() => {
@@ -168,8 +178,8 @@ export const App: React.FC<AppProps> = ({
         return;
       }
       const uiState = useUiStore.getState();
-      if (uiState.selectedTool !== 'seed_bag') {
-        uiState.showToast('Select seeds to plant here', 'info', 2000);
+      if (!uiState.plantArmed) {
+        uiState.showToast('Pick a seed from the hotbar or inventory to plant', 'info', 2000);
         return;
       }
       const result = executePlantAt(point.x, point.z, uiState.selectedSeed, Date.now());

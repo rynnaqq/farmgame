@@ -50,6 +50,7 @@ export const PlayerModel: React.FC<PlayerModelProps> = ({
   headTiltZ = 0,
 }) => {
   const selectedTool = useUiStore((state) => state.selectedTool);
+  const plantArmed = useUiStore((state) => state.plantArmed);
   const goldenWateringCanOwned = useGameStore((state) => state.farm.goldenWateringCanOwned);
 
   const totalOffsetY = idleBobY + stepBounce;
@@ -242,7 +243,7 @@ export const PlayerModel: React.FC<PlayerModelProps> = ({
           </group>
         )}
 
-        {selectedTool === 'seed_bag' && (
+        {plantArmed && (
           <group position={[0, -0.26, 0.06]} rotation={[-0.2, 0, 0]}>
             <mesh castShadow>
               <cylinderGeometry args={[0.05, 0.07, 0.14, 6]} />

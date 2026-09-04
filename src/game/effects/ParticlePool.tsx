@@ -18,6 +18,7 @@ import {
   type ParticleBuffer,
   type ParticleBounds,
 } from './particlePoolMath';
+import { PARTICLE_POOL_SPHERE } from './culling';
 
 // ============================================================================
 // Constants & Bounds
@@ -108,6 +109,32 @@ export const ParticlePool: React.FC = () => {
   const dummyQuat = useMemo(() => new THREE.Quaternion(), []);
   const dummyScale = useMemo(() => new THREE.Vector3(), []);
   const dummyColor = useMemo(() => new THREE.Color(), []);
+
+  // Static frustum-culling bounds for every pool. Instances fly around each
+  // frame, so an auto-computed sphere would go stale (or degenerate when all
+  // instances are parked offscreen) — while `frustumCulled` forces
+  // the GPU to process every pool even when looking away. One generous
+  // island-covering sphere restores correct, zero-cost culling.
+  useEffect(() => {
+    const center = new THREE.Vector3(
+      PARTICLE_POOL_SPHERE.centerX,
+      PARTICLE_POOL_SPHERE.centerY,
+      PARTICLE_POOL_SPHERE.centerZ
+    );
+    for (const ref of [
+      rainMeshRef,
+      rainSplashMeshRef,
+      heatMoteMeshRef,
+      bloodMoteMeshRef,
+      burstMeshRef,
+    ]) {
+      const mesh = ref.current;
+      if (mesh) {
+        mesh.frustumCulled = true;
+        mesh.boundingSphere = new THREE.Sphere(center.clone(), PARTICLE_POOL_SPHERE.radius);
+      }
+    }
+  }, []);
 
   // Initialize continuous weather buffers when weather or quality changes
   useEffect(() => {
@@ -381,7 +408,7 @@ export const ParticlePool: React.FC = () => {
       <instancedMesh
         ref={rainMeshRef}
         args={[undefined, undefined, BASE_CAPACITIES.rain]}
-        frustumCulled={false}
+        frustumCulled
         visible={weather === 'heavy_rain'}
       >
         <boxGeometry args={[0.04, 0.4, 0.04]} />
@@ -398,7 +425,7 @@ export const ParticlePool: React.FC = () => {
       <instancedMesh
         ref={rainSplashMeshRef}
         args={[undefined, undefined, BASE_CAPACITIES.rainSplash]}
-        frustumCulled={false}
+        frustumCulled
         visible={weather === 'heavy_rain'}
       >
         <dodecahedronGeometry args={[0.06, 0]} />
@@ -415,7 +442,7 @@ export const ParticlePool: React.FC = () => {
       <instancedMesh
         ref={heatMoteMeshRef}
         args={[undefined, undefined, BASE_CAPACITIES.heatMote]}
-        frustumCulled={false}
+        frustumCulled
         visible={weather === 'heatwave'}
       >
         <octahedronGeometry args={[0.1, 0]} />
@@ -432,7 +459,7 @@ export const ParticlePool: React.FC = () => {
       <instancedMesh
         ref={bloodMoteMeshRef}
         args={[undefined, undefined, BASE_CAPACITIES.bloodMote]}
-        frustumCulled={false}
+        frustumCulled
         visible={weather === 'blood_moon'}
       >
         <octahedronGeometry args={[0.12, 0]} />
@@ -449,7 +476,7 @@ export const ParticlePool: React.FC = () => {
       <instancedMesh
         ref={burstMeshRef}
         args={[undefined, undefined, BASE_CAPACITIES.gameplayBurst]}
-        frustumCulled={false}
+        frustumCulled
       >
         <octahedronGeometry args={[0.1, 0]} />
         <meshBasicMaterial

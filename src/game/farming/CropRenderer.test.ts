@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   getCropStage,
   getCropProgressRatio,
+  getGrowthScale,
+  CROP_EMERGE_RATIO,
   getMutationScale,
   getMutationMaterialProps,
   calculateStageTransition,
@@ -78,6 +80,33 @@ describe('CropRenderer & Procedural Mesh Systems', () => {
     it('returns 1 if base growth is 0 or negative', () => {
       expect(getCropProgressRatio(5, 0)).toBe(1);
       expect(getCropProgressRatio(5, -10)).toBe(1);
+    });
+  });
+
+  describe('Growth Scale (getGrowthScale)', () => {
+    it('starts small at emergence and reaches full size at maturity', () => {
+      expect(getGrowthScale(0)).toBeCloseTo(0.25, 5);
+      expect(getGrowthScale(CROP_EMERGE_RATIO)).toBeGreaterThan(0.25);
+      expect(getGrowthScale(1)).toBeCloseTo(1.0, 5);
+    });
+
+    it('grows monotonically across the whole growth bar', () => {
+      let prev = getGrowthScale(0);
+      for (let r = 0.1; r <= 1.0; r += 0.1) {
+        const next = getGrowthScale(r);
+        expect(next).toBeGreaterThan(prev);
+        prev = next;
+      }
+    });
+
+    it('clamps out-of-range ratios', () => {
+      expect(getGrowthScale(-5)).toBeCloseTo(0.25, 5);
+      expect(getGrowthScale(42)).toBeCloseTo(1.0, 5);
+    });
+
+    it('defines a small positive emergence threshold', () => {
+      expect(CROP_EMERGE_RATIO).toBeGreaterThan(0);
+      expect(CROP_EMERGE_RATIO).toBeLessThan(0.1);
     });
   });
 

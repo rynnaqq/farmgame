@@ -218,7 +218,7 @@ export interface PlotActionOptions {
 
 /**
  * Applies a tool to an existing crop plot (watering can, harvest hand).
- * Seed bag has no effect on planted plots — plant on empty soil instead.
+ * Planting is done on empty soil via executePlantAt, never on a plot.
  */
 export function executePlotAction(
   plotId: PlotId,
@@ -228,12 +228,6 @@ export function executePlotAction(
   switch (tool) {
     case 'watering_can':
       return waterPlot(plotId, options?.isGoldenCan, options?.weather, options?.nowMs);
-    case 'seed_bag':
-      return {
-        ok: false,
-        reason: 'invalid_plot_state',
-        message: 'Plot is already planted',
-      };
     case 'scythe':
     case 'hand':
       return harvestCrop(plotId);

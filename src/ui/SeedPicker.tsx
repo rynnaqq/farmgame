@@ -9,7 +9,6 @@ import { audioManager } from '../game/audio/AudioManager';
 export interface SeedPickerProps {
   selectedSeed?: CropId;
   onSelectSeed?: (seed: CropId) => void;
-  onClose?: () => void;
   className?: string;
   disabled?: boolean;
 }
@@ -136,21 +135,23 @@ function CropSeedIcon({ cropId, isSelected }: { cropId: CropId; isSelected: bool
 }
 
 /**
- * SeedPicker: Floating popup seed selector above the toolbelt.
+ * SeedPicker: Persistent seed hotbar above the toolbelt (no seed-bag tool).
  * - Displays all 5 crops with icons, names, and live inventory count badges.
- * - Keyboard shortcut cycling (Q/E) is coordinated globally by InputManager.
+ * - Tapping a card arms planting for that seed; tapping the armed card again
+ *   disarms. Soil clicks plant the armed seed.
+ * - Keyboard seed cycling (Q/E) is coordinated globally by InputManager.
  * - Accessible >= 44x44px touch targets with aria-label & aria-pressed.
  * - Responsive scrollable bar with safe-area spacing.
  */
 export const SeedPicker: React.FC<SeedPickerProps> = ({
   selectedSeed: propSelectedSeed,
   onSelectSeed,
-  onClose,
   className = '',
   disabled = false,
 }) => {
   const activeModal = useUiStore((state) => state.activeModal);
   const storeSelectedSeed = useUiStore((state) => state.selectedSeed);
+  const plantArmed = useUiStore((state) => state.plantArmed);
   const inventorySeeds = useGameStore((state) => state.inventory.seeds);
 
   const currentSelectedSeed = propSelectedSeed ?? storeSelectedSeed;
@@ -159,21 +160,16 @@ export const SeedPicker: React.FC<SeedPickerProps> = ({
     (cropId: CropId) => {
       if (disabled || activeModal !== null) return;
       audioManager.playSfx('ui_click');
-      useUiStore.getState().setSelectedSeed(cropId);
+      const ui = useUiStore.getState();
+      if (ui.plantArmed && ui.selectedSeed === cropId) {
+        ui.disarmPlant();
+      } else {
+        ui.armSeed(cropId);
+      }
       onSelectSeed?.(cropId);
     },
     [disabled, activeModal, onSelectSeed]
   );
-
-  const handleClose = useCallback(() => {
-    if (disabled) return;
-    audioManager.playSfx('ui_click');
-    if (onClose) {
-      onClose();
-    } else {
-      useUiStore.getState().setSelectedTool('watering_can');
-    }
-  }, [disabled, onClose]);
 
   const isInteractive = !disabled && activeModal === null;
 
@@ -195,7 +191,7 @@ export const SeedPicker: React.FC<SeedPickerProps> = ({
         </div>
 
         <span className="font-bold uppercase tracking-wider text-emerald-400 text-[11px]">
-          Select Seed
+          Seeds
         </span>
 
         <div className="flex items-center gap-1.5">
@@ -206,15 +202,6 @@ export const SeedPicker: React.FC<SeedPickerProps> = ({
           >
             E
           </span>
-          <button
-            type="button"
-            data-testid="seed-picker-close-button"
-            aria-label="Close seed selection"
-            onClick={handleClose}
-            className="ml-1 w-5 h-5 flex items-center justify-center rounded-full bg-slate-800/90 hover:bg-rose-900/60 active:bg-rose-800 border border-white/10 hover:border-rose-400/50 text-slate-400 hover:text-rose-200 text-[10px] font-bold transition-all cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
-          >
-            ✕
-          </button>
         </div>
       </div>
 
@@ -228,6 +215,7 @@ export const SeedPicker: React.FC<SeedPickerProps> = ({
           const cropDef = CROPS[cropId];
           const count = inventorySeeds[cropId] ?? 0;
           const isSelected = currentSelectedSeed === cropId;
+          const isArmed = isSelected && plantArmed;
           const isEmpty = count === 0;
 
           return (
@@ -236,8 +224,8 @@ export const SeedPicker: React.FC<SeedPickerProps> = ({
               type="button"
               data-testid={`seed-card-${cropId}`}
               data-empty={isEmpty ? 'true' : 'false'}
-              aria-label={`${cropDef.name} Seeds (${count} available)`}
-              aria-pressed={isSelected}
+              aria-label={`${cropDef.name} Seeds (${count} available)${isArmed ? ' - planting armed' : ''}`}
+              aria-pressed={isArmed}
               disabled={!isInteractive}
               onClick={() => handleSelect(cropId)}
               className={`min-w-[44px] min-h-[44px] w-16 h-18 md:w-20 md:h-20 flex flex-col items-center justify-between p-1.5 rounded-xl border transition-all duration-150 relative cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${

@@ -335,16 +335,6 @@ describe('Task 11: Free-Placement Farming Commands & Atomic Validation', () => {
       expect(replant.ok).toBe(true);
     });
 
-    it('seed_bag on a planted plot explains it is already planted', () => {
-      const planted = plantCropAt(0, 0, 'carrot', baseNow);
-      if (!planted.ok) return;
-      const res = executePlotAction(planted.value.plotId, 'seed_bag');
-      expect(res.ok).toBe(false);
-      if (!res.ok) {
-        expect(res.reason).toBe('invalid_plot_state');
-      }
-    });
-
     it('returns wrong_tool for unrecognized tool', () => {
       const planted = plantCropAt(0, 0, 'carrot', baseNow);
       if (!planted.ok) return;

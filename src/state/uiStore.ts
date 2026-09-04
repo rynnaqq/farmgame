@@ -18,6 +18,11 @@ export interface UiStoreState extends UiState {
   setJoystickVector: (vector: { x: number; y: number }) => void;
   setSelectedTool: (tool: ToolType) => void;
   setSelectedSeed: (seed: CropId) => void;
+  setPlantArmed: (armed: boolean) => void;
+  /** Select a seed and arm planting mode. */
+  armSeed: (seed: CropId) => void;
+  /** Disarm planting mode (keeps the selected seed). */
+  disarmPlant: () => void;
   setHoveredPlot: (plotId: PlotId | null) => void;
   setTargetedPlot: (plotId: PlotId | null) => void;
   setIsFirstPerson: (isFirstPerson: boolean) => void;
@@ -37,6 +42,7 @@ function createInitialUiState(): UiState {
     joystickVector: { x: 0, y: 0 },
     selectedTool: 'watering_can',
     selectedSeed: 'carrot',
+    plantArmed: false,
     hoveredPlotId: null,
     targetedPlotId: null,
     isFirstPerson: false,
@@ -122,6 +128,18 @@ export const useUiStore = create<UiStoreState>((set, get) => ({
 
   setSelectedSeed: (selectedSeed: CropId) => {
     set({ selectedSeed });
+  },
+
+  setPlantArmed: (plantArmed: boolean) => {
+    set({ plantArmed });
+  },
+
+  armSeed: (seed: CropId) => {
+    set({ selectedSeed: seed, plantArmed: true });
+  },
+
+  disarmPlant: () => {
+    set({ plantArmed: false });
   },
 
   setHoveredPlot: (hoveredPlotId: PlotId | null) => {

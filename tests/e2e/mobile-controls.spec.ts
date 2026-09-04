@@ -51,9 +51,9 @@ test.describe('Mobile Controls & Touch Viewport E2E', () => {
   });
 
   test('direct plot tap plants without till step or reach rule', async ({ page }) => {
-    // 1. Select Seed Bag tool
-    const seedBagBtn = page.locator('[data-testid="tool-seed_bag"]');
-    await seedBagBtn.click();
+    // 1. Arm planting via the seed hotbar card
+    const carrotCard = page.locator('[data-testid="seed-card-carrot"]');
+    await carrotCard.click();
 
     // 2. Plant directly via helper (no till, no reach check)
     const plotId = await page.evaluate(() => {

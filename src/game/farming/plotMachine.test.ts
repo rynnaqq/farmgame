@@ -272,13 +272,6 @@ describe('Task 10: Farming State Machine & Evaluator', () => {
       );
     });
 
-    it('provides accurate feedback for seed_bag', () => {
-      expect(describeNextAction(emptyPlot, baseTime, 'seed_bag').toLowerCase()).toContain('plant');
-      expect(describeNextAction(growingPlot, baseTime, 'seed_bag').toLowerCase()).toContain(
-        'already'
-      );
-    });
-
     it('provides accurate feedback for scythe and hand', () => {
       const tools: ToolType[] = ['scythe', 'hand'];
       tools.forEach((tool) => {

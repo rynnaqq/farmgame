@@ -83,6 +83,23 @@ export function getMutationScale(mutation: MutationType): number {
 }
 
 /**
+ * Below this overall growth ratio a freshly planted seed shows nothing yet —
+ * just the dark soil spot. The sprout emerges gradually afterwards.
+ */
+export const CROP_EMERGE_RATIO = 0.02;
+
+/**
+ * Continuous growth scale so crops visibly grow from tiny to full size
+ * across the whole growth bar (0.25x at emergence → 1.0x at maturity),
+ * instead of popping between fixed-size stage meshes.
+ */
+export function getGrowthScale(ratio: number): number {
+  const r = Math.max(0, Math.min(1, ratio));
+  const eased = 1 - (1 - r) * (1 - r);
+  return 0.25 + 0.75 * eased;
+}
+
+/**
  * Returns material properties considering active mutation.
  */
 export function getMutationMaterialProps(

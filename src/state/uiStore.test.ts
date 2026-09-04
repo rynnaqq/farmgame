@@ -105,6 +105,25 @@ describe('useUiStore', () => {
       expect(useUiStore.getState().selectedSeed).toBe('pumpkin');
     });
 
+    it('starts disarmed and arms/disarms planting via armSeed/disarmPlant', () => {
+      expect(useUiStore.getState().plantArmed).toBe(false);
+
+      useUiStore.getState().armSeed('tomato');
+      expect(useUiStore.getState().selectedSeed).toBe('tomato');
+      expect(useUiStore.getState().plantArmed).toBe(true);
+
+      useUiStore.getState().disarmPlant();
+      expect(useUiStore.getState().plantArmed).toBe(false);
+      expect(useUiStore.getState().selectedSeed).toBe('tomato');
+    });
+
+    it('toggles plantArmed via setPlantArmed', () => {
+      useUiStore.getState().setPlantArmed(true);
+      expect(useUiStore.getState().plantArmed).toBe(true);
+      useUiStore.getState().setPlantArmed(false);
+      expect(useUiStore.getState().plantArmed).toBe(false);
+    });
+
     it('sets hovered and targeted plot IDs', () => {
       useUiStore.getState().setHoveredPlot('plot-2-3');
       expect(useUiStore.getState().hoveredPlotId).toBe('plot-2-3');

@@ -13,6 +13,44 @@ const STUD_MAT = new THREE.MeshStandardMaterial({
   flatShading: true,
 });
 
+// Shared fence parts: every rail/post/cap reuses one geometry + material
+// instead of allocating per-mesh JSX pairs (~150 meshes share 6 objects).
+// Rails use a unit-height cylinder scaled to span length.
+const FENCE_RAIL_GEO = new THREE.CylinderGeometry(0.065, 0.065, 1, 8);
+const FENCE_POST_GEO = new THREE.CylinderGeometry(0.1, 0.11, 0.96, 8);
+const FENCE_CAP_GEO = new THREE.ConeGeometry(0.13, 0.1, 4);
+const FENCE_RAIL_MAT = new THREE.MeshStandardMaterial({
+  color: '#6E4424',
+  roughness: 0.82,
+  metalness: 0.04,
+  flatShading: true,
+});
+const FENCE_POST_MAT = new THREE.MeshStandardMaterial({
+  color: '#523218',
+  roughness: 0.85,
+  metalness: 0.05,
+  flatShading: true,
+});
+const FENCE_CAP_MAT = new THREE.MeshStandardMaterial({
+  color: '#422510',
+  roughness: 0.88,
+  flatShading: true,
+});
+
+// Shared cloud puffs: detail 0 dodecahedrons read identically to detail 1
+// at sky distance for a quarter of the triangles.
+const CLOUD_PUFF_GEOS = [
+  new THREE.DodecahedronGeometry(1.8, 0),
+  new THREE.DodecahedronGeometry(1.3, 0),
+  new THREE.DodecahedronGeometry(1.2, 0),
+  new THREE.DodecahedronGeometry(1.1, 0),
+];
+const CLOUD_MAT = new THREE.MeshStandardMaterial({
+  color: '#FFFFFF',
+  roughness: 0.9,
+  flatShading: true,
+});
+
 /**
  * Procedural circular studs on grass top surface (Roblox/Lego style as seen in Growden.io)
  */
@@ -86,22 +124,14 @@ const CartoonClouds: React.FC = () => {
         const z = Math.sin(c.angle) * c.radius;
         return (
           <group key={idx} position={[x, c.y, z]} scale={c.scale}>
-            <mesh position={[0, 0, 0]}>
-              <dodecahedronGeometry args={[1.8, 1]} />
-              <meshStandardMaterial color="#FFFFFF" roughness={0.9} flatShading />
-            </mesh>
-            <mesh position={[1.4, -0.2, 0.2]}>
-              <dodecahedronGeometry args={[1.3, 1]} />
-              <meshStandardMaterial color="#FFFFFF" roughness={0.9} flatShading />
-            </mesh>
-            <mesh position={[-1.3, -0.1, -0.3]}>
-              <dodecahedronGeometry args={[1.2, 1]} />
-              <meshStandardMaterial color="#FFFFFF" roughness={0.9} flatShading />
-            </mesh>
-            <mesh position={[0.2, 0.7, -0.2]}>
-              <dodecahedronGeometry args={[1.1, 1]} />
-              <meshStandardMaterial color="#FFFFFF" roughness={0.9} flatShading />
-            </mesh>
+            <mesh position={[0, 0, 0]} geometry={CLOUD_PUFF_GEOS[0]} material={CLOUD_MAT} />
+            <mesh position={[1.4, -0.2, 0.2]} geometry={CLOUD_PUFF_GEOS[1]} material={CLOUD_MAT} />
+            <mesh
+              position={[-1.3, -0.1, -0.3]}
+              geometry={CLOUD_PUFF_GEOS[2]}
+              material={CLOUD_MAT}
+            />
+            <mesh position={[0.2, 0.7, -0.2]} geometry={CLOUD_PUFF_GEOS[3]} material={CLOUD_MAT} />
           </group>
         );
       })}
@@ -485,31 +515,47 @@ const FenceSection: React.FC<FenceSectionProps> = ({
     const postCount = Math.max(2, Math.round(span / 1.8) + 1);
     const step = (endZ - startZ) / (postCount - 1);
     const midZ = (startZ + endZ) / 2;
+    const railLength = span + 0.15;
 
     return (
       <group position={[0, 0, 0]}>
-        {/* Horizontal Rounded Log Rails */}
-        <mesh position={[x, 0.35, midZ]} rotation={[Math.PI / 2, 0, 0]} castShadow receiveShadow>
-          <cylinderGeometry args={[0.065, 0.065, span + 0.15, 8]} />
-          <meshStandardMaterial color="#6E4424" roughness={0.82} metalness={0.04} flatShading />
-        </mesh>
-        <mesh position={[x, 0.65, midZ]} rotation={[Math.PI / 2, 0, 0]} castShadow receiveShadow>
-          <cylinderGeometry args={[0.065, 0.065, span + 0.15, 8]} />
-          <meshStandardMaterial color="#6E4424" roughness={0.82} metalness={0.04} flatShading />
-        </mesh>
+        {/* Horizontal Rounded Log Rails (shared unit cylinder, scaled) */}
+        <mesh
+          position={[x, 0.35, midZ]}
+          rotation={[Math.PI / 2, 0, 0]}
+          scale={[1, railLength, 1]}
+          geometry={FENCE_RAIL_GEO}
+          material={FENCE_RAIL_MAT}
+          castShadow
+          receiveShadow
+        />
+        <mesh
+          position={[x, 0.65, midZ]}
+          rotation={[Math.PI / 2, 0, 0]}
+          scale={[1, railLength, 1]}
+          geometry={FENCE_RAIL_GEO}
+          material={FENCE_RAIL_MAT}
+          castShadow
+          receiveShadow
+        />
 
         {/* Chunky Vertical Posts */}
         {Array.from({ length: postCount }).map((_, idx) => (
           <group key={idx} position={[x, 0, startZ + idx * step]}>
-            <mesh position={[0, 0.48, 0]} castShadow receiveShadow>
-              <cylinderGeometry args={[0.1, 0.11, 0.96, 8]} />
-              <meshStandardMaterial color="#523218" roughness={0.85} metalness={0.05} flatShading />
-            </mesh>
+            <mesh
+              position={[0, 0.48, 0]}
+              geometry={FENCE_POST_GEO}
+              material={FENCE_POST_MAT}
+              castShadow
+              receiveShadow
+            />
             {/* Pyramidal post cap */}
-            <mesh position={[0, 0.98, 0]} castShadow>
-              <coneGeometry args={[0.13, 0.1, 4]} />
-              <meshStandardMaterial color="#422510" roughness={0.88} flatShading />
-            </mesh>
+            <mesh
+              position={[0, 0.98, 0]}
+              geometry={FENCE_CAP_GEO}
+              material={FENCE_CAP_MAT}
+              castShadow
+            />
           </group>
         ))}
       </group>
@@ -520,31 +566,47 @@ const FenceSection: React.FC<FenceSectionProps> = ({
   const postCount = Math.max(2, Math.round(span / 1.8) + 1);
   const step = (endX - startX) / (postCount - 1);
   const midX = (startX + endX) / 2;
+  const railLength = span + 0.15;
 
   return (
     <group position={[0, 0, 0]}>
-      {/* Horizontal Rounded Log Rails */}
-      <mesh position={[midX, 0.35, z]} rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.065, 0.065, span + 0.15, 8]} />
-        <meshStandardMaterial color="#6E4424" roughness={0.82} metalness={0.04} flatShading />
-      </mesh>
-      <mesh position={[midX, 0.65, z]} rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.065, 0.065, span + 0.15, 8]} />
-        <meshStandardMaterial color="#6E4424" roughness={0.82} metalness={0.04} flatShading />
-      </mesh>
+      {/* Horizontal Rounded Log Rails (shared unit cylinder, scaled) */}
+      <mesh
+        position={[midX, 0.35, z]}
+        rotation={[0, 0, Math.PI / 2]}
+        scale={[1, railLength, 1]}
+        geometry={FENCE_RAIL_GEO}
+        material={FENCE_RAIL_MAT}
+        castShadow
+        receiveShadow
+      />
+      <mesh
+        position={[midX, 0.65, z]}
+        rotation={[0, 0, Math.PI / 2]}
+        scale={[1, railLength, 1]}
+        geometry={FENCE_RAIL_GEO}
+        material={FENCE_RAIL_MAT}
+        castShadow
+        receiveShadow
+      />
 
       {/* Chunky Vertical Posts */}
       {Array.from({ length: postCount }).map((_, idx) => (
         <group key={idx} position={[startX + idx * step, 0, z]}>
-          <mesh position={[0, 0.48, 0]} castShadow receiveShadow>
-            <cylinderGeometry args={[0.1, 0.11, 0.96, 8]} />
-            <meshStandardMaterial color="#523218" roughness={0.85} metalness={0.05} flatShading />
-          </mesh>
+          <mesh
+            position={[0, 0.48, 0]}
+            geometry={FENCE_POST_GEO}
+            material={FENCE_POST_MAT}
+            castShadow
+            receiveShadow
+          />
           {/* Pyramidal post cap */}
-          <mesh position={[0, 0.98, 0]} castShadow>
-            <coneGeometry args={[0.13, 0.1, 4]} />
-            <meshStandardMaterial color="#422510" roughness={0.88} flatShading />
-          </mesh>
+          <mesh
+            position={[0, 0.98, 0]}
+            geometry={FENCE_CAP_GEO}
+            material={FENCE_CAP_MAT}
+            castShadow
+          />
         </group>
       ))}
     </group>

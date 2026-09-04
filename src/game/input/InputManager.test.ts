@@ -217,7 +217,7 @@ describe('Task 6: Cross-Platform Input Pipeline', () => {
       expect(keyboard.isRunning()).toBe(false);
     });
 
-    it('triggers tool selection callbacks for keys 1-3', () => {
+    it('triggers tool selection callbacks for keys 1-2', () => {
       const toolSpy = vi.fn();
       keyboard.onToolSelect = toolSpy;
 
@@ -225,9 +225,6 @@ describe('Task 6: Cross-Platform Input Pipeline', () => {
       expect(toolSpy).toHaveBeenCalledWith('watering_can');
 
       window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit2', key: '2' }));
-      expect(toolSpy).toHaveBeenCalledWith('seed_bag');
-
-      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit3', key: '3' }));
       expect(toolSpy).toHaveBeenCalledWith('hand');
     });
 

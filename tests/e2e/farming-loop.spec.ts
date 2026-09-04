@@ -22,10 +22,11 @@ test.describe('Farming Loop E2E', () => {
     );
     expect(initialSeeds).toBe(5);
 
-    // 1. Select Seed Bag tool and plant directly at a free soil point (no till step)
-    const seedBagBtn = page.locator('[data-testid="tool-seed_bag"]');
-    await seedBagBtn.click();
-    await expect(seedBagBtn).toHaveAttribute('aria-pressed', 'true');
+    // 1. Arm planting by tapping the Carrot card in the seed hotbar
+    // (no seed-bag tool anymore)
+    const carrotCard = page.locator('[data-testid="seed-card-carrot"]');
+    await carrotCard.click();
+    await expect(page.locator('[data-testid="plant-armed-chip"]')).toBeVisible();
 
     // 2. Plant Carrot at (0, 0)
     const plotId = await page.evaluate(() => {

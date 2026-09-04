@@ -148,6 +148,13 @@ export const InventoryPanel: React.FC<InventoryPanelProps> = ({
     useUiStore.getState().openModal('shop');
   }, []);
 
+  const handlePlantSeed = useCallback((cropId: CropId) => {
+    audioManager.playSfx('ui_click');
+    const ui = useUiStore.getState();
+    ui.armSeed(cropId);
+    ui.closeModal();
+  }, []);
+
   if (activeModal !== 'inventory') {
     return null;
   }
@@ -393,6 +400,15 @@ export const InventoryPanel: React.FC<InventoryPanelProps> = ({
                         >
                           {count}
                         </span>
+                        <button
+                          type="button"
+                          data-testid={`inventory-plant-seed-${crop.id}`}
+                          aria-label={`Plant ${crop.name} seeds`}
+                          onClick={() => handlePlantSeed(crop.id)}
+                          className="min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white shadow-md transition-all active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 cursor-pointer"
+                        >
+                          🌱 Plant
+                        </button>
                       </div>
                     </div>
                   );

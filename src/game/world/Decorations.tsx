@@ -2,6 +2,8 @@ import React, { useMemo } from 'react';
 import * as THREE from 'three';
 import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import { useSettingsStore } from '../../state/settingsStore';
+import { CulledGroup } from '../effects/CulledGroup';
+import { DECOR_CULL_DISTANCE } from '../effects/culling';
 
 // ==========================================
 // Preallocated Geometries for Scene Performance
@@ -14,6 +16,40 @@ const FOLIAGE_CONE_3_GEO = new THREE.ConeGeometry(0.65, 0.9, 7);
 const FLOWER_STEM_GEO = new THREE.CylinderGeometry(0.015, 0.015, 1, 4);
 const FLOWER_PETAL_GEO = new THREE.SphereGeometry(0.065, 5, 5);
 const GRASS_BLADE_GEO = new THREE.BoxGeometry(0.04, 0.22, 0.16);
+const BOULDER_GEO = new THREE.DodecahedronGeometry(1.0, 0);
+
+function treeMaterial(color: string) {
+  return new THREE.MeshStandardMaterial({ color, roughness: 0.75, flatShading: true });
+}
+
+// Shared materials: one instance per color for ALL trees, boulders, flowers
+// and grass tufts instead of per-mesh JSX pairs.
+const TRUNK_MAT = new THREE.MeshStandardMaterial({
+  color: '#5D4037',
+  roughness: 0.85,
+  flatShading: true,
+});
+const FOLIAGE_MATS = ['#388E3C', '#2E7D32', '#43A047'].map(treeMaterial);
+const BOULDER_MAT = new THREE.MeshStandardMaterial({
+  color: '#6B7280',
+  roughness: 0.88,
+  flatShading: true,
+});
+const FLOWER_STEM_MAT = new THREE.MeshStandardMaterial({ color: '#4CAF50', roughness: 0.8 });
+const GRASS_BLADE_MAT = new THREE.MeshStandardMaterial({
+  color: '#68A538',
+  roughness: 0.8,
+  flatShading: true,
+});
+const PETAL_MATS = new Map<string, THREE.MeshStandardMaterial>();
+function petalMaterial(color: string): THREE.MeshStandardMaterial {
+  let mat = PETAL_MATS.get(color);
+  if (!mat) {
+    mat = new THREE.MeshStandardMaterial({ color, roughness: 0.6, flatShading: true });
+    PETAL_MATS.set(color, mat);
+  }
+  return mat;
+}
 
 // ==========================================
 // Types & Item Definitions
@@ -157,31 +193,46 @@ const LowPolyTree: React.FC<{ tree: TreeItem }> = ({ tree }) => {
   const { scale, variant } = tree;
 
   // Foliage variations
-  const foliageColors = ['#388E3C', '#2E7D32', '#43A047'];
-  const primaryColor = foliageColors[variant % foliageColors.length];
-  const secondaryColor = foliageColors[(variant + 1) % foliageColors.length];
+  const primaryColor = FOLIAGE_MATS[variant % FOLIAGE_MATS.length];
+  const secondaryColor = FOLIAGE_MATS[(variant + 1) % FOLIAGE_MATS.length];
 
   return (
     <group position={[tree.x, 0, tree.z]} scale={[scale, scale, scale]}>
       {/* Tree Trunk */}
-      <mesh geometry={TRUNK_GEO} position={[0, 0.7, 0]} castShadow receiveShadow>
-        <meshStandardMaterial color="#5D4037" roughness={0.85} flatShading />
-      </mesh>
+      <mesh
+        geometry={TRUNK_GEO}
+        material={TRUNK_MAT}
+        position={[0, 0.7, 0]}
+        castShadow
+        receiveShadow
+      />
 
       {/* Layer 1 - Lower foliage cone */}
-      <mesh geometry={FOLIAGE_CONE_1_GEO} position={[0, 1.6, 0]} castShadow receiveShadow>
-        <meshStandardMaterial color={primaryColor} roughness={0.75} flatShading />
-      </mesh>
+      <mesh
+        geometry={FOLIAGE_CONE_1_GEO}
+        material={primaryColor}
+        position={[0, 1.6, 0]}
+        castShadow
+        receiveShadow
+      />
 
       {/* Layer 2 - Mid foliage cone */}
-      <mesh geometry={FOLIAGE_CONE_2_GEO} position={[0, 2.3, 0]} castShadow receiveShadow>
-        <meshStandardMaterial color={secondaryColor} roughness={0.75} flatShading />
-      </mesh>
+      <mesh
+        geometry={FOLIAGE_CONE_2_GEO}
+        material={secondaryColor}
+        position={[0, 2.3, 0]}
+        castShadow
+        receiveShadow
+      />
 
       {/* Layer 3 - Top foliage cone */}
-      <mesh geometry={FOLIAGE_CONE_3_GEO} position={[0, 2.95, 0]} castShadow receiveShadow>
-        <meshStandardMaterial color={primaryColor} roughness={0.75} flatShading />
-      </mesh>
+      <mesh
+        geometry={FOLIAGE_CONE_3_GEO}
+        material={primaryColor}
+        position={[0, 2.95, 0]}
+        castShadow
+        receiveShadow
+      />
     </group>
   );
 };
@@ -194,12 +245,11 @@ const FacetedBoulder: React.FC<{ boulder: BoulderItem }> = ({ boulder }) => {
       position={[boulder.x, scale * 0.45, boulder.z]}
       rotation={[0.2, rotY, 0.1]}
       scale={[scale * 0.7, scale * 0.7, scale * 0.7]}
+      geometry={BOULDER_GEO}
+      material={BOULDER_MAT}
       castShadow
       receiveShadow
-    >
-      <dodecahedronGeometry args={[1.0, 0]} />
-      <meshStandardMaterial color="#6B7280" roughness={0.88} flatShading />
-    </mesh>
+    />
   );
 
   if (hasCollision) {
@@ -228,13 +278,18 @@ const FlowerCluster: React.FC<{ flower: FlowerClusterItem }> = ({ flower }) => {
       ].map(([px, py, pz], idx) => (
         <group key={idx} position={[px, 0, pz]}>
           {/* Green Stem */}
-          <mesh geometry={FLOWER_STEM_GEO} position={[0, py / 2, 0]} scale={[1, py, 1]}>
-            <meshStandardMaterial color="#4CAF50" roughness={0.8} />
-          </mesh>
-          {/* Petal Head */}
-          <mesh geometry={FLOWER_PETAL_GEO} position={[0, py, 0]} castShadow>
-            <meshStandardMaterial color={flower.color} roughness={0.6} flatShading />
-          </mesh>
+          <mesh
+            geometry={FLOWER_STEM_GEO}
+            material={FLOWER_STEM_MAT}
+            position={[0, py / 2, 0]}
+            scale={[1, py, 1]}
+          />
+          {/* Petal Head (no shadow: tiny, saves shadow-pass calls) */}
+          <mesh
+            geometry={FLOWER_PETAL_GEO}
+            material={petalMaterial(flower.color)}
+            position={[0, py, 0]}
+          />
         </group>
       ))}
     </group>
@@ -248,12 +303,11 @@ const GrassTuft: React.FC<{ tuft: GrassTuftItem }> = ({ tuft }) => {
         <mesh
           key={idx}
           geometry={GRASS_BLADE_GEO}
+          material={GRASS_BLADE_MAT}
           position={[0, 0.1, 0]}
           rotation={[0.1, rot, 0.05]}
           receiveShadow
-        >
-          <meshStandardMaterial color="#68A538" roughness={0.8} flatShading />
-        </mesh>
+        />
       ))}
     </group>
   );
@@ -312,14 +366,18 @@ export const Decorations: React.FC = () => {
         <FacetedBoulder key={boulder.id} boulder={boulder} />
       ))}
 
-      {/* Flower Clusters */}
+      {/* Flower Clusters (distance-culled: subpixel noise at range) */}
       {visibleFlowers.map((flower) => (
-        <FlowerCluster key={flower.id} flower={flower} />
+        <CulledGroup key={flower.id} maxDistance={DECOR_CULL_DISTANCE}>
+          <FlowerCluster flower={flower} />
+        </CulledGroup>
       ))}
 
-      {/* Grass Tufts */}
+      {/* Grass Tufts (distance-culled: subpixel noise at range) */}
       {visibleGrassTufts.map((tuft) => (
-        <GrassTuft key={tuft.id} tuft={tuft} />
+        <CulledGroup key={tuft.id} maxDistance={DECOR_CULL_DISTANCE}>
+          <GrassTuft tuft={tuft} />
+        </CulledGroup>
       ))}
     </group>
   );

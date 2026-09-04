@@ -24,36 +24,36 @@ describe('Task 14: Toolbelt Component', () => {
   });
 
   describe('1. Tool Layout and Fixed Ordering', () => {
-    it('renders exactly 3 tool buttons in fixed order: Watering Can (1), Seed Bag (2), Hand/Scythe (3)', () => {
+    it('renders exactly 2 tool buttons in fixed order: Watering Can (1), Hand/Scythe (2)', () => {
       render(<Toolbelt inputManager={inputManager} />);
 
       const toolbelt = screen.getByTestId('toolbelt-container');
       expect(toolbelt).toBeInTheDocument();
 
       const waterBtn = screen.getByTestId('tool-watering_can');
-      const seedBtn = screen.getByTestId('tool-seed_bag');
       const handBtn = screen.getByTestId('tool-hand');
 
       expect(waterBtn).toBeInTheDocument();
-      expect(seedBtn).toBeInTheDocument();
       expect(handBtn).toBeInTheDocument();
+      expect(screen.queryByTestId('tool-seed_bag')).not.toBeInTheDocument();
       expect(screen.queryByTestId('tool-trowel')).not.toBeInTheDocument();
 
       // Verify DOM order
-      const buttons = [waterBtn, seedBtn, handBtn];
-      for (let i = 0; i < buttons.length - 1; i++) {
-        expect(buttons[i].compareDocumentPosition(buttons[i + 1])).toBe(
-          Node.DOCUMENT_POSITION_FOLLOWING
-        );
-      }
+      expect(waterBtn.compareDocumentPosition(handBtn)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     });
 
-    it('displays shortcut numbers 1, 2, 3 on the respective tools', () => {
+    it('displays shortcut numbers 1, 2 on the respective tools', () => {
       render(<Toolbelt inputManager={inputManager} />);
 
       expect(screen.getByTestId('tool-watering_can')).toHaveTextContent('1');
-      expect(screen.getByTestId('tool-seed_bag')).toHaveTextContent('2');
-      expect(screen.getByTestId('tool-hand')).toHaveTextContent('3');
+      expect(screen.getByTestId('tool-hand')).toHaveTextContent('2');
+    });
+
+    it('always renders the seed hotbar (no seed-bag tool anymore)', () => {
+      render(<Toolbelt inputManager={inputManager} />);
+
+      expect(screen.getByTestId('seed-picker')).toBeInTheDocument();
+      expect(screen.getByTestId('seed-card-carrot')).toBeInTheDocument();
     });
   });
 
@@ -62,10 +62,10 @@ describe('Task 14: Toolbelt Component', () => {
       render(<Toolbelt inputManager={inputManager} />);
 
       const waterBtn = screen.getByTestId('tool-watering_can');
-      const seedBtn = screen.getByTestId('tool-seed_bag');
+      const handBtn = screen.getByTestId('tool-hand');
 
       expect(waterBtn).toHaveAttribute('aria-pressed', 'true');
-      expect(seedBtn).toHaveAttribute('aria-pressed', 'false');
+      expect(handBtn).toHaveAttribute('aria-pressed', 'false');
     });
 
     it('selects Watering Can on click and updates uiStore', () => {
@@ -76,17 +76,7 @@ describe('Task 14: Toolbelt Component', () => {
 
       expect(useUiStore.getState().selectedTool).toBe('watering_can');
       expect(waterBtn).toHaveAttribute('aria-pressed', 'true');
-      expect(screen.getByTestId('tool-seed_bag')).toHaveAttribute('aria-pressed', 'false');
-    });
-
-    it('selects Seed Bag on click and updates uiStore', () => {
-      render(<Toolbelt inputManager={inputManager} />);
-
-      const seedBtn = screen.getByTestId('tool-seed_bag');
-      fireEvent.click(seedBtn);
-
-      expect(useUiStore.getState().selectedTool).toBe('seed_bag');
-      expect(seedBtn).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByTestId('tool-hand')).toHaveAttribute('aria-pressed', 'false');
     });
 
     it('selects Hand/Scythe on click and updates uiStore', () => {
@@ -108,9 +98,9 @@ describe('Task 14: Toolbelt Component', () => {
     });
   });
 
-  describe('3. Keyboard Shortcuts (1-3)', () => {
+  describe('3. Keyboard Shortcuts (1-2)', () => {
     it('switches tool to Watering Can on pressing "1"', () => {
-      useUiStore.getState().setSelectedTool('seed_bag');
+      useUiStore.getState().setSelectedTool('hand');
       render(<Toolbelt inputManager={inputManager} />);
 
       fireEvent.keyDown(window, { key: '1' });
@@ -118,18 +108,10 @@ describe('Task 14: Toolbelt Component', () => {
       expect(screen.getByTestId('tool-watering_can')).toHaveAttribute('aria-pressed', 'true');
     });
 
-    it('switches tool to Seed Bag on pressing "2"', () => {
+    it('switches tool to Hand/Scythe on pressing "2"', () => {
       render(<Toolbelt inputManager={inputManager} />);
 
       fireEvent.keyDown(window, { key: '2' });
-      expect(useUiStore.getState().selectedTool).toBe('seed_bag');
-      expect(screen.getByTestId('tool-seed_bag')).toHaveAttribute('aria-pressed', 'true');
-    });
-
-    it('switches tool to Hand/Scythe on pressing "3"', () => {
-      render(<Toolbelt inputManager={inputManager} />);
-
-      fireEvent.keyDown(window, { key: '3' });
       expect(['hand', 'scythe']).toContain(useUiStore.getState().selectedTool);
       expect(screen.getByTestId('tool-hand')).toHaveAttribute('aria-pressed', 'true');
     });
@@ -172,45 +154,66 @@ describe('Task 14: Toolbelt Component', () => {
     });
   });
 
-  describe('5. Seed Bag Active Badge & Inventory Count', () => {
-    it('displays current active seed and remaining seed count on Seed Bag button', () => {
-      useUiStore.getState().setSelectedSeed('carrot');
+  describe('5. Armed-Seed Indicator Chip', () => {
+    it('hides the armed chip while planting is disarmed', () => {
       render(<Toolbelt inputManager={inputManager} />);
 
-      const seedBtn = screen.getByTestId('tool-seed_bag');
-      // Default starting carrot seeds is 5
-      expect(seedBtn).toHaveTextContent('5');
-      expect(seedBtn).toHaveAttribute('aria-label', expect.stringMatching(/carrot/i));
+      expect(useUiStore.getState().plantArmed).toBe(false);
+      expect(screen.queryByTestId('plant-armed-chip')).not.toBeInTheDocument();
     });
 
-    it('updates Seed Bag badge reactively when seed count or selected seed changes', () => {
+    it('shows the armed chip with seed name and count after arming from the hotbar', () => {
+      render(<Toolbelt inputManager={inputManager} />);
+
+      fireEvent.click(screen.getByTestId('seed-card-pumpkin'));
+
+      const chip = screen.getByTestId('plant-armed-chip');
+      expect(chip).toBeInTheDocument();
+      expect(chip).toHaveTextContent(/pumpkin/i);
+      // Default starting pumpkin seeds is 0
+      expect(chip).toHaveTextContent('0');
+    });
+
+    it('updates the armed chip count reactively when inventory changes', () => {
       render(<Toolbelt inputManager={inputManager} />);
 
       act(() => {
-        useUiStore.getState().setSelectedSeed('pumpkin');
+        useUiStore.getState().armSeed('pumpkin');
         useGameStore.getState().addSeeds('pumpkin', 12);
       });
 
-      const seedBtn = screen.getByTestId('tool-seed_bag');
-      expect(seedBtn).toHaveTextContent('12');
-      expect(seedBtn).toHaveAttribute('aria-label', expect.stringMatching(/pumpkin/i));
+      expect(screen.getByTestId('plant-armed-chip')).toHaveTextContent('12');
+    });
+
+    it('disarming via the chip cancel button hides the chip', () => {
+      render(<Toolbelt inputManager={inputManager} />);
+
+      fireEvent.click(screen.getByTestId('seed-card-carrot'));
+      expect(screen.getByTestId('plant-armed-chip')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByTestId('plant-disarm-button'));
+      expect(useUiStore.getState().plantArmed).toBe(false);
+      expect(screen.queryByTestId('plant-armed-chip')).not.toBeInTheDocument();
+    });
+
+    it('selecting a tool disarms planting and hides the chip', () => {
+      render(<Toolbelt inputManager={inputManager} />);
+
+      fireEvent.click(screen.getByTestId('seed-card-carrot'));
+      expect(screen.getByTestId('plant-armed-chip')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByTestId('tool-hand'));
+      expect(useUiStore.getState().plantArmed).toBe(false);
+      expect(screen.queryByTestId('plant-armed-chip')).not.toBeInTheDocument();
     });
   });
 
-  describe('6. SeedPicker Popup Integration', () => {
-    it('renders SeedPicker popup when Seed Bag tool is selected', () => {
-      useUiStore.getState().setSelectedTool('seed_bag');
-      render(<Toolbelt inputManager={inputManager} />);
-
-      const seedPicker = screen.getByTestId('seed-picker');
-      expect(seedPicker).toBeInTheDocument();
-    });
-
-    it('hides SeedPicker popup when a non-seed tool is active', () => {
+  describe('6. Seed Hotbar Integration', () => {
+    it('always renders the seed hotbar above the toolbelt', () => {
       useUiStore.getState().setSelectedTool('watering_can');
       render(<Toolbelt inputManager={inputManager} />);
 
-      expect(screen.queryByTestId('seed-picker')).not.toBeInTheDocument();
+      expect(screen.getByTestId('seed-picker')).toBeInTheDocument();
     });
   });
 
@@ -220,7 +223,6 @@ describe('Task 14: Toolbelt Component', () => {
 
       const buttons = [
         screen.getByTestId('tool-watering_can'),
-        screen.getByTestId('tool-seed_bag'),
         screen.getByTestId('tool-hand'),
       ];
 
@@ -233,7 +235,6 @@ describe('Task 14: Toolbelt Component', () => {
       render(<Toolbelt inputManager={inputManager} />);
 
       expect(screen.getByTestId('tool-watering_can')).toHaveAttribute('aria-label');
-      expect(screen.getByTestId('tool-seed_bag')).toHaveAttribute('aria-label');
       expect(screen.getByTestId('tool-hand')).toHaveAttribute('aria-label');
     });
 
